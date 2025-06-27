@@ -7,9 +7,9 @@ CREATE TABLE ClinicaDental.Paciente (
 	Nombre varchar(50) NOT NULL,
 	Apellido varchar(50) NOT NULL,
 	Fecha_Nacimiento DATE NOT NULL,
-	DUI varchar(10) NOT NULL UNIQUE, -- ESTO PUEDE SER NULL, POR LOS PACIENTES QUE SON MENORES DE EDAD
+	DUI varchar(10) UNIQUE, -- ESTO PUEDE SER NULL, POR LOS PACIENTES QUE SON MENORES DE EDAD
 	Telefono CHAR(8),
-	Correo VARCHAR(25) NOT NULL
+	Correo VARCHAR(25) NOT NULL UNIQUE
 );
 
 -- Tabla: historial médico
