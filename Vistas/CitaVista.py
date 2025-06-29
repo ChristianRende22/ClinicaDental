@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDateTime
 from PyQt6.QtGui import QFont
 from datetime import datetime
-from Doctor import Doctor  
+from Vistas.DoctorVista import Doctor  
 
 class Paciente:
     def __init__(self, nombre, apellido):

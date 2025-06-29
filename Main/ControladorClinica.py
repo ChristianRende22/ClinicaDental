@@ -1,0 +1,1 @@
+# Pasar metodo de la vista a la clase ControladorClinica

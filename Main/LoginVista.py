@@ -1,0 +1,1 @@
+# Meter todo lo que se necesite para la vista de la ventana principal

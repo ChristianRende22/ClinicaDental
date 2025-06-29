@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import List
 import re
 
-## COMETARIO 2
 # Clases auxiliares (Lo puse para que no se pierda el contexto)
 class Doctor:
     def __init__(self, nombre: str, apellido: str):
