@@ -7,34 +7,17 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from datetime import datetime
-from typing import List
-import re
+import os
+import sys
 
-# Clases auxiliares (Lo puse para que no se pierda el contexto)
-class Doctor:
-    def __init__(self, nombre: str, apellido: str):
-        self.nombre = nombre
-        self.apellido = apellido
+# Agregar el directorio padre al path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-class Tratamiento:
-    def __init__(self, id_tratamiento: str, descripcion: str, costo: float, 
-                 fecha_realizacion: str, estado: str, doctor: Doctor):
-        self.id_tratamiento = id_tratamiento
-        self.descripcion = descripcion
-        self.costo = costo
-        self.fecha_realizacion = fecha_realizacion
-        self.estado = estado
-        self.doctor = doctor
+# Importar las clases del controlador
+from Controladores.PacienteControlador import PacienteControlador
+from Vistas.TratamientoVista import Tratamiento
+from Vistas.CitaVista import Cita, Doctor
 
-class Cita:
-    def __init__(self, id_cita: str, hora_inicio: str, hora_fin: str, 
-                 costo_cita: float, estado: str, doctor: Doctor):
-        self.id_cita = id_cita
-        self.hora_inicio = hora_inicio
-        self.hora_fin = hora_fin
-        self.costo_cita = costo_cita
-        self.estado = estado
-        self.doctor = doctor
 
 class AgregarTratamientoDialog(QDialog):
     def __init__(self, parent=None):
@@ -230,21 +213,14 @@ class AgregarCitaDialog(QDialog):
             doctor
         )
 
-# CLASE PACIENTE
-class Paciente:
-    def __init__(self, nombre, apellido, fecha_nacimiento, dui, telefono, correo):
-        self.nombre = nombre
-        self.apellido = apellido
-        self.fecha_nacimiento = fecha_nacimiento  # Cambiado a fecha de nacimiento
-        self.dui = dui
-        self.telefono = telefono
-        self.correo = correo
-
 class PacienteWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gestión de Pacientes - Clínica Dental")
         self.setGeometry(100, 100, 900, 700)
+        
+        # Inicializar el controlador
+        self.controlador = PacienteControlador()
         
         # Color scheme 
         self.colors = {
@@ -344,22 +320,6 @@ class PacienteWindow(QMainWindow):
                 border-color: {self.colors['accent']};
             }}
         """)
-        
-        
-        # Atributos del paciente actual
-        # CREAR LA CLASE PACIENTE
-        self.nombre = ""
-        self.apellido = ""
-        self.edad = 0 # CAMBIAR A FECHA DE NACIMIENTO PARA HACER COHERENCIA CON LA BASE DE DATOS
-        self.dui = "" 
-        self.telefono = 0
-        self.correo = ""
-        self.historial_medico: List[Tratamiento] = [] #QUERY
-        self.citas: List[Cita] = [] # QUERY
-        self.saldo_pendiente = 0.0 # POR MEDIO DEL JOIN DE TRATAMIENTO SE HACE LA CONSULTA PARA CALCULAR EL SALDO PENDIENTE
-        
-        # Nueva lista para almacenar todos los pacientes registrados
-        self.pacientes_registrados = [] # INSERT INTO pacientes (nombre, apellido, edad, dui, telefono, correo, saldo_pendiente, fecha_registro)
         
         self.init_ui()
     
@@ -579,20 +539,6 @@ class PacienteWindow(QMainWindow):
         
         main_layout.addWidget(self.resultado_text)
     
-    def validar_email(self, email: str) -> bool:
-        """Valida el formato del email"""
-        patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return re.match(patron, email) is not None
-    
-    def validar_dui(self, dui: str) -> bool:
-        """Valida el formato del DUI (########-#)"""
-        patron = r'^\d{8}-\d{1}$'
-        return re.match(patron, dui) is not None
-    
-    def validar_telefono(self, telefono: str) -> bool:
-        """Valida que el teléfono tenga al menos 8 dígitos"""
-        return telefono.isdigit() and len(telefono) >= 8
-    
     def limpiar_campos(self):
         """Limpia todos los campos de entrada para agregar un nuevo paciente"""
         self.nombre_edit.clear()
@@ -609,96 +555,50 @@ class PacienteWindow(QMainWindow):
     def crear_paciente(self):
         """Crea un nuevo paciente con los datos ingresados"""
         try:
-            nombre = self.nombre_edit.text().strip().title()
-            apellido = self.apellido_edit.text().strip().title()
+            nombre = self.nombre_edit.text().strip()
+            apellido = self.apellido_edit.text().strip()
             edad = self.edad_edit.value()
             dui = self.dui_edit.text().strip()
             telefono_str = self.telefono_edit.text().strip()
-            correo = self.correo_edit.text().strip().lower()
+            correo = self.correo_edit.text().strip()
             saldo_pendiente = self.saldo_edit.value()
             
-            # Validaciones básicas
-            if not all([nombre, apellido, dui]):
-                QMessageBox.warning(self, "❌ Error", "Nombre, Apellido y DUI son campos obligatorios")
-                return
-            
-            # Validación DUI
-            if not self.validar_dui(dui):
-                QMessageBox.warning(self, "❌ Error de Formato", 
-                                  "El DUI debe tener el formato: 12345678-9")
-                return
-            
-            # Verificar si ya existe un paciente con el mismo DUI
-            for paciente in self.pacientes_registrados:
-                if paciente['dui'] == dui:
-                    QMessageBox.warning(self, "❌ Error", 
-                                      f"Ya existe un paciente registrado con el DUI: {dui}")
+            # Validación del teléfono
+            telefono = 0
+            if telefono_str:
+                if not self.controlador.validar_telefono(telefono_str):
+                    QMessageBox.warning(self, "❌ Error de Formato", 
+                                      "El teléfono debe contener al menos 8 dígitos")
                     return
+                telefono = int(telefono_str)
             
-            # Validación teléfono
-            if telefono_str and not self.validar_telefono(telefono_str):
-                QMessageBox.warning(self, "❌ Error de Formato", 
-                                  "El teléfono debe contener al menos 8 dígitos")
-                return
+            # Crear paciente usando el controlador
+            exito, mensaje = self.controlador.crear_paciente(
+                nombre, apellido, edad, dui, telefono, correo, saldo_pendiente
+            )
             
-            telefono = int(telefono_str) if telefono_str else 0
-            
-            # Validación email
-            if correo and not self.validar_email(correo):
-                QMessageBox.warning(self, "❌ Error de Formato", 
-                                  "El email no tiene un formato válido")
-                return
-            
-            # Validación edad
-            if edad <= 0:
-                QMessageBox.warning(self, "❌ Error", "La edad debe ser mayor a 0")
-                return
-            
-            # Crear datos del nuevo paciente
-            nuevo_paciente = {
-                'nombre': nombre,
-                'apellido': apellido,
-                'edad': edad,
-                'dui': dui,
-                'telefono': telefono,
-                'correo': correo,
-                'saldo_pendiente': saldo_pendiente,
-                'historial_medico': [],
-                'citas': [],
-                'fecha_registro': datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
-            }
-            
-            # Agregar a la lista de pacientes registrados
-            self.pacientes_registrados.append(nuevo_paciente)
-            
-            # Establecer como paciente actual
-            self.nombre = nombre
-            self.apellido = apellido
-            self.edad = edad
-            self.dui = dui
-            self.telefono = telefono
-            self.correo = correo
-            self.saldo_pendiente = saldo_pendiente
-            self.historial_medico = []
-            self.citas = []
-            
-            # Mostrar mensaje de éxito
-            QMessageBox.information(self, "✅ Éxito", 
-                                  f"Paciente {nombre} {apellido} creado exitosamente.\n\n"
-                                  f"Total de pacientes registrados: {len(self.pacientes_registrados)}")
-            
-            # Mostrar información del paciente creado
-            self.resultado_text.setText(self._generar_info_completa())
-            
-            # Limpiar campos automáticamente para el siguiente paciente
-            self.limpiar_campos()
-            
+            if exito:
+                # Mostrar mensaje de éxito
+                total_pacientes = len(self.controlador.get_todos_los_pacientes())
+                QMessageBox.information(self, "✅ Éxito", 
+                                      f"{mensaje}\n\n"
+                                      f"Total de pacientes registrados: {total_pacientes}")
+                
+                # Mostrar información del paciente creado
+                self.resultado_text.setText(self._generar_info_completa())
+                
+                # Limpiar campos automáticamente para el siguiente paciente
+                self.limpiar_campos()
+            else:
+                QMessageBox.warning(self, "❌ Error", mensaje)
+                
         except ValueError as e:
             QMessageBox.warning(self, "❌ Error", f"Error en el formato de los datos: {str(e)}")
     
     def mostrar_todos_historiales(self):
         """Muestra todos los historiales de los pacientes registrados"""
-        if not self.pacientes_registrados:
+        pacientes = self.controlador.get_todos_los_pacientes()
+        if not pacientes:
             QMessageBox.information(self, "ℹ️ Información", 
                                   "No hay pacientes registrados en el sistema.")
             return
@@ -711,64 +611,66 @@ class PacienteWindow(QMainWindow):
         separador_principal = "=" * 80
         separador_paciente = "-" * 60
         
+        pacientes = self.controlador.get_todos_los_pacientes()
+        
         historial = f"""
 {separador_principal}
 🏥 HISTORIALES MÉDICOS COMPLETOS - CLÍNICA DENTAL
 {separador_principal}
 
 📊 RESUMEN GENERAL:
-   ▪ Total de Pacientes Registrados: {len(self.pacientes_registrados)}
+   ▪ Total de Pacientes Registrados: {len(pacientes)}
    ▪ Fecha de Consulta: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
 
 {separador_principal}
 """
         
         # Mostrar cada paciente
-        for i, paciente in enumerate(self.pacientes_registrados, 1):
-            total_tratamientos = sum(t.costo for t in paciente['historial_medico'])
-            total_citas = sum(c.costo_cita for c in paciente['citas'])
+        for i, paciente in enumerate(pacientes, 1):
+            total_tratamientos = paciente.calcular_total_tratamientos()
+            total_citas = paciente.calcular_total_citas()
             
             historial += f"""
 {separador_paciente}
-👤 PACIENTE #{i:02d}: {paciente['nombre']} {paciente['apellido']}
+👤 PACIENTE #{i:02d}: {paciente.nombre} {paciente.apellido}
 {separador_paciente}
 
 📋 INFORMACIÓN PERSONAL:
-   ▪ Nombre Completo: {paciente['nombre']} {paciente['apellido']}
-   ▪ Edad: {paciente['edad']} años
-   ▪ DUI: {paciente['dui']}
-   ▪ Teléfono: {self._formatear_telefono_static(paciente['telefono'])}
-   ▪ Correo: {paciente['correo'] if paciente['correo'] else 'No especificado'}
-   ▪ Fecha de Registro: {paciente['fecha_registro']}
+   ▪ Nombre Completo: {paciente.nombre} {paciente.apellido}
+   ▪ Edad: {paciente.edad} años
+   ▪ DUI: {paciente.dui}
+   ▪ Teléfono: {self.controlador.formatear_telefono(paciente.telefono)}
+   ▪ Correo: {paciente.correo if paciente.correo else 'No especificado'}
+   ▪ Fecha de Registro: {paciente.fecha_registro}
 
 💰 INFORMACIÓN FINANCIERA:
-   ▪ Saldo Pendiente: ${paciente['saldo_pendiente']:,.2f}
+   ▪ Saldo Pendiente: ${paciente.saldo_pendiente:,.2f}
    ▪ Total Tratamientos: ${total_tratamientos:,.2f}
    ▪ Total Citas: ${total_citas:,.2f}
-   ▪ Balance Total: ${(total_tratamientos + total_citas + paciente['saldo_pendiente']):,.2f}
+   ▪ Balance Total: ${paciente.get_balance_total():,.2f}
 
-🩺 TRATAMIENTOS ({len(paciente['historial_medico'])}):
+🩺 TRATAMIENTOS ({len(paciente.historial_medico)}):
 """
             
-            if not paciente['historial_medico']:
+            if not paciente.historial_medico:
                 historial += "   📝 No hay tratamientos registrados.\n"
             else:
-                for j, tratamiento in enumerate(paciente['historial_medico'], 1):
-                    estado_icon = self._get_estado_icon(tratamiento.estado)
+                for j, tratamiento in enumerate(paciente.historial_medico, 1):
+                    estado_icon = self.controlador.get_estado_icon(tratamiento.estado)
                     historial += f"""   {j}. {tratamiento.descripcion}
       💵 ${tratamiento.costo:,.2f} | 📅 {tratamiento.fecha_realizacion}
       {estado_icon} {tratamiento.estado} | 👨‍⚕️ Dr. {tratamiento.doctor.nombre} {tratamiento.doctor.apellido}
 """
             
             historial += f"""
-📅 CITAS ({len(paciente['citas'])}):
+📅 CITAS ({len(paciente.citas)}):
 """
             
-            if not paciente['citas']:
+            if not paciente.citas:
                 historial += "   📝 No hay citas programadas.\n"
             else:
-                for j, cita in enumerate(paciente['citas'], 1):
-                    estado_icon = self._get_estado_icon(cita.estado)
+                for j, cita in enumerate(paciente.citas, 1):
+                    estado_icon = self.controlador.get_estado_icon(cita.estado)
                     historial += f"""   {j}. ID: {cita.id_cita}
       ⏰ {cita.hora_inicio} - {cita.hora_fin}
       💵 ${cita.costo_cita:,.2f} | {estado_icon} {cita.estado}
@@ -778,12 +680,12 @@ class PacienteWindow(QMainWindow):
             historial += "\n"
         
         # Resumen general
-        total_pacientes = len(self.pacientes_registrados)
-        total_tratamientos_general = sum(len(p['historial_medico']) for p in self.pacientes_registrados)
-        total_citas_general = sum(len(p['citas']) for p in self.pacientes_registrados)
-        total_dinero_tratamientos = sum(sum(t.costo for t in p['historial_medico']) for p in self.pacientes_registrados)
-        total_dinero_citas = sum(sum(c.costo_cita for c in p['citas']) for p in self.pacientes_registrados)
-        total_saldos_pendientes = sum(p['saldo_pendiente'] for p in self.pacientes_registrados)
+        total_pacientes = len(pacientes)
+        total_tratamientos_general = sum(len(p.historial_medico) for p in pacientes)
+        total_citas_general = sum(len(p.citas) for p in pacientes)
+        total_dinero_tratamientos = sum(p.calcular_total_tratamientos() for p in pacientes)
+        total_dinero_citas = sum(p.calcular_total_citas() for p in pacientes)
+        total_saldos_pendientes = sum(p.saldo_pendiente for p in pacientes)
         
         historial += f"""
 {separador_principal}
@@ -810,59 +712,40 @@ class PacienteWindow(QMainWindow):
 """
         return historial
     
-    def _formatear_telefono_static(self, telefono: int) -> str:
-        """Formatea el número de teléfono para mejor presentación (versión estática)"""
-        if telefono == 0:
-            return "No especificado"
-        
-        telefono_str = str(telefono)
-        if len(telefono_str) == 8:
-            return f"{telefono_str[:4]}-{telefono_str[4:]}"
-        elif len(telefono_str) >= 8:
-            return f"+503 {telefono_str[-8:-4]}-{telefono_str[-4:]}"
-        return telefono_str
-    
     def agregar_tratamiento(self):
         """Abre un diálogo para agregar un tratamiento"""
-        if not self.nombre:
+        paciente_actual = self.controlador.get_paciente_actual()
+        if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
         dialog = AgregarTratamientoDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             tratamiento = dialog.get_tratamiento()
-            self.historial_medico.append(tratamiento)
-            
-            # Actualizar también en la lista de pacientes registrados
-            for paciente in self.pacientes_registrados:
-                if paciente['dui'] == self.dui:
-                    paciente['historial_medico'].append(tratamiento)
-                    break
-            
-            QMessageBox.information(self, "✅ Éxito", "Tratamiento agregado exitosamente")
+            if self.controlador.agregar_tratamiento_a_paciente(tratamiento):
+                QMessageBox.information(self, "✅ Éxito", "Tratamiento agregado exitosamente")
+            else:
+                QMessageBox.warning(self, "❌ Error", "No se pudo agregar el tratamiento")
     
     def agregar_cita(self):
         """Abre un diálogo para agregar una cita"""
-        if not self.nombre:
+        paciente_actual = self.controlador.get_paciente_actual()
+        if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
         dialog = AgregarCitaDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             cita = dialog.get_cita()
-            self.citas.append(cita)
-            
-            # Actualizar también en la lista de pacientes registrados
-            for paciente in self.pacientes_registrados:
-                if paciente['dui'] == self.dui:
-                    paciente['citas'].append(cita)
-                    break
-            
-            QMessageBox.information(self, "✅ Éxito", "Cita agregada exitosamente")
+            if self.controlador.agregar_cita_a_paciente(cita):
+                QMessageBox.information(self, "✅ Éxito", "Cita agregada exitosamente")
+            else:
+                QMessageBox.warning(self, "❌ Error", "No se pudo agregar la cita")
     
     def consultar_historial(self):
         """Consulta y muestra el historial médico del paciente"""
-        if not self.nombre:
+        paciente_actual = self.controlador.get_paciente_actual()
+        if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
@@ -871,7 +754,8 @@ class PacienteWindow(QMainWindow):
     
     def mostrar_info_paciente(self):
         """Muestra la información básica del paciente"""
-        if not self.nombre:
+        paciente_actual = self.controlador.get_paciente_actual()
+        if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
@@ -879,6 +763,10 @@ class PacienteWindow(QMainWindow):
     
     def _generar_info_completa(self) -> str:
         """Genera la información completa del paciente con formato mejorado"""
+        paciente_actual = self.controlador.get_paciente_actual()
+        if not paciente_actual:
+            return "No hay paciente seleccionado"
+            
         separador = "=" * 60
         info = f"""
 {separador}
@@ -886,21 +774,21 @@ class PacienteWindow(QMainWindow):
 {separador}
 
 👤 DATOS PERSONALES:
-   ▪ Nombre Completo: {self.nombre} {self.apellido}
-   ▪ Edad: {self.edad} años
-   ▪ DUI: {self.dui}
-   ▪ Teléfono: {self._formatear_telefono()}
-   ▪ Correo Electrónico: {self.correo if self.correo else 'No especificado'}
+   ▪ Nombre Completo: {paciente_actual.nombre} {paciente_actual.apellido}
+   ▪ Edad: {paciente_actual.edad} años
+   ▪ DUI: {paciente_actual.dui}
+   ▪ Teléfono: {self.controlador.formatear_telefono(paciente_actual.telefono)}
+   ▪ Correo Electrónico: {paciente_actual.correo if paciente_actual.correo else 'No especificado'}
 
 💰 INFORMACIÓN FINANCIERA:
-   ▪ Saldo Pendiente: ${self.saldo_pendiente:,.2f}
-   ▪ Estado: {'🔴 Pendiente de pago' if self.saldo_pendiente > 0 else '🟢 Al día'}
+   ▪ Saldo Pendiente: ${paciente_actual.saldo_pendiente:,.2f}
+   ▪ Estado: {'🔴 Pendiente de pago' if paciente_actual.saldo_pendiente > 0 else '🟢 Al día'}
 
 📊 RESUMEN MÉDICO:
-   ▪ Tratamientos Realizados: {len(self.historial_medico)}
-   ▪ Citas Agendadas: {len(self.citas)}
-   ▪ Costo Total Tratamientos: ${self._calcular_total_tratamientos():,.2f}
-   ▪ Costo Total Citas: ${self._calcular_total_citas():,.2f}
+   ▪ Tratamientos Realizados: {len(paciente_actual.historial_medico)}
+   ▪ Citas Agendadas: {len(paciente_actual.citas)}
+   ▪ Costo Total Tratamientos: ${paciente_actual.calcular_total_tratamientos():,.2f}
+   ▪ Costo Total Citas: ${paciente_actual.calcular_total_citas():,.2f}
 
 ⏰ Última Actualización: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
 {separador}
@@ -909,6 +797,10 @@ class PacienteWindow(QMainWindow):
     
     def _generar_historial_detallado(self) -> str:
         """Genera el historial médico detallado con formato mejorado"""
+        paciente_actual = self.controlador.get_paciente_actual()
+        if not paciente_actual:
+            return "No hay paciente seleccionado"
+            
         separador_principal = "=" * 60
         separador_seccion = "-" * 40
         
@@ -917,19 +809,19 @@ class PacienteWindow(QMainWindow):
 📋 HISTORIAL MÉDICO COMPLETO
 {separador_principal}
 
-👤 Paciente: {self.nombre} {self.apellido}
+👤 Paciente: {paciente_actual.nombre} {paciente_actual.apellido}
 📅 Fecha de Consulta: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
 
 {separador_seccion}
-🩺 TRATAMIENTOS REALIZADOS ({len(self.historial_medico)})
+🩺 TRATAMIENTOS REALIZADOS ({len(paciente_actual.historial_medico)})
 {separador_seccion}
 """
         
-        if not self.historial_medico:
+        if not paciente_actual.historial_medico:
             historial += "\n   📝 No hay tratamientos registrados en el historial.\n"
         else:
-            for i, tratamiento in enumerate(self.historial_medico, 1):
-                estado_icon = self._get_estado_icon(tratamiento.estado)
+            for i, tratamiento in enumerate(paciente_actual.historial_medico, 1):
+                estado_icon = self.controlador.get_estado_icon(tratamiento.estado)
                 historial += f"""
    ┌─ Tratamiento #{i:02d}
    │ 🆔 ID: {tratamiento.id_tratamiento}
@@ -943,15 +835,15 @@ class PacienteWindow(QMainWindow):
         
         historial += f"""
 {separador_seccion}
-📅 CITAS PROGRAMADAS ({len(self.citas)})
+📅 CITAS PROGRAMADAS ({len(paciente_actual.citas)})
 {separador_seccion}
 """
         
-        if not self.citas:
+        if not paciente_actual.citas:
             historial += "\n   📝 No hay citas programadas.\n"
         else:
-            for i, cita in enumerate(self.citas, 1):
-                estado_icon = self._get_estado_icon(cita.estado)
+            for i, cita in enumerate(paciente_actual.citas, 1):
+                estado_icon = self.controlador.get_estado_icon(cita.estado)
                 historial += f"""
    ┌─ Cita #{i:02d}
    │ 🆔 ID: {cita.id_cita}
@@ -964,8 +856,8 @@ class PacienteWindow(QMainWindow):
 """
         
         # Resumen financiero
-        total_tratamientos = self._calcular_total_tratamientos()
-        total_citas = self._calcular_total_citas()
+        total_tratamientos = paciente_actual.calcular_total_tratamientos()
+        total_citas = paciente_actual.calcular_total_citas()
         total_general = total_tratamientos + total_citas
         
         historial += f"""
@@ -974,54 +866,16 @@ class PacienteWindow(QMainWindow):
 {separador_seccion}
 
    📊 Estadísticas:
-   ▪ Total de Tratamientos: {len(self.historial_medico)} - ${total_tratamientos:,.2f}
-   ▪ Total de Citas: {len(self.citas)} - ${total_citas:,.2f}
+   ▪ Total de Tratamientos: {len(paciente_actual.historial_medico)} - ${total_tratamientos:,.2f}
+   ▪ Total de Citas: {len(paciente_actual.citas)} - ${total_citas:,.2f}
    ▪ Subtotal General: ${total_general:,.2f}
-   ▪ Saldo Pendiente: ${self.saldo_pendiente:,.2f}
+   ▪ Saldo Pendiente: ${paciente_actual.saldo_pendiente:,.2f}
    
-   💳 Balance Final: ${(total_general + self.saldo_pendiente):,.2f}
+   💳 Balance Final: ${paciente_actual.get_balance_total():,.2f}
 
 {separador_principal}
 """
         return historial
-    
-    def _formatear_telefono(self) -> str:
-        """Formatea el número de teléfono para mejor presentación"""
-        if self.telefono == 0:
-            return "No especificado"
-        
-        telefono_str = str(self.telefono)
-        if len(telefono_str) == 8:
-            return f"{telefono_str[:4]}-{telefono_str[4:]}"
-        elif len(telefono_str) >= 8:
-            return f"+503 {telefono_str[-8:-4]}-{telefono_str[-4:]}"
-        return telefono_str
-    
-    def _get_estado_icon(self, estado: str) -> str:
-        """Devuelve un icono basado en el estado"""
-        estado_lower = estado.lower()
-        if 'completado' in estado_lower or 'finalizado' in estado_lower:
-            return "✅"
-        elif 'pendiente' in estado_lower or 'programado' in estado_lower:
-            return "⏳"
-        elif 'cancelado' in estado_lower:
-            return "❌"
-        elif 'en proceso' in estado_lower or 'activo' in estado_lower:
-            return "🔄"
-        else:
-            return "📋"
-    
-    def _calcular_total_tratamientos(self) -> float:
-        """Calcula el costo total de todos los tratamientos"""
-        return sum(tratamiento.costo for tratamiento in self.historial_medico)
-    
-    def _calcular_total_citas(self) -> float:
-        """Calcula el costo total de todas las citas"""
-        return sum(cita.costo_cita for cita in self.citas)
-    
-    def __str__(self):
-        """Representación en cadena del paciente con formato mejorado"""
-        return self._generar_info_completa()
 
 def main():
     app = QApplication([])
