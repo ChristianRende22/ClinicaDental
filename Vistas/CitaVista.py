@@ -1,44 +1,17 @@
+# Importaciones necesarias para no tener porblema con los path o importaciones de clase
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QLineEdit, QPushButton,
     QTextEdit, QGroupBox, QFormLayout, QMessageBox, QComboBox, QDateTimeEdit, QInputDialog, QScrollArea
 )
 from PyQt6.QtCore import Qt, QDateTime
 from PyQt6.QtGui import QFont
-from datetime import datetime
-from Vistas.DoctorVista import Doctor  
-
-class Paciente:
-    def __init__(self, nombre, apellido):
-        self.nombre = nombre
-        self.apellido = apellido
-    def __str__(self):
-        return f"{self.nombre} {self.apellido}"
-
-class Cita:
-    """
-    Clase que representa una cita en la clínica dental.
-    Contiene información sobre el paciente, el doctor, el horario y el estado de la cita.
-    """
-    def __init__(self, id_cita: str, paciente, doctor, hora_inicio: datetime, hora_fin: datetime, costo_cita: float):
-        self.id_cita = id_cita                  # Identificador único de la cita
-        self.paciente = paciente                # Paciente asociado a la cita
-        self.doctor = doctor                    # Doctor asociado a la cita
-        self.hora_inicio = hora_inicio          # Fecha y hora de inicio de la cita
-        self.hora_fin = hora_fin                # Fecha y hora de fin de la cita
-        self.costo_cita = costo_cita            # Costo de la cita
-        self.estado = "Pendiente"               # Por defecto, la cita está pendiente
-
-    def __str__(self):
-        return (
-            f"ID Cita: {self.id_cita}\n"
-            f"Paciente: {self.paciente.nombre} {self.paciente.apellido}\n"
-            f"Doctor: {self.doctor.nombre} {self.doctor.apellido}\n"
-            f"Fecha y Hora Inicio: {self.hora_inicio.strftime('%d/%m/%Y %H:%M')}\n"
-            f"Fecha y Hora Fin: {self.hora_fin.strftime('%d/%m/%Y %H:%M')}\n"
-            f"Estado: {self.estado}\n"
-            f"Costo: ${self.costo_cita:.2f}\n"
-        )
-
+from Controladores.CitaControlador import ControladorCita
+from Controladores.DoctorControlador import Paciente
+from Controladores.PacienteControlador import Paciente
 
 class CitaWindow(QMainWindow):
     def __init__(self, doctores, pacientes, tratamientos):
@@ -175,6 +148,7 @@ class CitaWindow(QMainWindow):
             }}
         """)
 
+        self.controlador = ControladorCita(self)
         self.doctores = doctores
         self.pacientes = pacientes
         self.tratamientos = tratamientos
@@ -247,11 +221,11 @@ class CitaWindow(QMainWindow):
         # Primera fila de botones
         buttons_row1 = QHBoxLayout()
         self.crear_btn = QPushButton("➕ Crear Cita")
-        self.crear_btn.clicked.connect(self.crear_cita)
+        self.crear_btn.clicked.connect(self.controlador.crear_cita)
         self.cancelar_btn = QPushButton("❌ Cancelar Cita")
-        self.cancelar_btn.clicked.connect(self.cancelar_cita)
+        self.cancelar_btn.clicked.connect(self.controlador.cancelar_cita)
         self.modificar_btn = QPushButton("✏️ Modificar Cita")
-        self.modificar_btn.clicked.connect(self.modificar_cita)
+        self.modificar_btn.clicked.connect(self.controlador.modificar_cita)
 
         buttons_row1.addWidget(self.crear_btn)
         buttons_row1.addWidget(self.cancelar_btn)
@@ -260,9 +234,9 @@ class CitaWindow(QMainWindow):
         # Segunda fila de botones
         buttons_row2 = QHBoxLayout()
         self.confirmar_btn = QPushButton("✅ Confirmar Asistencia")
-        self.confirmar_btn.clicked.connect(self.confirmar_asistencia)
+        self.confirmar_btn.clicked.connect(self.controlador.confirmar_asistencia)
         self.monto_btn = QPushButton("💲 Calcular Monto a Pagar")
-        self.monto_btn.clicked.connect(self.calcular_monto)
+        self.monto_btn.clicked.connect(self.controlador.calcular_monto)
 
         buttons_row2.addWidget(self.confirmar_btn)
         buttons_row2.addWidget(self.monto_btn)
@@ -371,116 +345,6 @@ class CitaWindow(QMainWindow):
         scroll_area.setWidget(central_widget)
         self.setCentralWidget(scroll_area)
 
-    def crear_cita(self):
-        """Crea una nueva cita verificando disponibilidad de la Cita"""
-        self.resultado_text.clear()
-        id_cita = self.id_edit.text().strip()
-        paciente_idx = self.paciente_combo.currentIndex()
-        doctor_idx = self.doctor_combo.currentIndex()
-        tratamiento_idx = self.tratamiento_combo.currentIndex()
-        hora_inicio = self.fecha_inicio_edit.dateTime().toPyDateTime()
-        hora_fin = self.fecha_fin_edit.dateTime().toPyDateTime()
-        costo = self.costo_edit.text().strip()
-        estado = self.estado_combo.currentText()
-
-        if not id_cita or paciente_idx == -1 or doctor_idx == -1 or tratamiento_idx == -1 or not costo:
-            QMessageBox.warning(self, "❌ Error", "Todos los campos son obligatorios.")
-            return
-
-        # Verificar disponibilidad del doctor
-        doctor = self.doctores[doctor_idx]
-        for cita in self.citas:
-            if cita.doctor == doctor and not (hora_fin <= cita.hora_inicio or hora_inicio >= cita.hora_fin):
-                QMessageBox.warning(self, "❌ Error", "El doctor no está disponible en ese horario.")
-                return
-
-        paciente = self.pacientes[paciente_idx]
-        tratamiento = self.tratamientos[tratamiento_idx]
-        nueva_cita = Cita(id_cita, paciente, doctor, hora_inicio, hora_fin, float(costo))
-        nueva_cita.tratamiento = tratamiento  
-        nueva_cita.estado = estado
-
-        self.citas.append(nueva_cita)
-        self.resultado_text.append(f"Cita creada:\n{nueva_cita}")
-        QMessageBox.information(self, "✅ Éxito", "Cita creada exitosamente.")
-        self.limpiar_campos()
-
-    def cancelar_cita(self):
-        """Cancela una cita por ID"""
-        self.resultado_text.clear()
-        id_cita, ok = QInputDialog.getText(self, "Cancelar Cita", "Ingrese el ID de la cita a cancelar:")
-        if not ok or not id_cita.strip():
-            return
-        for cita in self.citas:
-            if cita.id_cita == id_cita.strip():
-                cita.estado = "Cancelada"
-                self.resultado_text.append(f"Cita cancelada:\n{cita}")
-                QMessageBox.information(self, "✅ Éxito", "Cita cancelada exitosamente.")
-                return
-        QMessageBox.warning(self, "❌ Error", "No se encontró la cita.")
-
-    def modificar_cita(self):
-        """Permite modificar fecha y hora de una cita"""
-        self.resultado_text.clear()
-        id_cita, ok = QInputDialog.getText(self, "Modificar Cita", "Ingrese el ID de la cita a modificar:")
-        if not ok or not id_cita.strip():
-            return
-        for cita in self.citas:
-            if cita.id_cita == id_cita.strip():
-                # Cargar datos actuales
-                self.id_edit.setText(cita.id_cita)
-                self.fecha_inicio_edit.setDateTime(QDateTime(cita.hora_inicio))
-                self.fecha_fin_edit.setDateTime(QDateTime(cita.hora_fin))
-                # El usuario puede modificar y luego presionar "Crear Cita" para guardar cambios
-                self.editando_cita = cita
-                QMessageBox.information(self, "Modificar Cita", "Modifique los campos y presione 'Crear Cita' para guardar cambios.")
-                return
-        QMessageBox.warning(self, "❌ Error", "No se encontró la cita.")
-
-    def confirmar_asistencia(self):
-        """Confirma si se asistió a la cita"""
-        self.resultado_text.clear()
-        id_cita, ok = QInputDialog.getText(self, "Confirmar Asistencia", "Ingrese el ID de la cita:")
-        if not ok or not id_cita.strip():
-            return
-        for cita in self.citas:
-            if cita.id_cita == id_cita.strip():
-                cita.estado = "Asistida"
-                self.resultado_text.append(f"Asistencia confirmada:\n{cita}")
-                QMessageBox.information(self, "✅ Éxito", "Asistencia confirmada.")
-                return
-        QMessageBox.warning(self, "❌ Error", "No se encontró la cita.")
-
-    def calcular_monto(self):
-        """Calcula el monto a pagar según el tipo de consulta y tratamiento"""
-        self.resultado_text.clear()
-        id_cita, ok = QInputDialog.getText(self, "Calcular Monto", "Ingrese el ID de la cita:")
-        if not ok or not id_cita.strip():
-            return
-        for cita in self.citas:
-            if cita.id_cita == id_cita.strip():
-                costo_cita = cita.costo_cita
-                costo_tratamiento = getattr(cita, 'tratamiento', {}).get('costo', 0)
-                total = costo_cita + costo_tratamiento
-                self.resultado_text.append(
-                    f"Monto a pagar para la cita {cita.id_cita}:\n"
-                    f"Consulta: ${costo_cita:.2f}\n"
-                    f"Tratamiento: ${costo_tratamiento:.2f}\n"
-                    f"Total: ${total:.2f}\n"
-                )
-                QMessageBox.information(self, "Monto a Pagar", f"Total a pagar: ${total:.2f}")
-                return
-        QMessageBox.warning(self, "❌ Error", "No se encontró la cita.")
-
-    def limpiar_campos(self):
-        self.id_edit.clear()
-        self.fecha_inicio_edit.setDateTime(QDateTime.currentDateTime())
-        self.fecha_fin_edit.setDateTime(QDateTime.currentDateTime())
-        self.costo_edit.clear()
-        self.estado_combo.setCurrentIndex(0)
-        self.paciente_combo.setCurrentIndex(0)
-        self.doctor_combo.setCurrentIndex(0)
-        self.tratamiento_combo.setCurrentIndex(0)
 
 def main():
     # Simulacion para pruebas
@@ -489,8 +353,8 @@ def main():
         Doctor("Carlos", "López", "98765432-1", "Ortodontista", 87654321, "coreo1@gmail.com")
         ]
     pacientes = [
-        Paciente("Juan", "Pérez"), 
-        Paciente("Ana", "Gómez")
+        Paciente("Juan", "Pérez", "06-12-05", "12345678-9", 12345567, "correo@gmail.com"), 
+        Paciente("Ana", "Gomex", "07-31-07", "12345678-0", 12345678, "correo1@gmail.com")
         ]
     tratamientos = [{'descripcion': 'Limpieza', 'costo': 20.0}]
     app = QApplication([])
