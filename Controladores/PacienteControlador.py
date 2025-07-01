@@ -172,3 +172,15 @@ class PacienteControlador:
             return "🔄"
         else:
             return "📋"
+    
+    def calcular_edad(self, fecha_nacimiento):
+        """Calcula la edad a partir de la fecha de nacimiento"""
+        from datetime import datetime
+        if isinstance(fecha_nacimiento, datetime):
+            today = datetime.now()
+            edad = today.year - fecha_nacimiento.year
+            # Ajustar si el cumpleaños no ha ocurrido este año
+            if today.month < fecha_nacimiento.month or (today.month == fecha_nacimiento.month and today.day < fecha_nacimiento.day):
+                edad -= 1
+            return edad
+        return 0
