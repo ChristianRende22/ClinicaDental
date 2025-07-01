@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from Vistas.DoctorVista import Doctor
-from Vistas.CitaVista import Cita
+from Controladores.CitaControlador import Cita
 from Vistas.TratamientoVista import Tratamiento
 from datetime import datetime
 from typing import List
