@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDateTime
 from PyQt6.QtGui import QFont
 from Controladores.CitaControlador import ControladorCita
-from Controladores.DoctorControlador import Paciente
+from Controladores.DoctorControlador import Doctor
 from Controladores.PacienteControlador import Paciente
 
 class CitaWindow(QMainWindow):
