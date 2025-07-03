@@ -6,8 +6,26 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from datetime import datetime
 from typing import List
 
+from Controladores.DoctorControlador import Doctor
+
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from PyQt6.QtCore import QDateTime
+
+# Clase temporal
+class Paciente:
+    def __init__(self, nombre, apellido, fecha_nacimiento, dui, telefono, correo):
+        self.nombre = nombre
+        self.apellido = apellido
+        self.fecha_nacimiento = fecha_nacimiento
+        self.dui = dui
+        self.telefono = telefono
+        self.correo = correo
+        self.citas = []
+        self.historial_medico = []
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido}"
+
 
 class Cita:
     """
@@ -40,6 +58,28 @@ class ControladorCita:
         self.vista = vista
         self.citas: List[Cita] = []  # Lista para almacenar las citas creadas
         self.editando_cita = None
+        
+        # MOVER LOS DATOS AQUÍ
+        self.doctores = [
+            Doctor("Melisa", "Rivas", "12345678-9", "Cirujano Dentista", 12345678, "correo@gmail.com"), 
+            Doctor("Carlos", "López", "98765432-1", "Ortodontista", 87654321, "coreo1@gmail.com")
+        ]
+        
+        self.pacientes = [
+            Paciente("Juan", "Pérez", "06-12-05", "12345678-9", 12345567, "correo@gmail.com"), 
+            Paciente("Ana", "Gomex", "07-31-07", "12345678-0", 12345678, "correo1@gmail.com")
+        ]
+        
+        self.tratamientos = [
+            {'descripcion': 'Limpieza', 'costo': 20.0}
+        ]
+        
+        # Inicializar la vista con los datos
+        self.inicializar_vista()
+
+    def inicializar_vista(self):
+        """Inicializa la vista con los datos del controlador"""
+        self.vista.actualizar_combos(self.doctores, self.pacientes, self.tratamientos)
 
     def crear_cita(self):
         """Crea una nueva cita verificando disponibilidad de la Cita"""
@@ -53,12 +93,8 @@ class ControladorCita:
         costo = self.vista.costo_edit.text().strip()
         estado = self.vista.estado_combo.currentText()
 
-        if not id_cita or paciente_idx == -1 or doctor_idx == -1 or tratamiento_idx == -1 or not costo:
-            QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios.")
-            return
-
         # Verificar disponibilidad del doctor
-        doctor = self.vista.doctores[doctor_idx]
+        doctor = self.doctores[doctor_idx]
 
         # Esta funcion se implmenetara cuando este lista la clase y controlador de horario
         # for cita in self.citas:
@@ -67,15 +103,27 @@ class ControladorCita:
         #         QMessageBox.warning(self.vista, "❌ Error", "El doctor no está disponible en ese horario.")
         #         return
 
+        # Validar costo (por si acaso)
+        try:
+            costo_float = float(costo)
+            if costo_float <= 0:
+                QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser mayor que 0.")
+                return
+        except ValueError:
+            QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser un número válido.")
+            return
+
+
         # Valida que no se repita el id de cita
         for cita in self.citas:
             if cita.id_cita == id_cita:
                 QMessageBox.warning(self.vista, "❌ Error", "Ya existe una cita con ese ID.")
                 return
 
-        paciente = self.vista.pacientes[paciente_idx]
-        doctor = self.vista.doctores[doctor_idx]
-        tratamiento = self.vista.tratamientos[tratamiento_idx]
+        # Usar datos del controlador, no de la vista
+        paciente = self.pacientes[paciente_idx]
+        doctor = self.doctores[doctor_idx]
+        tratamiento = self.tratamientos[tratamiento_idx]
         nueva_cita = Cita(id_cita, paciente, doctor, hora_inicio, hora_fin, float(costo))
         nueva_cita.tratamiento = tratamiento
         nueva_cita.estado = estado
@@ -122,6 +170,7 @@ class ControladorCita:
             QMessageBox.information(self.vista, "ℹ️ Información", "No hay citas registradas")
             return
 
+        # Si ya estamos editando, guardar los cambios
         if self.editando_cita is not None:
             try:
                 # Obtener nuevos datos del formulario
@@ -150,9 +199,9 @@ class ControladorCita:
                 
                 # Actualizar la cita existente
                 cita = self.editando_cita
-                cita.paciente = self.vista.pacientes[paciente_idx]
-                cita.doctor = self.vista.doctores[doctor_idx]
-                cita.tratamiento = self.vista.tratamientos[tratamiento_idx]
+                cita.paciente = self.pacientes[paciente_idx]
+                cita.doctor = self.doctores[doctor_idx]
+                cita.tratamiento = self.tratamientos[tratamiento_idx]
                 cita.hora_inicio = hora_inicio
                 cita.hora_fin = hora_fin
                 cita.costo_cita = costo_float
@@ -203,18 +252,18 @@ class ControladorCita:
         self.vista.id_edit.setReadOnly(True)  # No permitir editar el ID
         
         # Establecer valores en los combos
-        for i, paciente in enumerate(self.vista.pacientes):
+        for i, paciente in enumerate(self.pacientes):
             if paciente.dui == cita_encontrada.paciente.dui:
                 self.vista.paciente_combo.setCurrentIndex(i)
                 break
         
-        for i, doctor in enumerate(self.vista.doctores):
+        for i, doctor in enumerate(self.doctores):
             if doctor.dui == cita_encontrada.doctor.dui:
                 self.vista.doctor_combo.setCurrentIndex(i)
                 break
         
         if hasattr(cita_encontrada, 'tratamiento'):
-            for i, tratamiento in enumerate(self.vista.tratamientos):
+            for i, tratamiento in enumerate(self.tratamientos):
                 if tratamiento == cita_encontrada.tratamiento:
                     self.vista.tratamiento_combo.setCurrentIndex(i)
                     break
@@ -243,7 +292,7 @@ class ControladorCita:
         
         for cita in self.citas:
             if cita.id_cita == id_cita.strip():
-                cita.estado = "Asistida"
+                cita.estado = "Confirmada"
                 self.vista.resultado_text.append(f"Asistencia confirmada:\n{cita}")
                 QMessageBox.information(self.vista, "✅ Éxito", "Asistencia confirmada.")
                 return

@@ -8,13 +8,11 @@ from PyQt6.QtWidgets import (
     QTextEdit, QGroupBox, QFormLayout, QMessageBox, QComboBox, QDateTimeEdit, QInputDialog, QScrollArea
 )
 from PyQt6.QtCore import Qt, QDateTime
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QIntValidator, QDoubleValidator
 from Controladores.CitaControlador import ControladorCita
-from Controladores.DoctorControlador import Doctor
-from Controladores.PacienteControlador import Paciente
 
 class CitaWindow(QMainWindow):
-    def __init__(self, doctores, pacientes, tratamientos):
+    def __init__(self):  # Sin parámetros de datos
         super().__init__()
         self.setWindowTitle("Gestión de Citas - Clínica Dental")
         self.setGeometry(100, 100, 900, 700)
@@ -148,15 +146,14 @@ class CitaWindow(QMainWindow):
             }}
         """)
 
-        self.controlador = ControladorCita(self)
-        self.doctores = doctores
-        self.pacientes = pacientes
-        self.tratamientos = tratamientos
-        self.citas = []
-
-        self.editando_cita = None
-
+        # PRIMERO: Crear la interfaz (sin conexiones)
         self.init_ui()
+        
+        # SEGUNDO: Crear el controlador
+        self.controlador = ControladorCita(self)
+        
+        # TERCERO: Conectar los botones después de crear el controlador
+        self.conectar_botones()
 
     def init_ui(self):
         """ Inicializa la interfaz de usuario de las Citas """
@@ -187,21 +184,23 @@ class CitaWindow(QMainWindow):
         info_layout = QFormLayout()
 
         self.id_edit = QLineEdit()
-        self.paciente_combo = QComboBox()
-        self.paciente_combo.addItems([f"{p.nombre} {p.apellido}" for p in self.pacientes])
-        self.doctor_combo = QComboBox()
+        id_validator = QIntValidator(0, 99999999)
+        self.id_edit.setValidator(id_validator)
 
-        for doctor in self.doctores:
-            self.doctor_combo.addItem(str(doctor), doctor)  
-        
+        self.paciente_combo = QComboBox()
+        self.doctor_combo = QComboBox()
         self.tratamiento_combo = QComboBox()
-        self.tratamiento_combo.addItems([t['descripcion'] for t in self.tratamientos])
 
         self.fecha_inicio_edit = QDateTimeEdit(QDateTime.currentDateTime())
         self.fecha_inicio_edit.setDisplayFormat("dd/MM/yyyy HH:mm")
         self.fecha_fin_edit = QDateTimeEdit(QDateTime.currentDateTime())
         self.fecha_fin_edit.setDisplayFormat("dd/MM/yyyy HH:mm")
+        
         self.costo_edit = QLineEdit()
+        costo_validator = QDoubleValidator(0.0, 999999.99, 2)
+        costo_validator.setNotation(QDoubleValidator.Notation.StandardNotation)
+        self.costo_edit.setValidator(costo_validator)
+
         self.estado_combo = QComboBox()
         self.estado_combo.addItems(["Pendiente", "Confirmada", "Cancelada", "Asistida", "No asistió"])
 
@@ -217,15 +216,12 @@ class CitaWindow(QMainWindow):
         info_group.setLayout(info_layout)
         main_layout.addWidget(info_group)
 
-        # Botones
+        # Botones - CREAR SIN CONECTAR
         # Primera fila de botones
         buttons_row1 = QHBoxLayout()
         self.crear_btn = QPushButton("➕ Crear Cita")
-        self.crear_btn.clicked.connect(self.controlador.crear_cita)
         self.cancelar_btn = QPushButton("❌ Cancelar Cita")
-        self.cancelar_btn.clicked.connect(self.controlador.cancelar_cita)
         self.modificar_btn = QPushButton("✏️ Modificar Cita")
-        self.modificar_btn.clicked.connect(self.controlador.modificar_cita)
 
         buttons_row1.addWidget(self.crear_btn)
         buttons_row1.addWidget(self.cancelar_btn)
@@ -234,9 +230,7 @@ class CitaWindow(QMainWindow):
         # Segunda fila de botones
         buttons_row2 = QHBoxLayout()
         self.confirmar_btn = QPushButton("✅ Confirmar Asistencia")
-        self.confirmar_btn.clicked.connect(self.controlador.confirmar_asistencia)
         self.monto_btn = QPushButton("💲 Calcular Monto a Pagar")
-        self.monto_btn.clicked.connect(self.controlador.calcular_monto)
 
         buttons_row2.addWidget(self.confirmar_btn)
         buttons_row2.addWidget(self.monto_btn)
@@ -345,20 +339,30 @@ class CitaWindow(QMainWindow):
         scroll_area.setWidget(central_widget)
         self.setCentralWidget(scroll_area)
 
+    def conectar_botones(self):
+        """Conecta los botones con los métodos del controlador"""
+        self.crear_btn.clicked.connect(self.controlador.crear_cita)
+        self.cancelar_btn.clicked.connect(self.controlador.cancelar_cita)
+        self.modificar_btn.clicked.connect(self.controlador.modificar_cita)
+        self.confirmar_btn.clicked.connect(self.controlador.confirmar_asistencia)
+        self.monto_btn.clicked.connect(self.controlador.calcular_monto)
+
+    def actualizar_combos(self, doctores, pacientes, tratamientos):
+        """Método para que el controlador actualice los combos"""
+        self.paciente_combo.clear()
+        self.doctor_combo.clear()
+        self.tratamiento_combo.clear()
+        
+        self.paciente_combo.addItems([f"{p.nombre} {p.apellido}" for p in pacientes])
+        
+        for doctor in doctores:
+            self.doctor_combo.addItem(str(doctor), doctor)
+        
+        self.tratamiento_combo.addItems([t['descripcion'] for t in tratamientos])
 
 def main():
-    # Simulacion para pruebas
-    doctores = [
-        Doctor("Melisa", "Rivas", "12345678-9", "Cirujano Dentista", 12345678, "correo@gmail.com"), 
-        Doctor("Carlos", "López", "98765432-1", "Ortodontista", 87654321, "coreo1@gmail.com")
-        ]
-    pacientes = [
-        Paciente("Juan", "Pérez", "06-12-05", "12345678-9", 12345567, "correo@gmail.com"), 
-        Paciente("Ana", "Gomex", "07-31-07", "12345678-0", 12345678, "correo1@gmail.com")
-        ]
-    tratamientos = [{'descripcion': 'Limpieza', 'costo': 20.0}]
     app = QApplication([])
-    window = CitaWindow(doctores, pacientes, tratamientos)
+    window = CitaWindow()  # Sin parámetros
     window.show()
     app.exec()
 
