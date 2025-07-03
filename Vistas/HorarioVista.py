@@ -1,12 +1,10 @@
 from PyQt6.QtWidgets import (QMainWindow, QVBoxLayout, QHBoxLayout,
-                               QWidget, QLabel, QLineEdit, QPushButton, 
-                               QTextEdit, QGroupBox, QFormLayout, QDialog, 
-                               QDialogButtonBox, QInputDialog, QComboBox)
+                            QWidget, QLabel, QLineEdit, QPushButton, 
+                            QTextEdit, QFormLayout, QMessageBox,
+                            QDialog, QDialogButtonBox, QInputDialog, QComboBox)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QMessageBox
 from typing import List
-from modelo import Doctor, Horario
+from modelo import Doctor
 
 class AgregarHorarioDialog(QDialog):
     def __init__(self, doctores: List[Doctor], parent=None):
@@ -30,26 +28,26 @@ class AgregarHorarioDialog(QDialog):
             QPushButton:hover { background: #10b8b9; }
         """)
 
-        layout = QFormLayout()
-        
-        # form
+        self.configurar_ui()
+    
+    def configurar_ui(self):
+        layout = QFormLayout()  
+        # Campos del formulario
         self.id_edit = QLineEdit()
         self.dia_edit = QLineEdit()
         self.hora_inicio_edit = QLineEdit()
         self.hora_fin_edit = QLineEdit()
-        
-        # seleccionar doctor
+        # ComboBox para seleccionar doctor
         self.doctor_combo = QComboBox()
         for doctor in self.doctores:
-            self.doctor_combo.addItem(f"{doctor.id_doctor} - {doctor.nombre}", doctor)
-        
-        layout.addRow(" ID Horario:", self.id_edit)
+            self.doctor_combo.addItem(f"{doctor.id_doctor} - {doctor.nombre}", doctor) 
+        layout.addRow("🆔 ID Horario:", self.id_edit)
         layout.addRow("🗓️ Día:", self.dia_edit)
         layout.addRow("⏰ Hora Inicio (HH:MM):", self.hora_inicio_edit)
         layout.addRow("⏳ Hora Fin (HH:MM):", self.hora_fin_edit)
         layout.addRow("👨‍⚕️ Médico:", self.doctor_combo)
         
-        # botones
+        # Botones
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -66,19 +64,20 @@ class AgregarHorarioDialog(QDialog):
             'hora_inicio': self.hora_inicio_edit.text().strip(),
             'hora_fin': self.hora_fin_edit.text().strip(),
             'doctor': self.doctor_combo.currentData()
-        }
+              }
 
-class HorarioWindow(QMainWindow):
-    def __init__(self, doctores: List[Doctor]):
+
+
+class HorarioView(QMainWindow):
+    def __init__(self):
         super().__init__()
-        self.doctores = doctores
-        self.horarios: List[Horario] = []
-        
         self.setWindowTitle("🕒 Gestión de horarios")
         self.setGeometry(100, 100, 900, 700)
-        
         self.configurar_ui()
         
+        # Referencias a los controladores (se estableceran desde el controlador)
+        self.controlador = None
+    
     def configurar_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -87,12 +86,13 @@ class HorarioWindow(QMainWindow):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
+        # Titulo
         titulo = QLabel("🕒 Gestión de horarios médicos")
         titulo.setStyleSheet("font-size: 24px; font-weight: bold; color: #10b8b9;")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
         
-        # botones
+        # Botones
         btn_container = QHBoxLayout()
         
         self.btn_agregar = QPushButton("➕ Agregar")
@@ -104,7 +104,8 @@ class HorarioWindow(QMainWindow):
         btn_container.addWidget(self.btn_agregar)
         btn_container.addWidget(self.btn_eliminar)
         layout.addLayout(btn_container)
-        # lista de horarios
+        
+        # Lista de horarios
         self.resultados = QTextEdit()
         self.resultados.setReadOnly(True)
         self.resultados.setStyleSheet("""
@@ -119,27 +120,65 @@ class HorarioWindow(QMainWindow):
         """)
         layout.addWidget(QLabel("📋 Horarios Registrados:"))
         layout.addWidget(self.resultados)
-
-    def mostrar_mensaje(self, titulo: str, mensaje: str):
-        QMessageBox.information(self, titulo, mensaje)
-
-    def mostrar_error(self, titulo: str, mensaje: str):
-        QMessageBox.warning(self, titulo, mensaje)
-
-    def actualizar_lista(self, horarios: List[Horario]):
+    
+    def conectar_controlador(self, controlador):
+        #Conecta los botones con el controlador
+        self.controlador = controlador
+        self.btn_agregar.clicked.connect(self.controlador.agregar_horario)
+        self.btn_eliminar.clicked.connect(self.controlador.eliminar_horario)
+    
+    def mostrar_dialogo_agregar(self, doctores: List[Doctor]):
+        #Muestra el dialogo para agregar horario
+        dialog = AgregarHorarioDialog(doctores, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            return dialog.get_data()
+        return None
+    
+    def mostrar_dialogo_eliminar(self, horarios_info: List[str]):
+        #Muestra el dialogo para eliminar horario
+        if not horarios_info:
+            self.mostrar_mensaje("Error", "No hay horarios registrados")
+            return None
+        item, ok = QInputDialog.getItem(
+            self, "Eliminar Horario", 
+            "Seleccione un horario a eliminar:", horarios_info, 0, False)
+        if ok and item:
+            id_horario = item.split(" | ")[0]
+            
+            confirm = QMessageBox.question(
+                self, "Confirmar",
+                f"¿Eliminar el horario {id_horario}?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            
+            if confirm == QMessageBox.StandardButton.Yes:
+                return id_horario
+        
+        return None
+    
+    def actualizar_lista_horarios(self, horarios_por_dia: dict):
+        #Actualiza la lista de horarios en la interfaz
         self.resultados.clear()
-        if not horarios:
+        
+        if not horarios_por_dia:
             self.resultados.setPlainText("No hay horarios registrados")
             return
-        # agrupar horarios por dia para que se vea ordenado
-        horarios_por_dia = {}
-        for horario in sorted(horarios, key=lambda h: h.dia):
-            if horario.dia not in horarios_por_dia:
-                horarios_por_dia[horario.dia] = []
-            horarios_por_dia[horario.dia].append(horario)
-
+        
         for dia, horarios in horarios_por_dia.items():
             self.resultados.append(f"\n📅 {dia.upper()}")
             self.resultados.append("━━━━━━━━━━━━━━━━━━━━━━━")
             for horario in sorted(horarios, key=lambda h: h.hora_inicio):
                 self.resultados.append(str(horario))
+    
+    def mostrar_mensaje(self, titulo: str, mensaje: str, tipo: str = "info"):
+        #Muestra un mensaje al usuario
+        if tipo == "error":
+            QMessageBox.warning(self, titulo, mensaje)
+        elif tipo == "success":
+            QMessageBox.information(self, titulo, mensaje)
+        else:
+            QMessageBox.information(self, titulo, mensaje)
+    
+    def obtener_info_horarios_para_eliminar(self, horarios):
+        #Genera la lista de información de horarios para el diálogo de eliminación
+        return [f"{h.id_horario} | {h.dia} {h.hora_inicio}-{h.hora_fin} (Dr. {h.doctor.nombre})" 
+                for h in horarios]
