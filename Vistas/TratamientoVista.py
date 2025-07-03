@@ -1,63 +1,24 @@
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from PyQt6.QtWidgets import (
-    QDialog, QFormLayout, QVBoxLayout, QLabel, QLineEdit, QTextEdit, QDoubleSpinBox, 
-    QSpinBox, QPushButton, QDialogButtonBox, QApplication
-)
+    QDialog, QFormLayout, QVBoxLayout, QLabel, QLineEdit, 
+    QTextEdit, QDoubleSpinBox, QDialogButtonBox, QApplication
+    )
 
-# ----------------------- Clases base -----------------------
-
-class Paciente:
-    def __init__(self, id_paciente, nombre, apellido, edad, genero, telefono, correo, direccion):
-        self.id_paciente = id_paciente
-        self.nombre = nombre
-        self.apellido = apellido
-        self.edad = edad
-        self.genero = genero
-        self.telefono = telefono
-        self.correo = correo
-        self.direccion = direccion
-
-    def __str__(self):
-        return f"{self.nombre} {self.apellido}, {self.edad} años"
-
-class Doctor:
-    def __init__(self, nombre, apellido):
-        self.nombre = nombre
-        self.apellido = apellido
-
-    def __str__(self):
-        return f"Dr. {self.nombre} {self.apellido}"
-
-class Tratamiento:
-    def __init__(self, id_tratamiento, descripcion, costo, fecha, estado, doctor, paciente):
-        self.id_tratamiento = id_tratamiento
-        self.descripcion = descripcion
-        self.costo = costo
-        self.fecha = fecha
-        self.estado = estado
-        self.doctor = doctor
-        self.paciente = paciente
-
-    def __str__(self):
-        return (f"Tratamiento ID: {self.id_tratamiento} \n " 
-                f"Descripción: '{self.descripcion}' \n "
-                f"Costo: ${self.costo:,.2f} \n " 
-                f"Fecha de realización: {self.fecha} \n " 
-                f"Estado: '{self.estado}' \n "
-                f"Doctor: {self.doctor} \n " 
-                f"Paciente: {self.paciente.nombre} {self.paciente.apellido})")
-
-# ----------------------- Ventana de Tratamiento -----------------------
+from Controladores.TratamientoControlador import TratamientoControlador
+from ClinicaTratamiento.Modelos.TratamientoModelo import Paciente
 
 class AgregarTratamientoDialog(QDialog):
-    def __init__(self, paciente, parent=None):
-        super().__init__(parent)
-        self.paciente = paciente
+    def __init__(self, paciente):
+        super().__init__()
+        self.paciente = paciente  
+        self.controlador = TratamientoControlador(self)
 
         self.setWindowTitle("🩺 Agregar Tratamiento")
         self.resize(450, 370)
         
-        # Updated styling to match the main application
         self.setStyleSheet("""
             QDialog { 
                 background-color: #f7f8fa; 
@@ -94,8 +55,7 @@ class AgregarTratamientoDialog(QDialog):
 
         form = QFormLayout()
         
-        # Patient info label
-        patient_label = QLabel(f"Paciente: {paciente.nombre} {paciente.apellido}")
+        patient_label = QLabel(f"Paciente: {self.paciente.nombre} {self.paciente.apellido}")
         patient_label.setStyleSheet("color: #10b8b9; font-weight: bold; font-size: 16px;")
         form.addRow(patient_label)
 
@@ -122,7 +82,7 @@ class AgregarTratamientoDialog(QDialog):
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        buttons.accepted.connect(self.accept)
+        buttons.accepted.connect(self.on_accepted)
         buttons.rejected.connect(self.reject)
 
         main = QVBoxLayout()
@@ -130,41 +90,38 @@ class AgregarTratamientoDialog(QDialog):
         main.addWidget(buttons)
         self.setLayout(main)
 
-    def get_tratamiento(self):
-        doctor = Doctor(self.doctor_nombre_edit.text(), self.doctor_apellido_edit.text())
-        return Tratamiento(
+    def on_accepted(self):
+        tratamiento = self.controlador.crear_tratamiento(
             id_tratamiento=self.id_edit.text(),
             descripcion=self.descripcion_edit.toPlainText(),
             costo=self.costo_edit.value(),
             fecha=self.fecha_edit.text(),
             estado=self.estado_edit.text(),
-            doctor=doctor,
+            doctor_nombre=self.doctor_nombre_edit.text(),
+            doctor_apellido=self.doctor_apellido_edit.text(),
             paciente=self.paciente
         )
-
-# ----------------------- Prueba -----------------------
-
-if __name__ == "__main__":
-    import sys
-
-    app = QApplication(sys.argv)
-
-    paciente_demo = Paciente(
-        id_paciente=1,
-        nombre="Laura",
-        apellido="Pérez",
-        edad=27,
-        genero="Femenino",
-        telefono="7012-3456",
-        correo="laura.perez@example.com",
-        direccion="Santa Tecla"
-    )
-
-    dialog = AgregarTratamientoDialog(paciente_demo)
-
-    if dialog.exec():
-        tratamiento = dialog.get_tratamiento()
         print("Tratamiento registrado:")
         print(tratamiento)
+        self.accept()
 
-    sys.exit(app.exec())
+def main():
+    app = QApplication([])
+
+    paciente = Paciente(
+        id_paciente="001",
+        nombre="Ana",
+        apellido="Gómez",
+        edad=30,
+        genero="Femenino",
+        telefono="123456789",
+        correo="ana@gmail.com",
+        direccion="Calle Falsa 123"
+    )    
+
+    window = AgregarTratamientoDialog(paciente)  # Pasar el paciente como parámetro
+    window.show()
+    app.exec()
+
+if __name__ == "__main__":
+    main()
