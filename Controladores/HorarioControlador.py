@@ -1,70 +1,94 @@
 from PyQt6.QtWidgets import QApplication
-from modelo import cargar_doctores, Horario
-from vista import HorarioWindow, AgregarHorarioDialog
+import sys
+from modelo import HorarioModel
+from vista import HorarioView
 
-class Controlador:
+class HorarioController:
     def __init__(self):
-        self.doctores = cargar_doctores()
-        self.horarios = []
-        self.window = HorarioWindow(self.doctores)
-        self.window.btn_agregar.clicked.connect(self.agregar_horario)
-        self.window.btn_eliminar.clicked.connect(self.eliminar_horario)
-
+        self.modelo = HorarioModel()
+        self.vista = HorarioView()
+        # Inicializar datos
+        self.modelo.cargar_doctores()
+        # Conectar vista con controlador
+        self.vista.conectar_controlador(self)
+        # Actualizar vista inicial
+        self.actualizar_vista()
+    
     def agregar_horario(self):
-        dialog = AgregarHorarioDialog(self.doctores, self.window)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                datos = dialog.get_data()
-                if not all(datos.values()):
-                    self.window.mostrar_error("Error", "Todos los campos son obligatorios")
-                    return   
-                # Validaciones
-                datetime.strptime(datos['hora_inicio'], "%H:%M")
-                datetime.strptime(datos['hora_fin'], "%H:%M")
-        
-                if any(h.id_horario == datos['id_horario'] for h in self.horarios):
-                    self.window.mostrar_error("Error", "El ID de horario ya existe")
-                    return
-        
-                nuevo_horario = Horario(**datos)
-                for horario_existente in self.horarios:
-                    if nuevo_horario.horario_ocupado(horario_existente):
-                        self.window.mostrar_error("Error", "El horario ya está ocupado")
-                        return
-                self.horarios.append(nuevo_horario)
-                self.window.actualizar_lista(self.horarios)
-                self.window.mostrar_mensaje("Éxito", "Horario agregado correctamente")
-            except ValueError as e:
-                self.window.mostrar_error("Error", f"Formato de hora inválido: {str(e)}")
-            except Exception as e:
-                self.window.mostrar_error("Error", f"Error al agregar horario: {str(e)}")
-
+        # agregar un nuevo horario
+        try:
+            # Obtener doctores del modelo
+            doctores = self.modelo.obtener_doctores()
+            # Mostrar diálogo y obtener datos
+            datos = self.vista.mostrar_dialogo_agregar(doctores)
+            if datos and all(datos.values()):
+                # Agregar horario al modelo
+                self.modelo.agregar_horario(
+                    datos['id_horario'],
+                    datos['dia'],
+                    datos['hora_inicio'],
+                    datos['hora_fin'],
+                    datos['doctor'] )
+                # Actualizar vista
+                self.actualizar_vista()
+                
+                # Mostrar mensaje de exito
+                self.vista.mostrar_mensaje("Exito", "Horario agregado correctamente", "success")
+            elif datos:  # Si se recibieron datos pero están incompletos
+                self.vista.mostrar_mensaje("Error", "Todos los campos son obligatorios", "error")
+                
+        except ValueError as e:
+            self.vista.mostrar_mensaje("Error", str(e), "error")
+        except Exception as e:
+            self.vista.mostrar_mensaje("Error", f"Error al agregar horario: {str(e)}", "error")
+    
     def eliminar_horario(self):
-        """Elimina un horario existente"""
-        if not self.horarios:
-            self.window.mostrar_error("Error", "No hay horarios registrados")
-            return
-        items = [f"{h.id_horario} | {h.dia} {h.hora_inicio}-{h.hora_fin} (Dr. {h.doctor.nombre})" 
-                for h in self.horarios]
-        item, ok = QInputDialog.getItem(
-            self.window, "Eliminar Horario", 
-            "Seleccione un horario a eliminar:", items, 0, False
-        )
-        
-        if ok and item:
-            id_horario = item.split(" | ")[0]
-            confirm = QMessageBox.question(
-                self.window, "Confirmar",
-                f"¿Eliminar el horario {id_horario}?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            if confirm == QMessageBox.StandardButton.Yes:
-                self.horarios = [h for h in self.horarios if h.id_horario != id_horario]
-                self.window.actualizar_lista(self.horarios)
-                self.window.mostrar_mensaje("Éxito", "Horario eliminado")
+        #eliminar un horario
+        try:
+            # Obtener horarios del modelo
+            horarios = self.modelo.obtener_horarios()
+            if not horarios:
+                self.vista.mostrar_mensaje("Error", "No hay horarios registrados", "error")
+                return
+            # Preparar informacion para el dialogo
+            horarios_info = self.vista.obtener_info_horarios_para_eliminar(horarios) 
+            # Mostrar dialogo y obtener seleccion
+            id_horario = self.vista.mostrar_dialogo_eliminar(horarios_info)
+            
+            if id_horario:
+                # Eliminar del modelo
+                if self.modelo.eliminar_horario(id_horario):
+                    # Actualizar vista
+                    self.actualizar_vista()
+                    # Mostrar mensaje de éxito
+                    self.vista.mostrar_mensaje("Éxito", "Horario eliminado correctamente", "success")
+                else:
+                    self.vista.mostrar_mensaje("Error", "No se pudo eliminar el horario", "error")
+                    
+        except Exception as e:
+            self.vista.mostrar_mensaje("Error", f"Error al eliminar horario: {str(e)}", "error")
+    
+    def actualizar_vista(self):
+        #Actualiza la vista con los datos del modelo
+        horarios_por_dia = self.modelo.obtener_horarios_agrupados_por_dia()
+        self.vista.actualizar_lista_horarios(horarios_por_dia)
+    
+    def mostrar_ventana(self):
+        #ventana principal
+        self.vista.show()
+    def obtener_vista(self):
+        #retorna la vista para acceso externo si es necesario
+        return self.vista
+
+def main():
+    app = QApplication(sys.argv)
+    # Crear controlador (que inicializa modelo y vista)
+    controlador = HorarioController()
+    # Mostrar ventana
+    controlador.mostrar_ventana()
+    
+    # Ejecutar aplicación
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
-    app = QApplication([])
-    controlador = Controlador()
-    controlador.window.show()
-    app.exec()
+    main()
