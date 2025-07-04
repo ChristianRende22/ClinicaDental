@@ -1,15 +1,10 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from datetime import datetime
 from typing import List
-
-class Paciente:
-    #Modelo para paciente
-    def __init__(self, nombre: str, apellido: str, dui: str, edad: int = 0):
-        self.nombre = nombre
-        self.apellido = apellido
-        self.dui = dui
-        self.edad = edad
-    def __str__(self):
-        return f"{self.nombre} {self.apellido} - {self.dui}"
+from Modelos.Paciente import Paciente
 
 class Factura:
     #Modelo para factura
