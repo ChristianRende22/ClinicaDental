@@ -1,14 +1,6 @@
 from datetime import datetime
 from typing import List
 
-# class Doctor:
-#     def __init__(self, id_doctor: str, nombre: str, especialidad: str):
-#         self.id_doctor = id_doctor
-#         self.nombre = nombre
-#         self.especialidad = especialidad
-#     def __str__(self):
-#         return f"{self.nombre} ({self.especialidad})"
-
 from Modelos.DoctorModelo import Doctor
 
 class Horario:
