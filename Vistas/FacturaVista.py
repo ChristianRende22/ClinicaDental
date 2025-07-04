@@ -248,3 +248,9 @@ class FacturacionView(QMainWindow):
     def on_limpiar_campos(self):
         #evento de limpiar campos
         self.limpiar_campos_signal.emit()
+
+if __name__ == "__main__":
+    app = QApplication([])
+    ventana = FacturacionView()
+    ventana.show()
+    app.exec()
