@@ -3,9 +3,9 @@ import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from Controladores.DoctorControlador import Doctor
-from Controladores.CitaControlador import Cita
-from Controladores.TratamientoControlador import Tratamiento
+from Modelos.DoctorModelo import *
+from Modelos.CitaModelo import *
+from Modelos.TratamientoModelo import *
 from datetime import datetime
 from typing import List
 

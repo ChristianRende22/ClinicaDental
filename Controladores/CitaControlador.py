@@ -6,26 +6,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from datetime import datetime
 from typing import List
 
+from Modelos.PacienteModelo import Paciente
 from Modelos.DoctorModelo import Doctor
 from Modelos.CitaModelo import Cita
 
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from PyQt6.QtCore import QDateTime
 
-# Clase temporal
-class Paciente:
-    def __init__(self, nombre, apellido, fecha_nacimiento, dui, telefono, correo):
-        self.nombre = nombre
-        self.apellido = apellido
-        self.fecha_nacimiento = fecha_nacimiento
-        self.dui = dui
-        self.telefono = telefono
-        self.correo = correo
-        self.citas = []
-        self.historial_medico = []
-
-    def __str__(self):
-        return f"{self.nombre} {self.apellido}"
 
 class ControladorCita:    
     def __init__(self, vista):

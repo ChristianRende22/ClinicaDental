@@ -1,10 +1,13 @@
-from PyQt6.QtWidgets import (QMainWindow, QVBoxLayout, QHBoxLayout,
+from PyQt6.QtWidgets import (QApplication,QMainWindow, QVBoxLayout, QHBoxLayout,
                             QWidget, QLabel, QLineEdit, QPushButton, 
                             QTextEdit, QFormLayout, QMessageBox,
                             QDialog, QDialogButtonBox, QInputDialog, QComboBox)
 from PyQt6.QtCore import Qt
 from typing import List
-from modelo import Doctor
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from Modelos.DoctorModelo import Doctor
 
 class AgregarHorarioDialog(QDialog):
     def __init__(self, doctores: List[Doctor], parent=None):
@@ -182,3 +185,8 @@ class HorarioView(QMainWindow):
         #Genera la lista de información de horarios para el diálogo de eliminación
         return [f"{h.id_horario} | {h.dia} {h.hora_inicio}-{h.hora_fin} (Dr. {h.doctor.nombre})" 
                 for h in horarios]
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    vista = HorarioView()
+    vista.show()
+    sys.exit(app.exec())

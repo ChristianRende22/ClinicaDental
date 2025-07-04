@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     )
 
 from Controladores.TratamientoControlador import TratamientoControlador
-from Modelos.TratamientoModelo import Paciente
+from Modelos.PacienteModelo import Paciente
 
 class AgregarTratamientoDialog(QDialog):
     def __init__(self, paciente):
@@ -109,14 +109,12 @@ def main():
     app = QApplication([])
 
     paciente = Paciente(
-        id_paciente="001",
         nombre="Ana",
         apellido="Gómez",
-        edad=30,
-        genero="Femenino",
-        telefono="123456789",
-        correo="ana@gmail.com",
-        direccion="Calle Falsa 123"
+        fecha_nacimiento= "21/05/1990",
+        dui="12345678-9",
+        telefono= 12345678,
+        correo="ana@gmail.com"
     )    
 
     window = AgregarTratamientoDialog(paciente)  # Pasar el paciente como parámetro

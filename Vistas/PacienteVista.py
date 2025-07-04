@@ -13,13 +13,13 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Importar las clases del controlador
-from Controladores.PacienteControlador import PacienteControlador, Tratamiento, Cita, Doctor
+from Controladores.PacienteControlador import *
 
 from PyQt6.QtWidgets import QDateEdit
 from PyQt6.QtCore import QDate
 
 
-class AgregarTratamientoDialog(QDialog):
+class AgregarTratamientoDialog(QDialog): # se debe que quitar
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("🩺 Agregar Tratamiento")
@@ -232,7 +232,7 @@ class AgregarTratamientoDialog(QDialog):
             doctor
         )
 
-class AgregarCitaDialog(QDialog):
+class AgregarCitaDialog(QDialog): # tambien 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("📅 Agregar Cita")

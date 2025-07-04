@@ -6,8 +6,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from datetime import datetime
 from typing import List, Dict, Any
-
-class FacturacionView(QMainWindow):    
+class FacturacionView(QMainWindow):  
+  
     # señales para comunicacion con el controlador
     crear_factura_signal = pyqtSignal(dict)
     mostrar_facturas_signal = pyqtSignal()

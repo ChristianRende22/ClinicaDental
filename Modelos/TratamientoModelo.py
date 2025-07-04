@@ -1,27 +1,3 @@
-class Paciente:
-    def __init__(self, id_paciente, nombre, apellido, edad, genero, telefono, correo, direccion):
-        self.id_paciente = id_paciente
-        self.nombre = nombre
-        self.apellido = apellido
-        self.edad = edad
-        self.genero = genero
-        self.telefono = telefono
-        self.correo = correo
-        self.direccion = direccion
-
-    def __str__(self):
-        return f"{self.nombre} {self.apellido}, {self.edad} años"
-
-
-class Doctor:
-    def __init__(self, nombre, apellido):
-        self.nombre = nombre
-        self.apellido = apellido
-
-    def __str__(self):
-        return f"Dr. {self.nombre} {self.apellido}"
-
-
 class Tratamiento:
     def __init__(self, id_tratamiento, descripcion, costo, fecha, estado, doctor, paciente):
         self.id_tratamiento = id_tratamiento

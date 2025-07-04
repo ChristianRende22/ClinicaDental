@@ -1,6 +1,5 @@
+from Modelos.DoctorModelo import Doctor
 from Modelos.TratamientoModelo import Tratamiento
-
-from Modelos.TratamientoModelo import Doctor
 
 class TratamientoControlador:
     def __init__(self, vista):

@@ -9,7 +9,9 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QDateTime
 from PyQt6.QtGui import QFont, QIntValidator, QDoubleValidator
-from Controladores.CitaControlador import ControladorCita
+from Controladores.CitaControlador import ControladorCita # no debe ser de modelo
+
+
 
 class CitaWindow(QMainWindow):
     def __init__(self):  # Sin parámetros de datos

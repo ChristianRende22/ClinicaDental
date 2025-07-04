@@ -1,12 +1,15 @@
 from datetime import datetime
 from typing import List
-class Doctor:
-    def __init__(self, id_doctor: str, nombre: str, especialidad: str):
-        self.id_doctor = id_doctor
-        self.nombre = nombre
-        self.especialidad = especialidad
-    def __str__(self):
-        return f"{self.nombre} ({self.especialidad})"
+
+# class Doctor:
+#     def __init__(self, id_doctor: str, nombre: str, especialidad: str):
+#         self.id_doctor = id_doctor
+#         self.nombre = nombre
+#         self.especialidad = especialidad
+#     def __str__(self):
+#         return f"{self.nombre} ({self.especialidad})"
+
+from Modelos.DoctorModelo import Doctor
 
 class Horario:
     def __init__(self, id_horario: str, dia: str, hora_inicio: str, hora_fin: str, doctor: Doctor):
@@ -88,9 +91,11 @@ class HorarioModel:
     def obtener_horarios(self):
         #Retorna todos los horarios
         return self.horarios.copy()
+    
     def obtener_doctores(self):
         #Retorna todos los doctores
         return self.doctores.copy()
+    
     def obtener_horarios_agrupados_por_dia(self):
         #Retorna horarios agrupados por dia
         horarios_por_dia = {}
