@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     )
 
 from Controladores.TratamientoControlador import TratamientoControlador
-from ClinicaTratamiento.Modelos.TratamientoModelo import Paciente
+from Modelos.TratamientoModelo import Paciente
 
 class AgregarTratamientoDialog(QDialog):
     def __init__(self, paciente):
