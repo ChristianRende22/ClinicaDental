@@ -137,7 +137,7 @@ class CitaWindow(QMainWindow):
                 background-color: {self.colors['surface']};
             }}
             
-
+            # Diseño del dropdown
             QComboBox QAbstractItemView {{
                 background-color: {self.colors['surface']};
                 color: {self.colors['text_dark']};
