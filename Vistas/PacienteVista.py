@@ -13,13 +13,13 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Importar las clases del controlador
-from Controladores.PacienteControlador import *
+from Controladores.PacienteControlador import PacienteControlador, Tratamiento, Cita, Doctor
 
 from PyQt6.QtWidgets import QDateEdit
 from PyQt6.QtCore import QDate
 
 
-class AgregarTratamientoDialog(QDialog): # se debe que quitar
+class AgregarTratamientoDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("🩺 Agregar Tratamiento")
@@ -28,139 +28,68 @@ class AgregarTratamientoDialog(QDialog): # se debe que quitar
         
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: #2b2b2b;
+                background-color: #f7f8fa;
                 font-family: 'Segoe UI';
                 font-size: 14px;
-                color: #ffffff;
+                color: #2c3e50;
             }}
             
             QLabel {{
-                color: #ffffff;
+                color: #2c3e50;
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 font-weight: bold;
             }}
             
             QLineEdit, QTextEdit, QDoubleSpinBox, QDateEdit {{
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                border: 2px solid #756f9f;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: #3c3c3c;
-                color: #ffffff;
+                background-color: #ffffff;
+                color: #2c3e50;
             }}
             
             QLineEdit:focus, QTextEdit:focus, QDoubleSpinBox:focus, QDateEdit:focus {{
-                border-color: #10b8b9;
-                background-color: #404040;
-            }}
-            
-            QDateEdit::drop-down {{
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 20px;
-                border-left: 1px solid #756f9f;
-                background-color: #756f9f;
-                border-radius: 3px;
-            }}
-            
-            QDateEdit::drop-down:hover {{
-                background-color: #10b8b9;
+                background-color: #ffffff;
             }}
             
             QDateEdit::down-arrow {{
-                image: none;
-                border: 2px solid #ffffff;
-                width: 6px;
-                height: 6px;
-                border-top: none;
-                border-left: none;
-                margin-top: -2px;
-                transform: rotate(45deg);
+                border: 2px solid #2c3e50;
             }}
             
             QCalendarWidget {{
-                background-color: #2b2b2b;
-                color: #ffffff;
-                border: 2px solid #756f9f;
-                border-radius: 8px;
-                font-family: 'Segoe UI';
-                font-size: 13px;
-            }}
-            
-            QCalendarWidget QToolButton {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border: none;
-                border-radius: 4px;
-                padding: 8px;
-                margin: 2px;
-                font-weight: bold;
-            }}
-            
-            QCalendarWidget QToolButton:hover {{
-                background-color: #10b8b9;
-            }}
-            
-            QCalendarWidget QToolButton:pressed {{
-                background-color: #130760;
+                background-color: #f7f8fa;
+                color: #2c3e50;
             }}
             
             QCalendarWidget QMenu {{
-                background-color: #3c3c3c;
-                color: #ffffff;
-                border: 1px solid #756f9f;
-                border-radius: 4px;
+                background-color: #ffffff;
+                color: #2c3e50;
             }}
             
             QCalendarWidget QSpinBox {{
-                background-color: #3c3c3c;
-                color: #ffffff;
-                border: 1px solid #756f9f;
-                border-radius: 4px;
-                padding: 4px;
-                font-weight: bold;
-            }}
-            
-            QCalendarWidget QSpinBox:focus {{
-                border-color: #10b8b9;
+                background-color: #ffffff;
+                color: #2c3e50;
             }}
             
             QCalendarWidget QAbstractItemView {{
-                background-color: #3c3c3c;
-                color: #ffffff;
-                selection-background-color: #10b8b9;
-                selection-color: #ffffff;
-                border: none;
-                outline: none;
+                background-color: #ffffff;
+                color: #2c3e50;
             }}
             
             QCalendarWidget QAbstractItemView:enabled {{
-                color: #ffffff;
-                background-color: #3c3c3c;
+                color: #2c3e50;
+                background-color: #ffffff;
             }}
             
             QCalendarWidget QAbstractItemView:disabled {{
-                color: #666666;
+                color: #999999;
             }}
             
             QCalendarWidget QWidget {{
-                alternate-background-color: #404040;
-            }}
-            
-            QCalendarWidget QHeaderView::section {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border: none;
-                padding: 8px;
-                font-weight: bold;
-                font-size: 12px;
+                alternate-background-color: #f7f8fa;
             }}
             
             QCalendarWidget QTableView {{
-                gridline-color: #555555;
-                background-color: #3c3c3c;
+                gridline-color: #e0e0e0;
+                background-color: #ffffff;
             }}
             
             QPushButton {{
@@ -232,7 +161,7 @@ class AgregarTratamientoDialog(QDialog): # se debe que quitar
             doctor
         )
 
-class AgregarCitaDialog(QDialog): # tambien 
+class AgregarCitaDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("📅 Agregar Cita")
@@ -242,14 +171,14 @@ class AgregarCitaDialog(QDialog): # tambien
       
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: #2b2b2b;
+                background-color: #f7f8fa;
                 font-family: 'Segoe UI';
                 font-size: 14px;
-                color: #ffffff;
+                color: #2c3e50;
             }}
             
             QLabel {{
-                color: #ffffff;
+                color: #2c3e50;
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 font-weight: bold;
@@ -261,13 +190,13 @@ class AgregarCitaDialog(QDialog): # tambien
                 border: 2px solid #756f9f;
                 border-radius: 6px;
                 padding: 8px;
-                background-color: #3c3c3c;
-                color: #ffffff;
+                background-color: #ffffff;
+                color: #2c3e50;
             }}
             
             QLineEdit:focus, QDoubleSpinBox:focus {{
                 border-color: #10b8b9;
-                background-color: #404040;
+                background-color: #ffffff;
             }}
             
             QDateEdit::drop-down {{
@@ -448,14 +377,14 @@ class VentanaInfoPaciente(QDialog):
         # Aplicar el mismo estilo que la ventana principal
         self.setStyleSheet(f"""
             QDialog {{
-                background-color: #2b2b2b;
+                background-color: #f7f8fa;
                 font-family: 'Segoe UI';
                 font-size: 14px;
-                color: #ffffff;
+                color: #2c3e50;
             }}
             
             QLabel {{
-                color: #ffffff;
+                color: #2c3e50;
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 font-weight: bold;
@@ -466,8 +395,8 @@ class VentanaInfoPaciente(QDialog):
                 font-size: 13px;
                 border: 2px solid #756f9f;
                 border-radius: 8px;
-                background-color: #1e1e1e;
-                color: #d4d4d4;
+                background-color: #ffffff;
+                color: #2c3e50;
                 padding: 15px;
                 selection-background-color: #10b8b9;
             }}
@@ -611,7 +540,7 @@ class VentanaInfoPaciente(QDialog):
         titulo.setStyleSheet("""
             QLabel {
                 color: #10b8b9;
-                background-color: #3c3c3c;
+                background-color: #ffffff;
                 border: 2px solid #10b8b9;
                 border-radius: 8px;
                 padding: 15px;
@@ -840,23 +769,27 @@ class PacienteWindow(QMainWindow):
             'primary': '#130760',      # Dark blue-purple 
             'secondary': '#756f9f',    # Medium purple
             'accent': '#10b8b9',       # Teal
-            'background': '#2b2b2b',   # Dark gray
-            'surface': '#3c3c3c',      # Slightly lighter gray
-            'text_light': '#ffffff',   # White text
-            'text_dark': '#e0e0e0'     # Light gray text
+            'background': '#f7f8fa',   # Light background
+            'surface': '#ffffff',      # White surface
+            'text_light': '#2c3e50',   # Dark text for light backgrounds
+            'text_dark': '#34495e'     # Darker text
         }
-        
-        
+
         self.setStyleSheet(f"""
             QMainWindow {{
                 background-color: {self.colors['background']};
                 font-family: 'Segoe UI';
                 font-size: 14px;
-                color: {self.colors['text_light']};
+                color: {self.colors['text_dark']};
             }}
             
+            QWidget {{
+                background-color: {self.colors['background']};
+            }}
+                
             QLabel {{
                 color: {self.colors['text_light']};
+                background-color: {self.colors['surface']};
                 font-family: 'Segoe UI';
                 font-size: 14px;
             }}
@@ -1186,15 +1119,15 @@ class PacienteWindow(QMainWindow):
         # Estilo mejorado para el área de texto y scroll bars
         self.resultado_text.setStyleSheet(f"""
             QTextEdit {{
-                background-color: #1e1e1e;
-                color: #d4d4d4;
+                background-color: #f7f8fa;
+                color: #2c3e50;
                 border: 2px solid {self.colors['secondary']};
                 border-radius: 8px;
                 padding: 15px;
             }}
             
             QScrollBar:vertical {{
-                background-color: #3c3c3c;
+                background-color: #e0e0e0;
                 width: 12px;
                 border-radius: 6px;
                 margin: 0px;
@@ -1226,7 +1159,7 @@ class PacienteWindow(QMainWindow):
             }}
             
             QScrollBar:horizontal {{
-                background-color: #3c3c3c;
+                background-color: #e0e0e0;
                 height: 12px;
                 border-radius: 6px;
                 margin: 0px;
@@ -1581,7 +1514,7 @@ class PacienteWindow(QMainWindow):
         
         edad = self.controlador.calcular_edad(paciente_actual.fecha_nacimiento)
         dui_label = "DUI del Responsable" if edad < 18 else "DUI"
-        edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else "")
+        edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else " (Mayor de edad)")
             
         separador_principal = "=" * 60
         separador_seccion = "-" * 40
