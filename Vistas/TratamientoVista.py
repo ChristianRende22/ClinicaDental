@@ -222,7 +222,7 @@ class AgregarTratamientoDialog(QDialog):
         print(f"Fecha: {fecha_str}")
         print(f"Estado: {self.estado_combo.currentText()}")
         print(f"Carnet Doctor: {self.doctor_carnet_edit.text()}")
-        print(f"Nombre Doctor: {self.doctor_nombre_label.text()}")
+        print(f"{self.doctor_nombre_label.text()}")
 
         self.accept()
         
