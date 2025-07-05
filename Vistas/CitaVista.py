@@ -24,10 +24,10 @@ class CitaWindow(QMainWindow):
             'primary': '#130760',      # Dark blue-purple 
             'secondary': '#756f9f',    # Medium purple
             'accent': '#10b8b9',       # Teal
-            'background': '#2b2b2b',   # Dark gray
-            'surface': '#3c3c3c',      # Slightly lighter gray
-            'text_light': '#ffffff',   # White text
-            'text_dark': '#e0e0e0'     # Light gray text
+            'text_light': '#2b2b2b',   # Dark gray
+            'text_dark': '#3c3c3c',      # Slightly lighter gray
+            'background': '#f7f8fa',   # White text
+            'surface': '#ffffff'     # Light gray text
         }
 
         self.setStyleSheet(f"""
@@ -37,9 +37,14 @@ class CitaWindow(QMainWindow):
                 font-size: 14px;
                 color: {self.colors['text_light']};
             }}
+
+            QWidget {{
+                background-color: {self.colors['background']};
+            }}
             
             QLabel {{
                 color: {self.colors['text_light']};
+                background-color: {self.colors['surface']};
                 font-family: 'Segoe UI';
                 font-size: 14px;
             }}
@@ -77,14 +82,14 @@ class CitaWindow(QMainWindow):
             
             QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
                 border-color: {self.colors['accent']};
-                background-color: #404040;
+                background-color: {self.colors['surface']};
             }}
             
             QPushButton {{
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 font-weight: bold;
-                color: {self.colors['text_light']};
+                color: {self.colors['surface']};
                 background-color: {self.colors['secondary']};
                 border: none;
                 border-radius: 8px;
@@ -129,9 +134,38 @@ class CitaWindow(QMainWindow):
 
             QComboBox:focus {{
                 border-color: {self.colors['accent']};
-                background-color: #404040;
+                background-color: {self.colors['surface']};
             }}
             
+
+            QComboBox QAbstractItemView {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_dark']};
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 5px;
+                selection-background-color: {self.colors['accent']};
+                selection-color: white;
+                outline: none;
+            }}
+            
+            QComboBox QAbstractItemView::item {{
+                padding: 8px;
+                color: {self.colors['text_dark']};
+                background-color: {self.colors['surface']};
+                border: none;
+            }}
+            
+            QComboBox QAbstractItemView::item:hover {{
+                background-color: {self.colors['accent']};
+                color: white;
+            }}
+            
+            QComboBox QAbstractItemView::item:selected {{
+                background-color: {self.colors['accent']};
+                color: white;
+            }}
+
             QDateTimeEdit {{
                 font-family: 'Segoe UI';
                 font-size: 14px;
@@ -144,7 +178,7 @@ class CitaWindow(QMainWindow):
             }}
             QDateTimeEdit:focus {{
                 border-color: {self.colors['accent']};
-                background-color: #404040;
+                background-color: {self.colors['surface']};
             }}
         """)
 
@@ -257,8 +291,8 @@ class CitaWindow(QMainWindow):
         # Estilo mejorado para el área de texto y scroll bars
         self.resultado_text.setStyleSheet(f"""
             QTextEdit {{
-                background-color: #1e1e1e;
-                color: #d4d4d4;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_dark']};
                 border: 2px solid {self.colors['secondary']};
                 border-radius: 8px;
                 padding: 15px;
