@@ -822,12 +822,12 @@ class PacienteWindow(QMainWindow):
                 padding: 10px;
                 background-color: {self.colors['surface']};
                 color: {self.colors['text_light']};
-                selection-background-color: {self.colors['accent']};
+               
             }}
             
             QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus {{
                 border-color: {self.colors['accent']};
-                background-color: #404040;
+                background-color: #ffffff;
             }}
             
             QDateEdit::drop-down {{
