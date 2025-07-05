@@ -19,7 +19,7 @@ class AgregarTratamientoDialog(QDialog):
         self.controlador = TratamientoControlador(self)
 
         self.setWindowTitle("🩺 Agregar Tratamiento")
-        self.resize(800, 800)
+        self.resize(600, 700)
         
         self.setStyleSheet("""
             QDialog { 
