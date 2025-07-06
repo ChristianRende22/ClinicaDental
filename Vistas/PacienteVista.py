@@ -1,8 +1,4 @@
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
-                             QWidget, QLabel, QLineEdit, QSpinBox, QPushButton, 
-                             QTextEdit, QGroupBox, QFormLayout, QMessageBox,
-                             QListWidget, QDialog, QDialogButtonBox, QDoubleSpinBox,
-                             QScrollArea, QScrollBar)
+from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from datetime import datetime
@@ -12,359 +8,27 @@ import sys
 # Agregar el directorio padre al path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Importar las clases del controlador
-from Controladores.PacienteControlador import PacienteControlador, Tratamiento, Cita, Doctor
-
+# ==========================================
+# IMPORTACIONES: Clases del modelo y controladores
+# ==========================================
+from Modelos.PacienteModelo import Paciente
+from Modelos.DoctorModelo import Doctor
+from Modelos.CitaModelo import Cita
+from Modelos.TratamientoModelo import Tratamiento
+from Controladores.PacienteControlador import PacienteControlador
+from Controladores.TratamientoControlador import TratamientoControlador
+from Controladores.CitaControlador import ControladorCita
+from CitaVista import CitaWindow
+from TratamientoVista import AgregarTratamientoDialog  # NUEVA IMPORTACIÓN: Vista de tratamiento
+from PyQt6.QtWidgets import QCalendarWidget
 from PyQt6.QtWidgets import QDateEdit
 from PyQt6.QtCore import QDate
 
 
-class AgregarTratamientoDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("🩺 Agregar Tratamiento")
-        self.setModal(True)
-        self.resize(450, 350)
-        
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: #f7f8fa;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                color: #2c3e50;
-            }}
-            
-            QLabel {{
-                color: #2c3e50;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            
-            QLineEdit, QTextEdit, QDoubleSpinBox, QDateEdit {{
-                background-color: #ffffff;
-                color: #2c3e50;
-            }}
-            
-            QLineEdit:focus, QTextEdit:focus, QDoubleSpinBox:focus, QDateEdit:focus {{
-                background-color: #ffffff;
-            }}
-            
-            QDateEdit::down-arrow {{
-                border: 2px solid #2c3e50;
-            }}
-            
-            QCalendarWidget {{
-                background-color: #f7f8fa;
-                color: #2c3e50;
-            }}
-            
-            QCalendarWidget QMenu {{
-                background-color: #ffffff;
-                color: #2c3e50;
-            }}
-            
-            QCalendarWidget QSpinBox {{
-                background-color: #ffffff;
-                color: #2c3e50;
-            }}
-            
-            QCalendarWidget QAbstractItemView {{
-                background-color: #ffffff;
-                color: #2c3e50;
-            }}
-            
-            QCalendarWidget QAbstractItemView:enabled {{
-                color: #2c3e50;
-                background-color: #ffffff;
-            }}
-            
-            QCalendarWidget QAbstractItemView:disabled {{
-                color: #999999;
-            }}
-            
-            QCalendarWidget QWidget {{
-                alternate-background-color: #f7f8fa;
-            }}
-            
-            QCalendarWidget QTableView {{
-                gridline-color: #e0e0e0;
-                background-color: #ffffff;
-            }}
-            
-            QPushButton {{
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-                color: #ffffff;
-                background-color: #756f9f;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 15px;
-            }}
-            
-            QPushButton:hover {{
-                background-color: #10b8b9;
-            }}
-        """)
-        
-        layout = QFormLayout()
-        
-        self.id_edit = QLineEdit()
-        self.descripcion_edit = QTextEdit()
-        self.descripcion_edit.setMaximumHeight(80)
-        self.costo_edit = QDoubleSpinBox()
-        self.costo_edit.setMaximum(99999.99)
-        self.costo_edit.setPrefix("$")
-        
-        # Cambiar a QDateEdit con calendario popup
-        self.fecha_edit = QDateEdit()
-        self.fecha_edit.setCalendarPopup(True)
-        self.fecha_edit.setDisplayFormat("dd/MM/yyyy")
-        self.fecha_edit.setDate(QDate.currentDate())
-        
-        self.estado_edit = QLineEdit()
-        self.doctor_nombre_edit = QLineEdit()
-        self.doctor_apellido_edit = QLineEdit()
-        
-        layout.addRow("ID Tratamiento:", self.id_edit)
-        layout.addRow("Descripción:", self.descripcion_edit)
-        layout.addRow("Costo:", self.costo_edit)
-        layout.addRow("Fecha:", self.fecha_edit)
-        layout.addRow("Estado:", self.estado_edit)
-        layout.addRow("Nombre Doctor:", self.doctor_nombre_edit)
-        layout.addRow("Apellido Doctor:", self.doctor_apellido_edit)
-        
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | 
-                                 QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(layout)
-        main_layout.addWidget(buttons)
-        self.setLayout(main_layout)
-    
-    def get_tratamiento(self):
-        doctor = Doctor(self.doctor_nombre_edit.text(), self.doctor_apellido_edit.text())
-        
-        # Convertir QDate a string en formato DD/MM/YYYY
-        fecha_qdate = self.fecha_edit.date()
-        fecha_str = fecha_qdate.toString("dd/MM/yyyy")
-        
-        return Tratamiento(
-            self.id_edit.text(),
-            self.descripcion_edit.toPlainText(),
-            self.costo_edit.value(),
-            fecha_str,
-            self.estado_edit.text(),
-            doctor
-        )
-
-class AgregarCitaDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("📅 Agregar Cita")
-        self.setModal(True)
-        self.resize(450, 300)
-        
-      
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: #f7f8fa;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                color: #2c3e50;
-            }}
-            
-            QLabel {{
-                color: #2c3e50;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            
-            QLineEdit, QDoubleSpinBox {{
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                border: 2px solid #756f9f;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: #ffffff;
-                color: #2c3e50;
-            }}
-            
-            QLineEdit:focus, QDoubleSpinBox:focus {{
-                border-color: #10b8b9;
-                background-color: #ffffff;
-            }}
-            
-            QDateEdit::drop-down {{
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 25px;
-                border-left: 1px solid #756f9f;
-                background-color: #756f9f;
-                border-radius: 3px;
-            }}
-            
-            QDateEdit::drop-down:hover {{
-                background-color: #10b8b9;
-            }}
-            
-            QDateEdit::down-arrow {{
-                image: none;
-                border: 2px solid #ffffff;
-                width: 6px;
-                height: 6px;
-                border-top: none;
-                border-left: none;
-                margin-top: -2px;
-                transform: rotate(45deg);
-            }}
-            
-            QCalendarWidget {{
-                background-color: #2b2b2b;
-                color: #ffffff;
-                border: 2px solid #756f9f;
-                border-radius: 8px;
-                font-family: 'Segoe UI';
-                font-size: 13px;
-            }}
-            
-            QCalendarWidget QToolButton {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border: none;
-                border-radius: 4px;
-                padding: 8px;
-                margin: 2px;
-                font-weight: bold;
-            }}
-            
-            QCalendarWidget QToolButton:hover {{
-                background-color: #10b8b9;
-            }}
-            
-            QCalendarWidget QToolButton:pressed {{
-                background-color: #130760;
-            }}
-            
-            QCalendarWidget QMenu {{
-                background-color: #3c3c3c;
-                color: #ffffff;
-                border: 1px solid #756f9f;
-                border-radius: 4px;
-            }}
-            
-            QCalendarWidget QSpinBox {{
-                background-color: #3c3c3c;
-                color: #ffffff;
-                border: 1px solid #756f9f;
-                border-radius: 4px;
-                padding: 4px;
-                font-weight: bold;
-            }}
-            
-            QCalendarWidget QSpinBox:focus {{
-                border-color: #10b8b9;
-            }}
-            
-            QCalendarWidget QAbstractItemView {{
-                background-color: #3c3c3c;
-                color: #ffffff;
-                selection-background-color: #10b8b9;
-                selection-color: #ffffff;
-                border: none;
-                outline: none;
-            }}
-            
-            QCalendarWidget QAbstractItemView:enabled {{
-                color: #ffffff;
-                background-color: #3c3c3c;
-            }}
-            
-            QCalendarWidget QAbstractItemView:disabled {{
-                color: #666666;
-            }}
-            
-            QCalendarWidget QWidget {{
-                alternate-background-color: #404040;
-            }}
-            
-            QCalendarWidget QHeaderView::section {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border: none;
-                padding: 8px;
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            
-            QCalendarWidget QTableView {{
-                gridline-color: #555555;
-                background-color: #3c3c3c;
-            }}
-            
-            QPushButton {{
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-                color: #ffffff;
-                background-color: #756f9f;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 15px;
-            }}
-            
-            QPushButton:hover {{
-                background-color: #10b8b9;
-            }}
-        """)
-        
-        layout = QFormLayout()
-        
-        self.id_edit = QLineEdit()
-        self.hora_inicio_edit = QLineEdit()
-        self.hora_inicio_edit.setPlaceholderText("DD/MM/YYYY HH:MM")
-        self.hora_fin_edit = QLineEdit()
-        self.hora_fin_edit.setPlaceholderText("DD/MM/YYYY HH:MM")
-        self.costo_edit = QDoubleSpinBox()
-        self.costo_edit.setMaximum(99999.99)
-        self.costo_edit.setPrefix("$")
-        self.estado_edit = QLineEdit()
-        self.doctor_nombre_edit = QLineEdit()
-        self.doctor_apellido_edit = QLineEdit()
-        
-        layout.addRow("ID Cita:", self.id_edit)
-        layout.addRow("Hora Inicio:", self.hora_inicio_edit)
-        layout.addRow("Hora Fin:", self.hora_fin_edit)
-        layout.addRow("Costo:", self.costo_edit)
-        layout.addRow("Estado:", self.estado_edit)
-        layout.addRow("Nombre Doctor:", self.doctor_nombre_edit)
-        layout.addRow("Apellido Doctor:", self.doctor_apellido_edit)
-        
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | 
-                                 QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(layout)
-        main_layout.addWidget(buttons)
-        self.setLayout(main_layout)
-    
-    def get_cita(self):
-        doctor = Doctor(self.doctor_nombre_edit.text(), self.doctor_apellido_edit.text())
-        return Cita(
-            self.id_edit.text(),
-            self.hora_inicio_edit.text(),
-            self.hora_fin_edit.text(),
-            self.costo_edit.value(),
-            self.estado_edit.text(),
-            doctor
-        )
-
+# ==========================================
+# CLASE: VentanaInfoPaciente
+# PROPÓSITO: Ventana modal para mostrar información detallada del paciente
+# ==========================================
 class VentanaInfoPaciente(QDialog):
     def __init__(self, paciente, controlador, parent=None):
         super().__init__(parent)
@@ -755,6 +419,10 @@ class VentanaInfoPaciente(QDialog):
 """
         return historial
 
+# ==========================================
+# CLASE PRINCIPAL: PacienteWindow
+# PROPÓSITO: Ventana principal del sistema de gestión de pacientes
+# ==========================================
 class PacienteWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -1379,35 +1047,38 @@ class PacienteWindow(QMainWindow):
         return historial
     
     def agregar_tratamiento(self):
-        """Abre un diálogo para agregar un tratamiento"""
+        """Abre la vista de tratamiento usando TratamientoVista"""
         paciente_actual = self.controlador.get_paciente_actual()
         if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
-        dialog = AgregarTratamientoDialog(self)
+        # INSTANCIA: Crear diálogo de tratamiento con el paciente actual
+        dialog = AgregarTratamientoDialog(paciente_actual)
+        
+        # EJECUCIÓN: Mostrar diálogo y procesar resultado
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            tratamiento = dialog.get_tratamiento()
-            if self.controlador.agregar_tratamiento_a_paciente(tratamiento):
-                QMessageBox.information(self, "✅ Éxito", "Tratamiento agregado exitosamente")
-            else:
-                QMessageBox.warning(self, "❌ Error", "No se pudo agregar el tratamiento")
+            QMessageBox.information(self, "✅ Éxito", 
+                                  "Tratamiento procesado correctamente.\n"
+                                  "Los datos han sido registrados en el sistema.")
+            
+            # ACTUALIZACIÓN: Refrescar información del paciente en pantalla
+            self.resultado_text.setText(self._generar_info_completa())
+        else:
+            QMessageBox.information(self, "ℹ️ Cancelado", 
+                                  "No se agregó ningún tratamiento.")
     
     def agregar_cita(self):
-        """Abre un diálogo para agregar una cita"""
+        """Abre la ventana de citas"""
         paciente_actual = self.controlador.get_paciente_actual()
         if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
-        dialog = AgregarCitaDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            cita = dialog.get_cita()
-            if self.controlador.agregar_cita_a_paciente(cita):
-                QMessageBox.information(self, "✅ Éxito", "Cita agregada exitosamente")
-            else:
-                QMessageBox.warning(self, "❌ Error", "No se pudo agregar la cita")
-    
+        # Crear y mostrar la ventana de citas
+        self.cita_window = CitaWindow()
+        self.cita_window.show()
+
     def consultar_historial(self):
         """Consulta y muestra el historial médico del paciente"""
         paciente_actual = self.controlador.get_paciente_actual()
@@ -1600,3 +1271,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+ 
