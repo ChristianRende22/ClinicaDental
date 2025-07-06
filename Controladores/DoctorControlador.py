@@ -91,14 +91,14 @@ class AgregarHorarioDialog(QDialog):
         """Configura los estilos CSS"""
         self.setStyleSheet("""
             QDialog {
-                background-color: #2b2b2b;
+                background-color: #f7f8fa;
                 font-family: 'Segoe UI';
                 font-size: 14px;
-                color: #ffffff;
+                color: #2b2b2b;
             }
             
             QLabel {
-                color: #ffffff;
+                color: #2b2b2b;
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 font-weight: bold;
@@ -110,13 +110,13 @@ class AgregarHorarioDialog(QDialog):
                 border: 2px solid #756f9f;
                 border-radius: 6px;
                 padding: 8px;
-                background-color: #3c3c3c;
-                color: #ffffff;
+                background-color: #f7f8fa;
+                color: #2b2b2b;
             }
             
             QComboBox:focus, QTimeEdit:focus {
                 border-color: #10b8b9;
-                background-color: #404040;
+                background-color: #f7f8fa;
             }
             
             QPushButton {
