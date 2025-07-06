@@ -138,6 +138,22 @@ class CitaWindow(QMainWindow):
             }}
             
             # Diseño del dropdown
+                        QComboBox {{
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                selection-background-color: {self.colors['accent']};
+            }}
+
+            QComboBox:focus {{
+                border-color: {self.colors['accent']};
+                background-color: {self.colors['surface']};
+            }}
+            
             QComboBox QAbstractItemView {{
                 background-color: {self.colors['surface']};
                 color: {self.colors['text_dark']};
