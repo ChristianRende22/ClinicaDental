@@ -14,134 +14,8 @@ import re
 from datetime import datetime
 
 from Modelos.DoctorModelo import Doctor
+from Vistas.HorarioVista import AgregarHorarioDialog
 
-class Horario:
-    """
-    Clase que representa un horario de atención del doctor.
-    Contiene información sobre el día de la semana y el rango de horas.
-    """
-    def __init__(self, dia: str, hora_inicio: datetime, hora_fin: datetime):
-        self.dia = dia
-        self.hora_inicio = hora_inicio
-        self.hora_fin = hora_fin
-
-    def __str__(self):
-        return f"Horario{{dia='{self.dia}', hora_inicio={self.hora_inicio.strftime('%H:%M')}, hora_fin={self.hora_fin.strftime('%H:%M')}}}"
-    
-    def to_dict(self):
-        """Convierte el horario a diccionario para almacenamiento"""
-        return {
-            'dia': self.dia,
-            'hora_inicio': self.hora_inicio.strftime('%H:%M'),
-            'hora_fin': self.hora_fin.strftime('%H:%M')
-        }
-    
-class AgregarHorarioDialog(QDialog):
-    """
-    Diálogo para agregar un horario de atención del doctor.
-    Permite seleccionar el día de la semana y el rango de horas.
-    """
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("⌚ Agregar Horario")        
-        self.setModal(True)
-        self.resize(450, 350)
-        self.setup_ui()
-        self.setup_styles()
-
-    def setup_ui(self):
-        """Configura la interfaz de usuario"""
-        # ComboBox para días de la semana
-        self.dia_combo = QComboBox()
-        self.dia_combo.addItems([
-            "Lunes", "Martes", "Miércoles", "Jueves", 
-            "Viernes", "Sábado", "Domingo"
-        ])
-        
-        # TimeEdit para horas
-        self.hora_inicio_edit = QTimeEdit()
-        self.hora_inicio_edit.setTime(QTime(8, 0))  # Default 8:00 AM
-        self.hora_inicio_edit.setDisplayFormat("HH:mm")
-        
-        self.hora_fin_edit = QTimeEdit()
-        self.hora_fin_edit.setTime(QTime(17, 0))  # Default 5:00 PM
-        self.hora_fin_edit.setDisplayFormat("HH:mm")
-
-        # Layout del formulario
-        layout = QFormLayout()
-        layout.addRow("🗓️ Día:", self.dia_combo)
-        layout.addRow("⏰ Hora Inicio:", self.hora_inicio_edit)
-        layout.addRow("⏳ Hora Fin:", self.hora_fin_edit)
-
-        # Botones
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | 
-            QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        
-        # Layout principal
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(layout)
-        main_layout.addWidget(buttons)
-        self.setLayout(main_layout)
-
-    def setup_styles(self):
-        """Configura los estilos CSS"""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #f7f8fa;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                color: #2b2b2b;
-            }
-            
-            QLabel {
-                color: #2b2b2b;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-            }
-            
-            QComboBox, QTimeEdit {
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                border: 2px solid #756f9f;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: #f7f8fa;
-                color: #2b2b2b;
-            }
-            
-            QComboBox:focus, QTimeEdit:focus {
-                border-color: #10b8b9;
-                background-color: #f7f8fa;
-            }
-            
-            QPushButton {
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-                color: #ffffff;
-                background-color: #756f9f;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 15px;
-            }
-            
-            QPushButton:hover {
-                background-color: #10b8b9;
-            }
-        """)
-
-    def get_horario_data(self):
-        """Devuelve los datos del horario ingresado"""
-        return {
-            'dia': self.dia_combo.currentText(),
-            'hora_inicio': self.hora_inicio_edit.time().toString("HH:mm"),
-            'hora_fin': self.hora_fin_edit.time().toString("HH:mm")
-        }
 
 class ControladorDoctor:
     def __init__(self, vista):
@@ -249,7 +123,7 @@ class ControladorDoctor:
             
             # Mostrar mensaje de éxito
             QMessageBox.information(self.vista, "✅ Éxito", 
-                                  f"Paciente {nombre} {apellido} creado exitosamente.\n\n"
+                                  f"Doctor {nombre} {apellido} creado exitosamente.\n\n"
                                   f"Total de pacientes registrados: {len(self.doctores)}")
             
             # Mostrar información del paciente creado
@@ -267,43 +141,57 @@ class ControladorDoctor:
             QMessageBox.warning(self.vista, "❌ Error", f"Error en el formato de los datos: {str(e)}")
     
     def agregar_horario(self):
-        """ Abre un diálogo para agregar un horario al doctor """
-        dialog = AgregarHorarioDialog(self.vista)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            dia, hora_inicio, hora_fin = dialog.get_horario_data()
-            
-            # Validar que se ingresaron todos los campos
-            if not all([dia, hora_inicio, hora_fin]):
-                QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios")
+        """Abre el diálogo de HorarioVista para agregar un horario"""
+        try:
+            # Verificar que hay doctores registrados
+            if not self.doctores:
+                QMessageBox.information(self.vista, "ℹ️ Información", 
+                                      "Debe registrar al menos un doctor antes de agregar horarios.")
                 return
             
-            # Validar formato de horas
-            try:
-                hora_inicio_dt = datetime.strptime(hora_inicio, "%H:%M")
-                hora_fin_dt = datetime.strptime(hora_fin, "%H:%M")
-            except ValueError:
-                QMessageBox.warning(self.vista, "❌ Error de Formato", 
-                                  "El formato de hora debe ser HH:MM (24 horas)")
-                return
+            # Convertir la lista de doctores a objetos Doctor para el diálogo
+            doctores_objetos = []
+            for doctor_dict in self.doctores:
+                doctor_obj = Doctor(
+                    nombre=doctor_dict['nombre'],
+                    apellido=doctor_dict['apellido'],
+                    dui=doctor_dict['dui'],
+                    especialidad=doctor_dict['especialidad'],
+                    telefono=doctor_dict['telefono'],
+                    correo=doctor_dict['correo']
+                )
+                doctores_objetos.append(doctor_obj)
             
-            # Verificar que la hora de inicio sea antes de la hora de fin
-            if hora_inicio_dt >= hora_fin_dt:
-                QMessageBox.warning(self.vista, "❌ Error", 
-                                  "La hora de inicio debe ser anterior a la hora de fin")
-                return
+            # Crear y mostrar el diálogo de horario
+            dialog = AgregarHorarioDialog(doctores_objetos, self.vista)
             
-            # Crear el horario y agregarlo a la lista
-            nuevo_horario = Horario(dia, hora_inicio_dt, hora_fin_dt)
-            self.horario.append(nuevo_horario)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                data = dialog.get_data()
+                
+                # Validar que todos los campos están completos
+                if not all([data['id_horario'], data['dia'], data['hora_inicio'], data['hora_fin'], data['doctor']]):
+                    QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios")
+                    return
+                
+                # Mostrar el resultado en el área de texto
+                self.vista.resultado_text.append(f"""
+🕒 Horario agregado exitosamente:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ID Horario: {data['id_horario']}
+📅 Día: {data['dia']}
+⏰ Hora Inicio: {data['hora_inicio']}
+⏳ Hora Fin: {data['hora_fin']}
+👨‍⚕️ Doctor: Dr. {data['doctor'].nombre} {data['doctor'].apellido}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+""")
+                
+                QMessageBox.information(self.vista, "✅ Éxito", 
+                                      f"Horario agregado exitosamente para Dr. {data['doctor'].nombre} {data['doctor'].apellido}")
             
-            # Actualizar también en la lista de doctores registrados
-            for doctor in self.doctores:
-                if doctor['dui'] == self.dui:
-                    doctor['horario'].append(nuevo_horario)
-                    break
-            
-            QMessageBox.information(self.vista, "✅ Éxito", 
-                                  f"Horario agregado exitosamente para {self.nombre} {self.apellido}")
+        except Exception as e:
+            QMessageBox.critical(self.vista, "❌ Error", 
+                               f"Error al abrir el diálogo de horarios: {str(e)}")
+            print(f"Error detallado: {e}")  # Para debugging
 
     def mostrar_info_doctor(self):
         """ Muestra un diálogo con la información de todos los doctores registrados """
