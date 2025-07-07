@@ -5,7 +5,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PyQt6.QtWidgets import (
     QDialog, QFormLayout, QVBoxLayout, QLabel, QLineEdit, 
     QTextEdit, QComboBox, QPushButton, QDateEdit,
-    QDialogButtonBox, QApplication, QHBoxLayout, QCalendarWidget
+    QDialogButtonBox, QApplication, QHBoxLayout, QCalendarWidget,
+    QMessageBox
 )
 from PyQt6.QtCore import QDate
 
@@ -175,54 +176,60 @@ class AgregarTratamientoDialog(QDialog):
 
     def verificar_doctor(self):
         carnet = self.doctor_carnet_edit.text().strip()
-        if not carnet:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Validación", "Ingrese el carnet del doctor.")
-            return
+        self.controlador.verificar_doctor(carnet)
         
-        # Simulación búsqueda en BD
-        doctores_simulados = {
-            "DOC123": "Juan Pérez",
-            "DOC456": "María López",
-            "DOC789": "Carlos Gómez"
-        }
-
-        nombre = doctores_simulados.get(carnet)
-        if nombre:
-            self.doctor_nombre_label.setText(f"Nombre Doctor: {nombre}")
-        else:
-            self.doctor_nombre_label.setText("Doctor no encontrado, debe registrarlo.")
-            from PyQt6.QtWidgets import QMessageBox
-            respuesta = QMessageBox.question(
-                self, "Doctor no existe",
-                "El doctor no existe. ¿Desea registrar uno nuevo?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            if respuesta == QMessageBox.StandardButton.Yes:
-                self.abrir_registro_doctor()
+    def mostrar_mensaje(self, titulo, mensaje):
+        QMessageBox.warning(self, titulo, mensaje)
+        
+    def mostrar_nombre_doctor(self, texto):
+        self.doctor_nombre_label.setText(texto)
+        
+    def preguntar_registro_doctor(self):
+        respuesta = QMessageBox.question(self, "Doctor no existe", "El doctor no existe. ¿Desea registrar uno nuevo?",
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return respuesta == QMessageBox.StandardButton.Yes
 
     def abrir_registro_doctor(self):
-        from PyQt6.QtWidgets import QMessageBox
         QMessageBox.information(self, "Registro Doctor", "Aquí abriría la ventana para registrar un doctor.")
 
     def on_accepted(self):
-        from PyQt6.QtWidgets import QMessageBox
-
-        # Validar fecha
-        fecha_str = self.fecha_edit.selectedDate().toString("dd/MM/yyyy")
-        if not fecha_str:
-            QMessageBox.warning(self, "Validación", "Debe seleccionar una fecha válida.")
+        
+        tratamiento = self.tratamiento_combo.currentText()
+        costo_text = self.costo_edit.text().replace("$", "")
+        try:
+            costo = float(costo_text)
+        except ValueError:
+            costo = 0
+            
+        fecha = self.fecha_edit.selectedDate()
+        estado = self.estado_combo.currentText()
+        carnet_doctor = self.doctor_carnet_edit.text().strip()
+        self.verificar_doctor()
+        nombre_doctor = self.doctor_nombre_label.text()
+        
+        # Validar datos llamando al controlador
+        if not self.controlador.validar_datos(tratamiento, costo, fecha, estado, carnet_doctor, nombre_doctor):
             return
-
-        # Aquí, por ahora, solo imprime los datos y acepta la ventana
+        
+        tratamiento_obj = self.controlador.crear_tratamiento(
+            id_tratamiento=None,  # Manejar el autoincremento
+            descripcion=self.descripcion_edit.toPlainText(),
+            costo=costo,
+            fecha=fecha.toString("yyyy-MM-dd"),
+            estado=estado,
+            doctor_nombre=nombre_doctor.replace("Nombre Doctor: ", ""),
+            doctor_apellido="",  # Por simplicidad, no capturamos apellido aquí
+            paciente=self.paciente
+        )
+            
         print("Tratamiento registrado con datos:")
-        print(f"Tratamiento: {self.tratamiento_combo.currentText()}")
-        print(f"Costo: {self.costo_edit.text()}")
+        print(f"Tratamiento: {tratamiento}")
+        print(f"Costo: {costo}")
         print(f"Descripción: {self.descripcion_edit.toPlainText()}")
-        print(f"Fecha: {fecha_str}")
-        print(f"Estado: {self.estado_combo.currentText()}")
-        print(f"Carnet Doctor: {self.doctor_carnet_edit.text()}")
-        print(f"{self.doctor_nombre_label.text()}")
+        print(f"Fecha: {fecha.toString('dd/MM/yyyy')}")
+        print(f"Estado: {estado}")
+        print(f"Carnet Doctor: {carnet_doctor}")
+        print(nombre_doctor)
 
         self.accept()
         
