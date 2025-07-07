@@ -10,7 +10,6 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QDoubleValidator 
 from datetime import datetime
 from typing import List, Dict, Any
-# NO IMPORTAR EL CONTROLADOR AQUÍ - se creará externamente
 
 class FacturacionView(QMainWindow):  
     crear_factura_signal = pyqtSignal(dict)
@@ -35,7 +34,6 @@ class FacturacionView(QMainWindow):
         
         self.setup_styles()  # Configurar estilos
         self.init_ui()       # Inicializar la interfaz
-        # NO CREAR EL CONTROLADOR AQUÍ
         self.conectar_botones()  # Conectar los botones
 
     def setup_styles(self):
