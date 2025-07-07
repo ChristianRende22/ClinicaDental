@@ -132,8 +132,8 @@ class AgregarTratamientoDialog(QDialog):
 
         # Fecha con calendario
         self.fecha_edit = QCalendarWidget()
-        self.fecha_edit.setSelectedDate(QDate.currentDate())
         self.fecha_edit.setGridVisible(True)
+        self.fecha_edit.setSelectedDate(QDate.currentDate())
         form.addRow("Fecha:", self.fecha_edit)
 
         # Estado (enum)
@@ -201,7 +201,7 @@ class AgregarTratamientoDialog(QDialog):
         except ValueError:
             costo = 0
             
-        fecha = self.fecha_edit.selectedDate()
+        fecha = self.fecha_edit.selectedDate().toString("dd-MM-YYYY")
         estado = self.estado_combo.currentText()
         carnet_doctor = self.doctor_carnet_edit.text().strip()
         self.verificar_doctor()
