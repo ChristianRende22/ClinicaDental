@@ -15,7 +15,7 @@ def obtener_datos():
 
         cursor = conexion.cursor()
         print("🔍 Ejecutando consulta SQL...")
-        cursor.execute("select Nombre from Paciente limit 2 ;")
+        cursor.execute("SELECT Nombre FROM Paciente LIMIT 2")
 
         resultados = cursor.fetchall()
         columnas = [desc[0] for desc in cursor.description]

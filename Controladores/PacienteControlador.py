@@ -4,7 +4,6 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from Modelos.PacienteModelo import Paciente
-from Modelos.DoctorModelo import Doctor
 from Modelos.CitaModelo import Cita
 from Modelos.TratamientoModelo import Tratamiento
 from datetime import datetime

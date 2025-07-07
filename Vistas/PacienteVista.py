@@ -11,16 +11,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 # ==========================================
 # IMPORTACIONES: Clases del modelo y controladores
 # ==========================================
-from Modelos.PacienteModelo import Paciente
-from Modelos.DoctorModelo import Doctor
-from Modelos.CitaModelo import Cita
-from Modelos.TratamientoModelo import Tratamiento
+
+
 from Controladores.PacienteControlador import PacienteControlador
-from Controladores.TratamientoControlador import TratamientoControlador
-from Controladores.CitaControlador import ControladorCita
 from CitaVista import CitaWindow
 from TratamientoVista import AgregarTratamientoDialog  
-from PyQt6.QtWidgets import QCalendarWidget
+
 from PyQt6.QtWidgets import QDateEdit
 from PyQt6.QtCore import QDate
 
