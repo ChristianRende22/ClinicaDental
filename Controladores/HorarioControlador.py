@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from datetime import datetime
 from typing import List
 
@@ -21,6 +22,7 @@ class HorarioController:
         self.inicializar_vista()
         
     def inicializar_vista(self):
+        """Inicializa la vista con los datos del controlador."""
         self.vista.actualizar_combos(self.doctores) 
 
     def agregar_horario(self):
@@ -40,7 +42,6 @@ class HorarioController:
             hora_inicio = datos['hora_inicio']
             hora_fin = datos['hora_fin']
             doctor = datos['doctor'] 
-
             # Validar formato de hora 
             try:
                 datetime.strptime(hora_inicio, "%H:%M")
@@ -66,6 +67,7 @@ class HorarioController:
                 if nuevo_horario.horario_ocupado(horario_existente):
                     QMessageBox.warning(self.vista, "❌ Error", "El doctor ya tiene un horario ocupado en ese día y rango de horas.")
                     return
+            
             # Si todas las validaciones pasan, agregar al modelo
             self.modelo.agregar_horario(nuevo_horario)
             # Actualizar vista
@@ -81,6 +83,7 @@ class HorarioController:
             if not horarios:
                 QMessageBox.information(self.vista, "ℹ️ Información", "No hay horarios registrados para eliminar.")
                 return
+            
             # Obtener el ID del horario a eliminar de la vista
             id_horario = self.vista.mostrar_dialogo_eliminar(self.vista.obtener_info_horarios_para_eliminar(horarios))
             if id_horario: 
