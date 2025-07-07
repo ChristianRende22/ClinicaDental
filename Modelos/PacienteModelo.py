@@ -3,11 +3,20 @@ import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# ==========================================
+# IMPORTACIONES: Clases del modelo y librerías necesarias
+# ==========================================
+
 from Modelos.DoctorModelo import *
 from Modelos.CitaModelo import *
 from Modelos.TratamientoModelo import *
 from datetime import datetime
 from typing import List
+
+# ==========================================
+# CLASE: Paciente
+# PROPÓSITO: Clase que representa un paciente de la clínica
+# ==========================================
 
 class Paciente:
     """Clase que representa un paciente de la clínica"""
@@ -24,6 +33,11 @@ class Paciente:
         self.citas: List[Cita] = []
         self.fecha_registro = datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
     
+    # ==========================================
+    # MÉTODOS DE GESTIÓN DE HISTORIAL MÉDICO
+    # PROPÓSITO: Agregar y gestionar tratamientos y citas
+    # ==========================================
+    
     def agregar_tratamiento(self, tratamiento: Tratamiento):
         """Agrega un tratamiento al historial médico del paciente"""
         self.historial_medico.append(tratamiento)
@@ -31,6 +45,11 @@ class Paciente:
     def agregar_cita(self, cita: Cita):
         """Agrega una cita al paciente"""
         self.citas.append(cita)
+    
+    # ==========================================
+    # MÉTODOS DE CÁLCULO FINANCIERO
+    # PROPÓSITO: Calcular costos y balances del paciente
+    # ==========================================
     
     def calcular_total_tratamientos(self) -> float:
         """Calcula el costo total de todos los tratamientos"""
@@ -43,6 +62,11 @@ class Paciente:
     def get_balance_total(self) -> float:
         """Calcula el balance total del paciente"""
         return self.calcular_total_tratamientos() + self.calcular_total_citas() + self.saldo_pendiente
+    
+    # ==========================================
+    # MÉTODOS ESPECIALES
+    # PROPÓSITO: Representación en cadena del objeto
+    # ==========================================
     
     def __str__(self):
         return f"Paciente: {self.nombre} {self.apellido} - DUI: {self.dui}"

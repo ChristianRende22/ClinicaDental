@@ -3,6 +3,10 @@ import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# ==========================================
+# IMPORTACIONES: Clases del modelo y librerías necesarias
+# ==========================================
+
 from Modelos.PacienteModelo import Paciente
 from Modelos.CitaModelo import Cita
 from Modelos.TratamientoModelo import Tratamiento
@@ -10,9 +14,10 @@ from datetime import datetime
 from typing import List
 import re
 
-
-
-
+# ==========================================
+# CLASE: PacienteControlador
+# PROPÓSITO: Controlador para manejar la lógica de negocio de los pacientes
+# ==========================================
 
 class PacienteControlador:
     """Controlador para manejar la lógica de negocio de los pacientes"""
@@ -20,6 +25,11 @@ class PacienteControlador:
     def __init__(self):
         self.pacientes_registrados: List[Paciente] = []
         self.paciente_actual: Paciente = None
+    
+    # ==========================================
+    # MÉTODOS DE VALIDACIÓN
+    # PROPÓSITO: Validar datos de entrada para pacientes
+    # ==========================================
     
     def validar_email(self, email: str) -> bool:
         """Valida el formato del email"""
@@ -35,6 +45,11 @@ class PacienteControlador:
         """Valida que el teléfono tenga al menos 8 dígitos"""
         return telefono.isdigit() and len(telefono) >= 8
     
+    # ==========================================
+    # MÉTODOS DE BÚSQUEDA Y VERIFICACIÓN
+    # PROPÓSITO: Buscar y verificar existencia de pacientes
+    # ==========================================
+    
     def existe_paciente_con_dui(self, dui: str) -> bool:
         """Verifica si ya existe un paciente con el DUI dado"""
         return any(paciente.dui == dui for paciente in self.pacientes_registrados)
@@ -45,6 +60,11 @@ class PacienteControlador:
             if paciente.dui == dui:
                 return paciente
         return None
+    
+    # ==========================================
+    # MÉTODOS DE GESTIÓN DE PACIENTES
+    # PROPÓSITO: Crear y gestionar pacientes
+    # ==========================================
     
     def crear_paciente(self, nombre: str, apellido: str, fecha_nacimiento: datetime, dui: str, 
                       telefono: int, correo: str, saldo_pendiente: float = 0.0) -> tuple[bool, str]:
@@ -87,6 +107,11 @@ class PacienteControlador:
         
         return True, f"Paciente {nombre} {apellido} creado exitosamente"
     
+    # ==========================================
+    # MÉTODOS DE GESTIÓN DE TRATAMIENTOS Y CITAS
+    # PROPÓSITO: Agregar tratamientos y citas a pacientes
+    # ==========================================
+    
     def agregar_tratamiento_a_paciente(self, tratamiento: Tratamiento) -> bool:
         """Agrega un tratamiento al paciente actual"""
         if self.paciente_actual:
@@ -101,6 +126,11 @@ class PacienteControlador:
             return True
         return False
     
+    # ==========================================
+    # MÉTODOS DE CONSULTA
+    # PROPÓSITO: Obtener información de pacientes
+    # ==========================================
+    
     def get_paciente_actual(self) -> Paciente:
         """Retorna el paciente actual"""
         return self.paciente_actual
@@ -108,6 +138,11 @@ class PacienteControlador:
     def get_todos_los_pacientes(self) -> List[Paciente]:
         """Retorna la lista de todos los pacientes registrados"""
         return self.pacientes_registrados
+    
+    # ==========================================
+    # MÉTODOS DE FORMATEO Y UTILIDADES
+    # PROPÓSITO: Formatear datos para presentación
+    # ==========================================
     
     def formatear_telefono(self, telefono: int) -> str:
         """Formatea el número de teléfono para mejor presentación"""
@@ -134,6 +169,11 @@ class PacienteControlador:
             return "🔄"
         else:
             return "📋"
+    
+    # ==========================================
+    # MÉTODOS DE CÁLCULO
+    # PROPÓSITO: Realizar cálculos relacionados con pacientes
+    # ==========================================
     
     def calcular_edad(self, fecha_nacimiento):
         """Calcula la edad a partir de la fecha de nacimiento"""
