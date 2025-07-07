@@ -242,7 +242,7 @@ class CitaWindow(QMainWindow):
         self.costo_edit.setValidator(costo_validator)
 
         self.estado_combo = QComboBox()
-        self.estado_combo.addItems(["Pendiente", "Confirmada", "Cancelada", "Asistida", "No asistió"])
+        self.estado_combo.addItems(["Pendiente", "Confirmada", "Cancelada", "Asistida", "Ausente"])
 
         info_layout.addRow("ID Cita:", self.id_edit)
         info_layout.addRow("Paciente:", self.paciente_combo)
