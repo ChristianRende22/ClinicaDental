@@ -9,7 +9,7 @@ CREATE TABLE ClinicaDental.Paciente (
 	Fecha_Nacimiento DATE NOT NULL,
 	DUI varchar(10) UNIQUE, -- ESTO PUEDE SER NULL, POR LOS PACIENTES QUE SON MENORES DE EDAD
 	Telefono CHAR(8),
-	Correo VARCHAR(25) NOT NULL UNIQUE
+	Correo VARCHAR(25)
 );
 
 -- Tabla: historial médico
@@ -24,7 +24,7 @@ CREATE TABLE ClinicaDental.Historial_Medico (
 
 -- Tabla: Doctor
 CREATE TABLE ClinicaDental.Doctor (
-	ID_Doctor INTEGER auto_increment PRIMARY KEY,
+	ID_Doctor varchar(50) PRIMARY KEY,
 	Nombre varchar(50) NOT NULL,
 	Apellido varchar(50) NOT NULL,
 	Especialidad varchar(50) NOT NULL,
@@ -37,10 +37,9 @@ CREATE TABLE ClinicaDental.Doctor (
 CREATE TABLE ClinicaDental.Horario (
 	ID_Horario INTEGER auto_increment PRIMARY KEY,
 	ID_Doctor INTEGER NOT NULL,
-	Dia DATE NOT NULL,
+	Fecha DATE NOT NULL,
 	Hora_Inicio TIME NOT NULL,
 	Hora_Fin TIME NOT NULL,
-	Disponible BOOL DEFAULT TRUE,
 	FOREIGN KEY (ID_Doctor) REFERENCES Doctor(ID_Doctor) ON DELETE CASCADE
 );
 
@@ -49,8 +48,11 @@ CREATE TABLE ClinicaDental.Cita (
 	ID_Cita INTEGER auto_increment PRIMARY KEY,
 	ID_Paciente INTEGER NOT NULL,
 	ID_Doctor INTEGER NOT NULL,
+	ID_Tratamiento INTEGER NOT NULL,
 	Fecha DATETIME NOT NULL,
-	Estado ENUM('Pendiente', 'Confirmada', 'Cancelada') DEFAULT 'Pendiente',
+	Hora_Inicio TIME NOT NULL,
+	Hora_Fin TIME NOT NULL,
+	Estado ENUM('Pendiente', 'Confirmada', 'Cancelada', 'Ausente', 'Asistida') DEFAULT 'Pendiente',
 	Costo DECIMAL(10,2) NOT NULL,
 	FOREIGN KEY (ID_Paciente) REFERENCES Paciente(ID_Paciente) ON DELETE CASCADE,
 	FOREIGN KEY (ID_Doctor) REFERENCES Doctor(ID_Doctor) ON DELETE CASCADE
@@ -59,12 +61,11 @@ CREATE TABLE ClinicaDental.Cita (
 -- Tabla: Tratamiento
 CREATE TABLE ClinicaDental.Tratamiento (
 	ID_Tratamiento INTEGER auto_increment PRIMARY KEY,
-	ID_Paciente INTEGER NOT NULL,
 	ID_Doctor INTEGER NOT NULL,
 	Descripcion TEXT NOT NULL,
 	Costo DECIMAL(10,2) NOT NULL,
 	Fecha DATETIME NOT NULL,
-	Estado ENUM('Pendiente', 'En_Progreso', 'Finalizado') DEFAULT 'Pendiente',
+	Estado ENUM('Pendiente', 'En Progreso', 'Finalizado') DEFAULT 'Pendiente',
 	FOREIGN KEY (ID_Paciente) REFERENCES Paciente(ID_Paciente) ON DELETE CASCADE,
 	FOREIGN KEY (ID_Doctor) REFERENCES Doctor(ID_Doctor) ON DELETE CASCADE
 );
