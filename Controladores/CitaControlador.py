@@ -9,6 +9,9 @@ from typing import List
 from Modelos.PacienteModelo import Paciente
 from Modelos.DoctorModelo import Doctor
 from Modelos.CitaModelo import Cita
+from Vistas.FacturaVista import FacturacionView
+
+# ...existing imports...
 
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from PyQt6.QtCore import QDateTime
@@ -261,7 +264,7 @@ class ControladorCita:
         QMessageBox.warning(self.vista, "❌ Error", "No se encontró la cita.")
 
     def calcular_monto(self):
-        """Calcula el monto a pagar según el tipo de consulta y tratamiento"""
+        """Calcula el monto a pagar según el tipo de consulta y tratamiento y abre la vista de factura"""
         self.vista.resultado_text.clear()
         self.listar_citas()  
 
@@ -274,13 +277,58 @@ class ControladorCita:
                 costo_cita = cita.costo_cita
                 costo_tratamiento = getattr(cita, 'tratamiento', {}).get('costo', 0)
                 total = costo_cita + costo_tratamiento
+                
+                # Mostrar el cálculo en el área de resultados
                 self.vista.resultado_text.append(
                     f"Monto a pagar para la cita {cita.id_cita}:\n"
                     f"Consulta: ${costo_cita:.2f}\n"
                     f"Tratamiento: ${costo_tratamiento:.2f}\n"
                     f"Total: ${total:.2f}\n"
                 )
-                QMessageBox.information(self.vista, "Monto a Pagar", f"Total a pagar: ${total:.2f}")
+                
+                # Mostrar mensaje con el total
+                respuesta = QMessageBox.question(
+                    self.vista, 
+                    "💰 Monto Calculado", 
+                    f"Total a pagar: ${total:.2f}\n\n¿Desea generar una factura?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                
+                # Si el usuario acepta, abrir la vista de factura
+                if respuesta == QMessageBox.StandardButton.Yes:
+                    try:
+                        # Crear y mostrar la ventana de facturación
+                        self.factura_window = FacturacionView()
+                        
+                        # Pre-cargar datos de la cita en la factura
+                        self.factura_window.cargar_pacientes([cita.paciente])
+                        
+                        # Pre-llenar algunos campos
+                        fecha_actual = datetime.now().strftime('%d/%m/%Y')
+                        self.factura_window.fecha_edit.setText(fecha_actual)
+                        
+                        # Crear descripción del servicio
+                        descripcion_servicio = f"Consulta médica"
+                        if hasattr(cita, 'tratamiento') and cita.tratamiento:
+                            descripcion_servicio += f", {cita.tratamiento.get('descripcion', 'Tratamiento')}"
+                        
+                        self.factura_window.servicio_edit.setText(descripcion_servicio)
+                        self.factura_window.monto_edit.setText(f"{costo_cita}, {costo_tratamiento}")
+                        
+                        # Generar ID de factura automático
+                        id_factura = f"FAC-{cita.id_cita}-{datetime.now().strftime('%Y%m%d')}"
+                        self.factura_window.id_factura_edit.setText(id_factura)
+                        
+                        # Mostrar la ventana
+                        self.factura_window.show()
+                        
+                        # Mensaje en el área de resultados
+                        self.vista.resultado_text.append(f"🧾 Ventana de facturación abierta para la cita {cita.id_cita}")
+                        
+                    except Exception as e:
+                        QMessageBox.critical(self.vista, "❌ Error", 
+                                           f"Error al abrir la ventana de facturación: {str(e)}")
+                
                 return
         
         QMessageBox.warning(self.vista, "❌ Error", "No se encontró la cita.")
