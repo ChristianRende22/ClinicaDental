@@ -15,9 +15,10 @@ class Horario:
         status = "✅ Disponible" if self.disponible else "❌ Ocupado" 
         return (f"🆔 ID Horario: {self.id_horario}\n"
                 f"📅 Día: {self.dia} | ⏰ {self.hora_inicio} - {self.hora_fin}\n"
-                f"👨‍⚕️ Médico: {self.doctor.nombre} {self.doctor.apellido}\n" # Acceder a nombre y apellido del doctor de la clase de mi chera
+                f"👨‍⚕️ Médico: {self.doctor.nombre} {self.doctor.apellido}\n" # Acceder a nombre y apellido del doctor
                 f" {status}\n"
                 )
+    
     def horario_ocupado(self, otro_horario):
         # Usaré 'dui'
         if self.doctor.dui != otro_horario.doctor.dui or self.dia != otro_horario.dia:
@@ -38,12 +39,10 @@ class HorarioModel:
     def __init__(self):
         self.horarios: List[Horario] = []
         self.doctores: List[Doctor] = [] 
-    
     def agregar_horario(self, nuevo_horario: Horario):
         """Agrega un nuevo horario a la colección."""
         self.horarios.append(nuevo_horario)
         return nuevo_horario
-    
     def eliminar_horario(self, id_horario: str):
         """Elimina un horario por ID."""
         horario_eliminado = None
@@ -55,11 +54,9 @@ class HorarioModel:
             self.horarios.remove(horario_eliminado)
             return True
         return False
-        
     def obtener_horarios(self):
         """Retorna todos los horarios."""
         return self.horarios.copy()
-    
     def obtener_horarios_agrupados_por_dia(self):
         """Retorna horarios agrupados por día."""
         horarios_por_dia = {}
