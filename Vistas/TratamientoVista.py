@@ -20,7 +20,7 @@ class AgregarTratamientoDialog(QDialog):
         self.controlador = TratamientoControlador(self)
 
         self.setWindowTitle("🩺 Agregar Tratamiento")
-        self.resize(600, 700)
+        self.resize(500, 500)
         
         self.setStyleSheet("""
             QDialog { 
@@ -131,9 +131,10 @@ class AgregarTratamientoDialog(QDialog):
         form.addRow("Descripción:", self.descripcion_edit)
 
         # Fecha con calendario
-        self.fecha_edit = QCalendarWidget()
-        self.fecha_edit.setGridVisible(True)
-        self.fecha_edit.setSelectedDate(QDate.currentDate())
+        self.fecha_edit = QDateEdit()
+        self.fecha_edit.setCalendarPopup(True)
+        self.fecha_edit.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_edit.setDate(QDate.currentDate())
         form.addRow("Fecha:", self.fecha_edit)
 
         # Estado (enum)
