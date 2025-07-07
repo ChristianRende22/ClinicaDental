@@ -202,7 +202,7 @@ class AgregarTratamientoDialog(QDialog):
         except ValueError:
             costo = 0
             
-        fecha = self.fecha_edit.selectedDate()
+        fecha = self.fecha_edit.date()
         estado = self.estado_combo.currentText()
         carnet_doctor = self.doctor_carnet_edit.text().strip()
         self.verificar_doctor()
