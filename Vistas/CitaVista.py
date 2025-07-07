@@ -136,18 +136,6 @@ class CitaWindow(QMainWindow):
                 border-color: {self.colors['accent']};
                 background-color: {self.colors['surface']};
             }}
-            
-            # Diseño del dropdown
-                        QComboBox {{
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                border: 2px solid {self.colors['secondary']};
-                border-radius: 6px;
-                padding: 10px;
-                background-color: {self.colors['surface']};
-                color: {self.colors['text_light']};
-                selection-background-color: {self.colors['accent']};
-            }}
 
             QComboBox:focus {{
                 border-color: {self.colors['accent']};
@@ -273,7 +261,7 @@ class CitaWindow(QMainWindow):
         buttons_row1 = QHBoxLayout()
         self.crear_btn = QPushButton("➕ Crear Cita")
         self.cancelar_btn = QPushButton("❌ Cancelar Cita")
-        self.modificar_btn = QPushButton("✏️ Modificar Cita")
+        self.modificar_btn = QPushButton("✏ Modificar Cita")
 
         buttons_row1.addWidget(self.crear_btn)
         buttons_row1.addWidget(self.cancelar_btn)
@@ -418,5 +406,5 @@ def main():
     window.show()
     app.exec()
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     main()
