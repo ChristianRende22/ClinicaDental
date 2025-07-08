@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QFont
 from datetime import datetime
 import os
@@ -9,545 +9,13 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # ==========================================
-# IMPORTACIONES: Clases del modelo y controladores
+# IMPORTACIONES: Clases del modelo y controladores (MVC CORRECTO)
 # ==========================================
-
 
 from Controladores.PacienteControlador import PacienteControlador
-from CitaVista import CitaWindow
-from TratamientoVista import AgregarTratamientoDialog  
-
-from PyQt6.QtWidgets import QDateEdit
-from PyQt6.QtCore import QDate
+from Modelos.PacienteModelo import Paciente
 
 
-# ==========================================
-# CLASE: VentanaInfoPaciente
-# PROPÓSITO: Ventana  para mostrar información detallada del paciente
-# ==========================================
-class VentanaInfoPaciente(QDialog):
-    def __init__(self, paciente, controlador, parent=None):
-        super().__init__(parent)
-        self.paciente = paciente
-        self.controlador = controlador
-        self.setWindowTitle(f"📋 Información de {paciente.nombre} {paciente.apellido}")
-        self.setModal(True)
-        self.resize(800, 600)
-        
-        # Aplicar el mismo estilo que la ventana principal
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: #f7f8fa;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                color: #2c3e50;
-            }}
-            
-            QLabel {{
-                color: #2c3e50;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            
-            QTextEdit {{
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 13px;
-                border: 2px solid #756f9f;
-                border-radius: 8px;
-                background-color: #ffffff;
-                color: #2c3e50;
-                padding: 15px;
-                selection-background-color: #10b8b9;
-            }}
-            
-            QTextEdit:focus {{
-                border-color: #10b8b9;
-            }}
-            
-            QDateEdit::drop-down {{
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 25px;
-                border-left: 1px solid #756f9f;
-                background-color: #756f9f;
-                border-radius: 3px;
-            }}
-            
-            QDateEdit::drop-down:hover {{
-                background-color: #10b8b9;
-            }}
-            
-            QDateEdit::down-arrow {{
-                image: none;
-                border: 2px solid #ffffff;
-                width: 6px;
-                height: 6px;
-                border-top: none;
-                border-left: none;
-                margin-top: -2px;
-                transform: rotate(45deg);
-            }}
-            
-            QCalendarWidget {{
-                background-color: #ffffff;
-                color: #2c3e50;
-                border: 3px solid #756f9f;
-                border-radius: 12px;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                padding: 10px;
-                selection-background-color: #10b8b9;
-                alternate-background-color: #f8f9fa;
-            }}
-            
-            QCalendarWidget QWidget#qt_calendar_navigationbar {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                padding: 5px;
-            }}
-            
-            QCalendarWidget QToolButton {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 12px;
-                margin: 2px;
-                font-weight: bold;
-                font-size: 13px;
-                min-width: 30px;
-                min-height: 30px;
-            }}
-            
-            QCalendarWidget QToolButton:hover {{
-                background-color: #10b8b9;
-                transform: scale(1.05);
-            }}
-            
-            QCalendarWidget QToolButton:pressed {{
-                background-color: #130760;
-                transform: scale(0.95);
-            }}
-            
-            QCalendarWidget QToolButton#qt_calendar_prevmonth {{
-                qproperty-text: "◀";
-                font-size: 16px;
-                font-weight: bold;
-            }}
-            
-            QCalendarWidget QToolButton#qt_calendar_nextmonth {{
-                qproperty-text: "▶";
-                font-size: 16px;
-                font-weight: bold;
-            }}
-            
-            QCalendarWidget QMenu {{
-                background-color: #ffffff;
-                color: #2c3e50;
-                border: 2px solid #756f9f;
-                border-radius: 8px;
-                padding: 5px;
-            }}
-            
-            QCalendarWidget QMenu::item {{
-                background-color: transparent;
-                padding: 8px 12px;
-                border-radius: 4px;
-            }}
-            
-            QCalendarWidget QMenu::item:selected {{
-                background-color: #10b8b9;
-                color: #ffffff;
-            }}
-            
-            QCalendarWidget QSpinBox {{
-                background-color: #ffffff;
-                color: #2c3e50;
-                border: 2px solid #756f9f;
-                border-radius: 6px;
-                padding: 6px;
-                font-weight: bold;
-                font-size: 13px;
-                min-width: 80px;
-                selection-background-color: #10b8b9;
-            }}
-            
-            QCalendarWidget QSpinBox:focus {{
-                border-color: #10b8b9;
-                background-color: #f8f9fa;
-            }}
-            
-            QCalendarWidget QSpinBox::up-button {{
-                subcontrol-origin: border;
-                subcontrol-position: top right;
-                width: 20px;
-                border-left: 1px solid #756f9f;
-                background-color: #756f9f;
-                border-top-right-radius: 4px;
-            }}
-            
-            QCalendarWidget QSpinBox::up-button:hover {{
-                background-color: #10b8b9;
-            }}
-            
-            QCalendarWidget QSpinBox::down-button {{
-                subcontrol-origin: border;
-                subcontrol-position: bottom right;
-                width: 20px;
-                border-left: 1px solid #756f9f;
-                background-color: #756f9f;
-                border-bottom-right-radius: 4px;
-            }}
-            
-            QCalendarWidget QSpinBox::down-button:hover {{
-                background-color: #10b8b9;
-            }}
-            
-            QCalendarWidget QSpinBox::up-arrow {{
-                image: none;
-                border: 2px solid #ffffff;
-                width: 4px;
-                height: 4px;
-                border-bottom: none;
-                border-right: none;
-                margin: 2px;
-                transform: rotate(45deg);
-            }}
-            
-            QCalendarWidget QSpinBox::down-arrow {{
-                image: none;
-                border: 2px solid #ffffff;
-                width: 4px;
-                height: 4px;
-                border-top: none;
-                border-left: none;
-                margin: 2px;
-                transform: rotate(45deg);
-            }}
-            
-            QCalendarWidget QAbstractItemView {{
-                background-color: #ffffff;
-                color: #2c3e50;
-                selection-background-color: #10b8b9;
-                selection-color: #ffffff;
-                border: none;
-                outline: none;
-                gridline-color: #e1e8ed;
-                font-size: 13px;
-                font-weight: 500;
-            }}
-            
-            QCalendarWidget QAbstractItemView:enabled {{
-                color: #2c3e50;
-                background-color: #ffffff;
-            }}
-            
-            QCalendarWidget QAbstractItemView:disabled {{
-                color: #bdc3c7;
-                background-color: #f8f9fa;
-            }}
-            
-            QCalendarWidget QAbstractItemView::item {{
-                padding: 8px;
-                border-radius: 6px;
-                margin: 1px;
-            }}
-            
-            QCalendarWidget QAbstractItemView::item:hover {{
-                background-color: #e8f4fd;
-                color: #2c3e50;
-                border: 1px solid #10b8b9;
-            }}
-            
-            QCalendarWidget QAbstractItemView::item:selected {{
-                background-color: #10b8b9;
-                color: #ffffff;
-                font-weight: bold;
-                border: 2px solid #0d9a9b;
-            }}
-            
-            QCalendarWidget QHeaderView::section {{
-                background-color: #756f9f;
-                color: #ffffff;
-                border: none;
-                padding: 10px;
-                font-weight: bold;
-                font-size: 12px;
-                border-radius: 4px;
-                margin: 1px;
-            }}
-            
-            QCalendarWidget QTableView {{
-                gridline-color: #e1e8ed;
-                background-color: #ffffff;
-                alternate-background-color: #f8f9fa;
-                border-radius: 8px;
-            }}
-            
-            QCalendarWidget QTableView::item {{
-                border: 1px solid transparent;
-                padding: 6px;
-            }}
-            
-            QCalendarWidget QTableView::item:hover {{
-                background-color: #e8f4fd;
-                border: 1px solid #10b8b9;
-                border-radius: 4px;
-            }}
-            
-            QCalendarWidget QTableView::item:selected {{
-                background-color: #10b8b9;
-                color: #ffffff;
-                border: 2px solid #0d9a9b;
-                border-radius: 4px;
-                font-weight: bold;
-            }}
-            
-            QPushButton {{
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                font-weight: bold;
-                color: #ffffff;
-                background-color: #756f9f;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 15px;
-            }}
-            
-            QPushButton:hover {{
-                background-color: #10b8b9;
-            }}
-        """)
-        
-        self.init_ui()
-    
-    def init_ui(self):
-        layout = QVBoxLayout()
-        
-        # Título de la ventana
-        titulo = QLabel(f"👤 Información Completa del Paciente")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        titulo.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        titulo.setStyleSheet("""
-            QLabel {
-                color: #10b8b9;
-                background-color: #ffffff;
-                border: 2px solid #10b8b9;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 10px;
-            }
-        """)
-        layout.addWidget(titulo)
-        
-        # Área de texto para mostrar la información
-        self.info_text = QTextEdit()
-        self.info_text.setReadOnly(True)
-        self.info_text.setFont(QFont("Consolas", 13))
-        
-        # Generar y mostrar la información del paciente
-        info_completa = self._generar_info_detallada()
-        self.info_text.setText(info_completa)
-        
-        layout.addWidget(self.info_text)
-        
-        # Botones de acción
-        botones_layout = QHBoxLayout()
-        
-        cerrar_btn = QPushButton("❌ Cerrar")
-        cerrar_btn.clicked.connect(self.reject)
-        
-        seleccionar_btn = QPushButton("✅ Seleccionar Paciente")
-        seleccionar_btn.clicked.connect(self.seleccionar_paciente)
-        seleccionar_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10b8b9;
-            }
-            QPushButton:hover {
-                background-color: #0d9a9b;
-            }
-        """)
-        
-        historial_btn = QPushButton("📋 Ver Historial Completo")
-        historial_btn.clicked.connect(self.mostrar_historial_completo)
-        
-        botones_layout.addWidget(historial_btn)
-        botones_layout.addWidget(seleccionar_btn)
-        botones_layout.addWidget(cerrar_btn)
-        
-        layout.addLayout(botones_layout)
-        self.setLayout(layout)
-    
-    def _generar_info_detallada(self):
-        """Genera información detallada del paciente"""
-        edad = self.controlador.calcular_edad(self.paciente.fecha_nacimiento)
-        dui_label = "DUI del Responsable" if edad < 18 else "DUI"
-        edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else " (Mayor de edad)")
-        
-        separador = "=" * 70
-        info = f"""
-{separador}
-🏥 INFORMACIÓN DETALLADA DEL PACIENTE - CLÍNICA DENTAL
-{separador}
-
-👤 DATOS PERSONALES:
-   ▪ Nombre Completo: {self.paciente.nombre} {self.paciente.apellido}
-   ▪ Edad: {edad_info}
-   ▪ Fecha de Nacimiento: {self.paciente.fecha_nacimiento.strftime('%d/%m/%Y')}
-   ▪ {dui_label}: {self.paciente.dui}
-   ▪ Teléfono: {self.controlador.formatear_telefono(self.paciente.telefono)}
-   ▪ Correo Electrónico: {self.paciente.correo if self.paciente.correo else 'No especificado'}
-   ▪ Fecha de Registro: {self.paciente.fecha_registro}
-
-💰 INFORMACIÓN FINANCIERA:
-   ▪ Saldo Pendiente: ${self.paciente.saldo_pendiente:,.2f}
-   ▪ Estado de Pago: {'🔴 Pendiente de pago' if self.paciente.saldo_pendiente > 0 else '🟢 Al día'}
-
-📊 RESUMEN MÉDICO:
-   ▪ Tratamientos Realizados: {len(self.paciente.historial_medico)}
-   ▪ Citas Agendadas: {len(self.paciente.citas)}
-   ▪ Costo Total Tratamientos: ${self.paciente.calcular_total_tratamientos():,.2f}
-   ▪ Costo Total Citas: ${self.paciente.calcular_total_citas():,.2f}
-   ▪ Balance Total: ${self.paciente.get_balance_total():,.2f}
-
-🩺 ÚLTIMOS TRATAMIENTOS:
-"""
-        
-        if not self.paciente.historial_medico:
-            info += "   📝 No hay tratamientos registrados.\n"
-        else:
-            for i, tratamiento in enumerate(self.paciente.historial_medico[-3:], 1):  # Últimos 3
-                estado_icon = self.controlador.get_estado_icon(tratamiento.estado)
-                info += f"""   {i}. {tratamiento.descripcion}
-      💵 ${tratamiento.costo:,.2f} | 📅 {tratamiento.fecha_realizacion}
-      {estado_icon} {tratamiento.estado} | 👨‍⚕️ Dr. {tratamiento.doctor.nombre} {tratamiento.doctor.apellido}
-"""
-        
-        info += f"""
-📅 PRÓXIMAS CITAS:
-"""
-        
-        if not self.paciente.citas:
-            info += "   📝 No hay citas programadas.\n"
-        else:
-            for i, cita in enumerate(self.paciente.citas[-3:], 1):  # Últimas 3
-                estado_icon = self.controlador.get_estado_icon(cita.estado)
-                info += f"""   {i}. ID: {cita.id_cita}
-      ⏰ {cita.hora_inicio} - {cita.hora_fin}
-      💵 ${cita.costo_cita:,.2f} | {estado_icon} {cita.estado}
-      👨‍⚕️ Dr. {cita.doctor.nombre} {cita.doctor.apellido}
-"""
-        
-        info += f"""
-⏰ Consulta realizada: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
-
-💡 OPCIONES DISPONIBLES:
-   • Seleccionar Paciente: Establecer como paciente actual para trabajar
-   • Ver Historial Completo: Mostrar todos los tratamientos y citas
-   • Cerrar: Volver a la ventana principal
-
-{separador}
-"""
-        return info
-    
-    def seleccionar_paciente(self):
-        """Selecciona este paciente como el actual en el controlador"""
-        self.controlador.paciente_actual = self.paciente
-        QMessageBox.information(self, "✅ Paciente Seleccionado", 
-                              f"Paciente {self.paciente.nombre} {self.paciente.apellido} "
-                              f"ha sido seleccionado como paciente actual.\n\n"
-                              f"Ahora puede usar todas las funciones (agregar tratamientos, "
-                              f"citas, consultar historial, etc.) con este paciente.")
-        self.accept()
-    
-    def mostrar_historial_completo(self):
-        """Muestra el historial completo del paciente"""
-        historial = self._generar_historial_completo()
-        self.info_text.setText(historial)
-    
-    def _generar_historial_completo(self):
-        """Genera el historial médico completo del paciente"""
-        edad = self.controlador.calcular_edad(self.paciente.fecha_nacimiento)
-        edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else "")
-        
-        separador_principal = "=" * 70
-        separador_seccion = "-" * 50
-        
-        historial = f"""
-{separador_principal}
-📋 HISTORIAL MÉDICO COMPLETO
-{separador_principal}
-
-👤 Paciente: {self.paciente.nombre} {self.paciente.apellido} - {edad_info}
-📅 Fecha de Consulta: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
-
-{separador_seccion}
-🩺 TODOS LOS TRATAMIENTOS ({len(self.paciente.historial_medico)})
-{separador_seccion}
-"""
-        
-        if not self.paciente.historial_medico:
-            historial += "\n   📝 No hay tratamientos registrados en el historial.\n"
-        else:
-            for i, tratamiento in enumerate(self.paciente.historial_medico, 1):
-                estado_icon = self.controlador.get_estado_icon(tratamiento.estado)
-                historial += f"""
-   ┌─ Tratamiento #{i:02d}
-   │ 🆔 ID: {tratamiento.id_tratamiento}
-   │ 📄 Descripción: {tratamiento.descripcion}
-   │ 💵 Costo: ${tratamiento.costo:,.2f}
-   │ 📅 Fecha: {tratamiento.fecha_realizacion}
-   │ {estado_icon} Estado: {tratamiento.estado}
-   │ 👨‍⚕️ Doctor: Dr. {tratamiento.doctor.nombre} {tratamiento.doctor.apellido}
-   └─────────────────────────────────────────────────
-"""
-        
-        historial += f"""
-{separador_seccion}
-📅 TODAS LAS CITAS ({len(self.paciente.citas)})
-{separador_seccion}
-"""
-        
-        if not self.paciente.citas:
-            historial += "\n   📝 No hay citas programadas.\n"
-        else:
-            for i, cita in enumerate(self.paciente.citas, 1):
-                estado_icon = self.controlador.get_estado_icon(cita.estado)
-                historial += f"""
-   ┌─ Cita #{i:02d}
-   │ 🆔 ID: {cita.id_cita}
-   │ ⏰ Inicio: {cita.hora_inicio}
-   │ ⏰ Fin: {cita.hora_fin}
-   │ 💵 Costo: ${cita.costo_cita:,.2f}
-   │ {estado_icon} Estado: {cita.estado}
-   │ 👨‍⚕️ Doctor: Dr. {cita.doctor.nombre} {cita.doctor.apellido}
-   └─────────────────────────────────────────────────
-"""
-        
-        # Resumen financiero
-        total_tratamientos = self.paciente.calcular_total_tratamientos()
-        total_citas = self.paciente.calcular_total_citas()
-        total_general = total_tratamientos + total_citas
-        
-        historial += f"""
-{separador_seccion}
-💰 RESUMEN FINANCIERO DETALLADO
-{separador_seccion}
-
-   📊 Estadísticas Completas:
-   ▪ Total de Tratamientos: {len(self.paciente.historial_medico)} - ${total_tratamientos:,.2f}
-   ▪ Total de Citas: {len(self.paciente.citas)} - ${total_citas:,.2f}
-   ▪ Subtotal General: ${total_general:,.2f}
-   ▪ Saldo Pendiente: ${self.paciente.saldo_pendiente:,.2f}
-   
-   💳 Balance Final: ${self.paciente.get_balance_total():,.2f}
-
-{separador_principal}
-"""
-        return historial
 
 # ==========================================
 # CLASE PRINCIPAL: PacienteWindow
@@ -576,7 +44,7 @@ class PacienteWindow(QMainWindow):
         self.setStyleSheet(f"""
             QMainWindow {{
                 background-color: {self.colors['background']};
-                font-family: 'Segoe UI';
+                font-family: Segoe UI, Arial, sans-serif;
                 font-size: 14px;
                 color: {self.colors['text_dark']};
             }}
@@ -588,12 +56,12 @@ class PacienteWindow(QMainWindow):
             QLabel {{
                 color: {self.colors['text_light']};
                 background-color: {self.colors['surface']};
-                font-family: 'Segoe UI';
+                font-family: Segoe UI, Arial, sans-serif;
                 font-size: 14px;
             }}
             
             QGroupBox {{
-                font-family: 'Segoe UI';
+                font-family: Segoe UI, Arial, sans-serif;
                 font-size: 14px;
                 font-weight: bold;
                 color: {self.colors['text_light']};
@@ -613,7 +81,7 @@ class PacienteWindow(QMainWindow):
             }}
             
             QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit {{
-                font-family: 'Segoe UI';
+                font-family: Segoe UI, Arial, sans-serif;
                 font-size: 14px;
                 border: 2px solid {self.colors['secondary']};
                 border-radius: 6px;
@@ -649,7 +117,6 @@ class PacienteWindow(QMainWindow):
                 border-top: none;
                 border-left: none;
                 margin-top: -2px;
-                transform: rotate(45deg);
             }}
             
             QCalendarWidget {{
@@ -657,7 +124,7 @@ class PacienteWindow(QMainWindow):
                 color: #2c3e50;
                 border: 3px solid #756f9f;
                 border-radius: 12px;
-                font-family: 'Segoe UI';
+                font-family: Segoe UI, Arial, sans-serif;
                 font-size: 14px;
                 padding: 10px;
                 selection-background-color: #10b8b9;
@@ -687,12 +154,10 @@ class PacienteWindow(QMainWindow):
             
             QCalendarWidget QToolButton:hover {{
                 background-color: #10b8b9;
-                transform: scale(1.05);
             }}
             
             QCalendarWidget QToolButton:pressed {{
                 background-color: #130760;
-                transform: scale(0.95);
             }}
             
             QCalendarWidget QToolButton#qt_calendar_prevmonth {{
@@ -777,7 +242,6 @@ class PacienteWindow(QMainWindow):
                 border-bottom: none;
                 border-right: none;
                 margin: 2px;
-                transform: rotate(45deg);
             }}
             
             QCalendarWidget QSpinBox::down-arrow {{
@@ -788,7 +252,6 @@ class PacienteWindow(QMainWindow):
                 border-top: none;
                 border-left: none;
                 margin: 2px;
-                transform: rotate(45deg);
             }}
             
             QCalendarWidget QAbstractItemView {{
@@ -870,7 +333,7 @@ class PacienteWindow(QMainWindow):
             }}
             
             QPushButton {{
-                font-family: 'Segoe UI';
+                font-family: Segoe UI, Arial, sans-serif;
                 font-size: 14px;
                 font-weight: bold;
                 color: #ffffff;
@@ -904,7 +367,7 @@ class PacienteWindow(QMainWindow):
         # Título con estilo mejorado
         title = QLabel("🏥 Sistema de Gestión de Pacientes")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setFont(QFont("Arial", 16, QFont.Weight.Bold))
         title.setStyleSheet(f"""
             QLabel {{
                 color: {self.colors['text_light']};
@@ -953,6 +416,122 @@ class PacienteWindow(QMainWindow):
         info_group.setLayout(info_layout)
         main_layout.addWidget(info_group)
         
+        # ==========================================
+        # GRUPO DE BÚSQUEDA DE PACIENTES
+        # ==========================================
+        busqueda_group = QGroupBox("🔍 Búsqueda de Pacientes")
+        busqueda_layout = QFormLayout()
+        
+        # Campos de búsqueda
+        self.buscar_nombre_edit = QLineEdit()
+        self.buscar_nombre_edit.setPlaceholderText("Ingrese nombre para buscar...")
+        self.buscar_nombre_edit.textChanged.connect(self.buscar_pacientes_por_nombre)
+        
+        self.buscar_apellido_edit = QLineEdit()
+        self.buscar_apellido_edit.setPlaceholderText("Ingrese apellido para buscar...")
+        self.buscar_apellido_edit.textChanged.connect(self.buscar_pacientes_por_nombre)
+        
+        # ComboBox para mostrar resultados de búsqueda
+        self.pacientes_combo = QComboBox()
+        self.pacientes_combo.setEditable(False)
+        self.pacientes_combo.currentTextChanged.connect(self.seleccionar_paciente_desde_combo)
+        
+        # Estilo para el ComboBox
+        self.pacientes_combo.setStyleSheet(f"""
+            QComboBox {{
+                font-family: Segoe UI, Arial, sans-serif;
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                min-height: 25px;
+            }}
+            
+            QComboBox:focus {{
+                border-color: {self.colors['accent']};
+                background-color: #ffffff;
+            }}
+            
+            QComboBox::drop-down {{
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 30px;
+                border-left: 2px solid {self.colors['secondary']};
+                background-color: {self.colors['secondary']};
+                border-top-right-radius: 6px;
+                border-bottom-right-radius: 6px;
+            }}
+            
+            QComboBox::drop-down:hover {{
+                background-color: {self.colors['accent']};
+            }}
+            
+            QComboBox::down-arrow {{
+                image: none;
+                border: 2px solid #ffffff;
+                width: 6px;
+                height: 6px;
+                border-top: none;
+                border-left: none;
+                margin-top: -2px;
+            }}
+            
+            QComboBox QAbstractItemView {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                selection-background-color: {self.colors['accent']};
+                selection-color: #ffffff;
+                padding: 5px;
+                font-size: 14px;
+            }}
+            
+            QComboBox QAbstractItemView::item {{
+                padding: 8px;
+                border-radius: 4px;
+                margin: 2px;
+            }}
+            
+            QComboBox QAbstractItemView::item:hover {{
+                background-color: #e8f4fd;
+                color: {self.colors['text_light']};
+            }}
+            
+            QComboBox QAbstractItemView::item:selected {{
+                background-color: {self.colors['accent']};
+                color: #ffffff;
+            }}
+        """)
+        
+        # Botón para limpiar búsqueda
+        self.limpiar_busqueda_btn = QPushButton("🧹 Limpiar Búsqueda")
+        self.limpiar_busqueda_btn.clicked.connect(self.limpiar_busqueda)
+        self.limpiar_busqueda_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.colors['secondary']};
+                font-size: 12px;
+                padding: 8px 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['accent']};
+            }}
+        """)
+        
+        busqueda_layout.addRow("🔤 Nombre:", self.buscar_nombre_edit)
+        busqueda_layout.addRow("🔤 Apellido:", self.buscar_apellido_edit)
+        busqueda_layout.addRow("📋 Pacientes Encontrados:", self.pacientes_combo)
+        busqueda_layout.addRow("", self.limpiar_busqueda_btn)
+        
+        busqueda_group.setLayout(busqueda_layout)
+        main_layout.addWidget(busqueda_group)
+        
+        # ==========================================
+        # FIN GRUPO DE BÚSQUEDA
+        # ==========================================
+        
         # Botones de acción con iconos
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
@@ -964,61 +543,43 @@ class PacienteWindow(QMainWindow):
         self.crear_btn = QPushButton("👤 Crear Paciente")
         self.crear_btn.clicked.connect(self.crear_paciente)
         
-        self.agregar_tratamiento_btn = QPushButton("🩺 Agregar Tratamiento")
-        self.agregar_tratamiento_btn.clicked.connect(self.agregar_tratamiento)
-        
-        self.agregar_cita_btn = QPushButton("📅 Agregar Cita")
-        self.agregar_cita_btn.clicked.connect(self.agregar_cita)
-        
+        # Solo botones relacionados con gestión básica de pacientes
         buttons_row1.addWidget(self.crear_btn)
-        buttons_row1.addWidget(self.agregar_tratamiento_btn)
-        buttons_row1.addWidget(self.agregar_cita_btn)
         
         # Segunda fila de botones
         buttons_row2 = QHBoxLayout()
         buttons_row2.setSpacing(10)
         
-        self.consultar_historial_btn = QPushButton("📋 Consultar Historial")
-        self.consultar_historial_btn.clicked.connect(self.consultar_historial)
+        self.ver_info_basica_btn = QPushButton("📋 Ver Info Básica")
+        self.ver_info_basica_btn.clicked.connect(self.ver_info_basica)
         
         self.mostrar_info_btn = QPushButton("ℹ️ Mostrar Info Paciente")
         self.mostrar_info_btn.clicked.connect(self.mostrar_info_paciente)
         
-        # Botón para mostrar todos los historiales
-        self.mostrar_todos_btn = QPushButton("📚 Todos los Historiales")
-        self.mostrar_todos_btn.clicked.connect(self.mostrar_todos_historiales)
+        # Botón para mostrar todos los pacientes
+        self.mostrar_todos_btn = QPushButton("📚 Todos los Pacientes")
+        self.mostrar_todos_btn.clicked.connect(self.mostrar_todos_pacientes)
         
-        buttons_row2.addWidget(self.consultar_historial_btn)
+        buttons_row2.addWidget(self.ver_info_basica_btn)
         buttons_row2.addWidget(self.mostrar_info_btn)
         buttons_row2.addWidget(self.mostrar_todos_btn)
-        
-        # Tercera fila de botones
-        buttons_row3 = QHBoxLayout()
-        buttons_row3.setSpacing(10)
-        
-        # Botón para buscar paciente por DUI
-        self.buscar_dui_btn = QPushButton("🔍 Buscar por DUI")
-        self.buscar_dui_btn.clicked.connect(self.buscar_paciente_por_dui)
-        
-        buttons_row3.addWidget(self.buscar_dui_btn)
         
         # Layout vertical para las filas de botones
         buttons_container = QVBoxLayout()
         buttons_container.addLayout(buttons_row1)
         buttons_container.addLayout(buttons_row2)
-        buttons_container.addLayout(buttons_row3)
 
         main_layout.addLayout(buttons_container)
         
         # Área de resultados con estilo mejorado y scroll bar
         resultado_label = QLabel("📊 Resultados:")
-        resultado_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        resultado_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
         resultado_label.setStyleSheet(f"color: {self.colors['accent']};")
         main_layout.addWidget(resultado_label)
         
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
-        self.resultado_text.setFont(QFont("Consolas", 13))
+        self.resultado_text.setFont(QFont("Courier New", 12))
         self.resultado_text.setPlaceholderText("Aquí aparecerán los resultados de las operaciones...")
         
         # Configurar scroll bars con estilo
@@ -1105,6 +666,9 @@ class PacienteWindow(QMainWindow):
         self.resultado_text.setMinimumHeight(200)
         
         main_layout.addWidget(self.resultado_text)
+        
+        # Inicializar el ComboBox de búsqueda
+        self.pacientes_combo.addItem("-- Seleccione un paciente --")
     
     def limpiar_campos(self):
         """Limpia todos los campos de entrada para agregar un nuevo paciente"""
@@ -1122,41 +686,74 @@ class PacienteWindow(QMainWindow):
     def crear_paciente(self):
         """Crea un nuevo paciente con los datos ingresados"""
         try:
-            nombre = self.nombre_edit.text().strip()
-            apellido = self.apellido_edit.text().strip()
+            # Obtener valores directamente sin strip() para evitar errores
+            nombre_raw = self.nombre_edit.text()
+            apellido_raw = self.apellido_edit.text()
+            
+            # Limpiar manualmente si hay valor
+            nombre = nombre_raw if isinstance(nombre_raw, str) else ""
+            apellido = apellido_raw if isinstance(apellido_raw, str) else ""
+            
+            # Limpiar espacios manualmente sin strip()
+            if nombre:
+                nombre = nombre.replace("  ", " ")  # Remover espacios dobles
+                if nombre.startswith(" "):
+                    nombre = nombre[1:]  # Quitar espacio al inicio
+                if nombre.endswith(" "):
+                    nombre = nombre[:-1]  # Quitar espacio al final
+            if apellido:
+                apellido = apellido.replace("  ", " ")  # Remover espacios dobles
+                if apellido.startswith(" "):
+                    apellido = apellido[1:]  # Quitar espacio al inicio
+                if apellido.endswith(" "):
+                    apellido = apellido[:-1]  # Quitar espacio al final
             
             # Convertir QDate a datetime
             fecha_qdate = self.edad_edit.date()
             fecha_nacimiento = datetime(fecha_qdate.year(), fecha_qdate.month(), fecha_qdate.day())
             
-            dui = self.dui_edit.text().strip()
-            telefono_str = self.telefono_edit.text().strip()
-            correo = self.correo_edit.text().strip()
+            # Obtener otros valores de forma segura
+            dui_raw = self.dui_edit.text()
+            telefono_raw = self.telefono_edit.text()
+            correo_raw = self.correo_edit.text()
+            
+            dui = dui_raw if isinstance(dui_raw, str) else ""
+            telefono_str = telefono_raw if isinstance(telefono_raw, str) else ""
+            correo = correo_raw if isinstance(correo_raw, str) else ""
+            
             saldo_pendiente = self.saldo_edit.value()
             
-            # Validación del teléfono
+            # Validación del teléfono - SIMPLIFICADO
             telefono = 0
             if telefono_str:
-                if not self.controlador.validar_telefono(telefono_str):
-                    QMessageBox.warning(self, "❌ Error de Formato", 
-                                      "El teléfono debe contener al menos 8 dígitos")
-                    return
-                telefono = int(telefono_str)
+                # Simplemente convertir a entero si hay texto
+                try:
+                    telefono_limpio = ''.join(filter(str.isdigit, telefono_str))
+                    if telefono_limpio:
+                        telefono = int(telefono_limpio)
+                except:
+                    telefono = 0
             
-            # Crear paciente usando el controlador
+            # Crear paciente usando el controlador (nuevo orden de parámetros)
             exito, mensaje = self.controlador.crear_paciente(
-                nombre, apellido, fecha_nacimiento, dui, telefono, correo, saldo_pendiente
+                nombre, apellido, fecha_nacimiento, telefono, correo, dui, saldo_pendiente
             )
             
             if exito:
-                # Mostrar mensaje de éxito
-                total_pacientes = len(self.controlador.get_todos_los_pacientes())
+                # Mostrar mensaje de éxito con información básica
+                total_pacientes = len(self.controlador.pacientes_registrados)
+                proximo_id = Paciente.get_next_id()
+                
                 QMessageBox.information(self, "✅ Éxito", 
                                       f"{mensaje}\n\n"
-                                      f"Total de pacientes registrados: {total_pacientes}")
+                                      f"📊 INFORMACIÓN DEL SISTEMA:\n"
+                                      f"• Total de pacientes: {total_pacientes}\n"
+                                      f"• Próximo ID disponible: {proximo_id}")
                 
-                # Mostrar información del paciente creado
-                self.resultado_text.setText(self._generar_info_completa())
+                # Mostrar información básica del paciente creado
+                self.resultado_text.setText(f"✅ {mensaje}\n\n"
+                                           f"📊 Pacientes registrados: {total_pacientes}\n"
+                                           f"🆔 Próximo ID: {proximo_id}")
                 
                 # Limpiar campos automáticamente para el siguiente paciente
                 self.limpiar_campos()
@@ -1165,31 +762,25 @@ class PacienteWindow(QMainWindow):
                 
         except ValueError as e:
             QMessageBox.warning(self, "❌ Error", f"Error en el formato de los datos: {str(e)}")
+        except Exception as e:
+            QMessageBox.critical(self, "❌ Error Inesperado", f"Ocurrió un error inesperado: {str(e)}")
+            print(f"Error en crear_paciente: {e}")  # Para debug
     
-    def mostrar_todos_historiales(self):
-        """Muestra todos los historiales de los pacientes registrados"""
-        pacientes = self.controlador.get_todos_los_pacientes()
-        if not pacientes:
-            QMessageBox.information(self, "ℹ️ Información", 
-                                  "No hay pacientes registrados en el sistema.")
-            return
-        
-        historial_completo = self._generar_historial_todos_pacientes()
-        self.resultado_text.setText(historial_completo)
+
     
-    def _generar_historial_todos_pacientes(self) -> str:
-        """Genera el historial de todos los pacientes registrados"""
+    def _generar_resumen_todos_pacientes(self) -> str:
+        """Genera un resumen básico de todos los pacientes (sin información médica)"""
         separador_principal = "=" * 80
         separador_paciente = "-" * 60
         
-        pacientes = self.controlador.get_todos_los_pacientes()
+        pacientes = self.controlador.pacientes_registrados
         
-        historial = f"""
+        resumen = f"""
 {separador_principal}
-🏥 HISTORIALES MÉDICOS COMPLETOS - CLÍNICA DENTAL
+📚 RESUMEN DE PACIENTES REGISTRADOS - CLÍNICA DENTAL
 {separador_principal}
 
-📊 RESUMEN GENERAL:
+📊 INFORMACIÓN GENERAL:
    ▪ Total de Pacientes Registrados: {len(pacientes)}
    ▪ Fecha de Consulta: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
 
@@ -1198,197 +789,129 @@ class PacienteWindow(QMainWindow):
         
         # Mostrar cada paciente
         for i, paciente in enumerate(pacientes, 1):
-            edad = self.controlador.calcular_edad(paciente.fecha_nacimiento)
+            edad = paciente.calcular_edad()
             dui_label = "DUI del Responsable" if edad < 18 else "DUI"
             edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else "")
+            dui_info = paciente.dui if paciente.tiene_dui() else "No registrado"
             
-            total_tratamientos = paciente.calcular_total_tratamientos()
-            total_citas = paciente.calcular_total_citas()
-            
-            historial += f"""
+            resumen += f"""
 {separador_paciente}
-👤 PACIENTE #{i:02d}: {paciente.nombre} {paciente.apellido}
+👤 PACIENTE #{i:02d}: {paciente.nombre} {paciente.apellido} (ID: #{paciente.id_paciente})
 {separador_paciente}
 
 📋 INFORMACIÓN PERSONAL:
+   ▪ ID del Paciente: #{paciente.id_paciente}
    ▪ Nombre Completo: {paciente.nombre} {paciente.apellido}
    ▪ Edad: {edad_info}
-   ▪ {dui_label}: {paciente.dui}
-   ▪ Teléfono: {self.controlador.formatear_telefono(paciente.telefono)}
+   ▪ {dui_label}: {dui_info}
+   ▪ Teléfono: {paciente.telefono}
    ▪ Correo: {paciente.correo if paciente.correo else 'No especificado'}
    ▪ Fecha de Registro: {paciente.fecha_registro}
 
 💰 INFORMACIÓN FINANCIERA:
    ▪ Saldo Pendiente: ${paciente.saldo_pendiente:,.2f}
-   ▪ Total Tratamientos: ${total_tratamientos:,.2f}
-   ▪ Total Citas: ${total_citas:,.2f}
-   ▪ Balance Total: ${paciente.get_balance_total():,.2f}
+   ▪ Estado de Pago: {'🔴 Pendiente' if paciente.saldo_pendiente > 0 else '🟢 Al día'}
 
-🩺 TRATAMIENTOS ({len(paciente.historial_medico)}):
 """
-            
-            if not paciente.historial_medico:
-                historial += "   📝 No hay tratamientos registrados.\n"
-            else:
-                for j, tratamiento in enumerate(paciente.historial_medico, 1):
-                    estado_icon = self.controlador.get_estado_icon(tratamiento.estado)
-                    historial += f"""   {j}. {tratamiento.descripcion}
-      💵 ${tratamiento.costo:,.2f} | 📅 {tratamiento.fecha_realizacion}
-      {estado_icon} {tratamiento.estado} | 👨‍⚕️ Dr. {tratamiento.doctor.nombre} {tratamiento.doctor.apellido}
-"""
-            
-            historial += f"""
-📅 CITAS ({len(paciente.citas)}):
-"""
-            
-            if not paciente.citas:
-                historial += "   📝 No hay citas programadas.\n"
-            else:
-                for j, cita in enumerate(paciente.citas, 1):
-                    estado_icon = self.controlador.get_estado_icon(cita.estado)
-                    historial += f"""   {j}. ID: {cita.id_cita}
-      ⏰ {cita.hora_inicio} - {cita.hora_fin}
-      💵 ${cita.costo_cita:,.2f} | {estado_icon} {cita.estado}
-      👨‍⚕️ Dr. {cita.doctor.nombre} {cita.doctor.apellido}
-"""
-            
-            historial += "\n"
         
-        # Resumen general
+        # Resumen estadístico básico
         total_pacientes = len(pacientes)
-        total_tratamientos_general = sum(len(p.historial_medico) for p in pacientes)
-        total_citas_general = sum(len(p.citas) for p in pacientes)
-        total_dinero_tratamientos = sum(p.calcular_total_tratamientos() for p in pacientes)
-        total_dinero_citas = sum(p.calcular_total_citas() for p in pacientes)
         total_saldos_pendientes = sum(p.saldo_pendiente for p in pacientes)
+        pacientes_con_saldo = sum(1 for p in pacientes if p.saldo_pendiente > 0)
         
-        historial += f"""
+        resumen += f"""
 {separador_principal}
-📈 ESTADÍSTICAS GENERALES DE LA CLÍNICA
+📈 ESTADÍSTICAS BÁSICAS DE LA CLÍNICA
 {separador_principal}
 
 👥 PACIENTES:
    ▪ Total de Pacientes: {total_pacientes}
+   ▪ Pacientes con Saldo Pendiente: {pacientes_con_saldo}
+   ▪ Pacientes al Día: {total_pacientes - pacientes_con_saldo}
    
-🩺 TRATAMIENTOS:
-   ▪ Total de Tratamientos: {total_tratamientos_general}
-   ▪ Ingresos por Tratamientos: ${total_dinero_tratamientos:,.2f}
-   
-📅 CITAS:
-   ▪ Total de Citas: {total_citas_general}
-   ▪ Ingresos por Citas: ${total_dinero_citas:,.2f}
-   
-💰 FINANCIERO:
-   ▪ Saldos Pendientes: ${total_saldos_pendientes:,.2f}
-   ▪ Ingresos Totales: ${(total_dinero_tratamientos + total_dinero_citas):,.2f}
-   ▪ Balance General: ${(total_dinero_tratamientos + total_dinero_citas + total_saldos_pendientes):,.2f}
+💰 FINANZAS BÁSICAS:
+   ▪ Total Saldos Pendientes: ${total_saldos_pendientes:,.2f}
+
+💡 NOTA: Esta vista muestra únicamente información básica de pacientes.
+Para consultar historiales médicos, citas y tratamientos, 
+utilice los módulos especializados correspondientes.
 
 {separador_principal}
 """
-        return historial
+        return resumen
     
-    def agregar_tratamiento(self):
-        """Abre la vista de tratamiento usando TratamientoVista"""
-        paciente_actual = self.controlador.get_paciente_actual()
+    def ver_info_basica(self):
+        """Muestra información básica del paciente seleccionado"""
+        paciente_actual = self.controlador.paciente_actual
         if not paciente_actual:
-            QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
+            QMessageBox.warning(self, "❌ Error", "Debe crear o seleccionar un paciente primero")
             return
         
-        # INSTANCIA: Crear diálogo de tratamiento con el paciente actual
-        dialog = AgregarTratamientoDialog(paciente_actual)
-        
-        # EJECUCIÓN: Mostrar diálogo y procesar resultado
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            QMessageBox.information(self, "✅ Éxito", 
-                                  "Tratamiento procesado correctamente.\n"
-                                  "Los datos han sido registrados en el sistema.")
-            
-            # ACTUALIZACIÓN: Refrescar información del paciente en pantalla
-            self.resultado_text.setText(self._generar_info_completa())
-        else:
-            QMessageBox.information(self, "ℹ️ Cancelado", 
-                                  "No se agregó ningún tratamiento.")
-    
-    def agregar_cita(self):
-        """Abre la ventana de citas"""
-        paciente_actual = self.controlador.get_paciente_actual()
-        if not paciente_actual:
-            QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
-            return
-        
-        # Crear y mostrar la ventana de citas
-        self.cita_window = CitaWindow()
-        self.cita_window.show()
+        # Generar información básica directamente
+        edad = paciente_actual.calcular_edad()
+        info_basica = f"""
+📋 INFORMACIÓN BÁSICA DEL PACIENTE
 
-    def consultar_historial(self):
-        """Consulta y muestra el historial médico del paciente"""
-        paciente_actual = self.controlador.get_paciente_actual()
-        if not paciente_actual:
-            QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
+🆔 ID: #{paciente_actual.id_paciente}
+👤 Nombre: {paciente_actual.nombre} {paciente_actual.apellido}
+🎂 Edad: {edad} años
+📞 Teléfono: {paciente_actual.telefono}
+📧 Correo: {paciente_actual.correo if paciente_actual.correo else 'No registrado'}
+💰 Saldo pendiente: ${paciente_actual.saldo_pendiente:.2f}
+"""
+        self.resultado_text.setText(info_basica)
+
+    def mostrar_todos_pacientes(self):
+        """Muestra un resumen de todos los pacientes registrados (información básica únicamente)"""
+        pacientes = self.controlador.pacientes_registrados
+        if not pacientes:
+            QMessageBox.information(self, "ℹ️ Información", 
+                                  "No hay pacientes registrados en el sistema.")
             return
         
-        historial = self._generar_historial_detallado()
-        self.resultado_text.setText(historial)
+        resumen_completo = self._generar_resumen_todos_pacientes()
+        self.resultado_text.setText(resumen_completo)
     
     def mostrar_info_paciente(self):
         """Muestra la información básica del paciente"""
-        paciente_actual = self.controlador.get_paciente_actual()
+        paciente_actual = self.controlador.paciente_actual
         if not paciente_actual:
             QMessageBox.warning(self, "❌ Error", "Debe crear un paciente primero")
             return
         
         self.resultado_text.setText(self._generar_info_completa())
     
-    def buscar_paciente_por_dui(self):
-        """Busca un paciente por su DUI y abre una ventana con su información"""
-        from PyQt6.QtWidgets import QInputDialog
-        
-        dui, ok = QInputDialog.getText(self, '🔍 Buscar Paciente', 
-                                      'Ingrese el DUI del paciente:')
-        
-        if ok and dui.strip():
-            dui = dui.strip()
-            pacientes = self.controlador.get_todos_los_pacientes()
-            paciente_encontrado = None
-            
-            # Buscar el paciente por DUI
-            for paciente in pacientes:
-                if paciente.dui == dui:
-                    paciente_encontrado = paciente
-                    break
-            
-            if paciente_encontrado:
-                # Abrir ventana con información del paciente
-                ventana_info = VentanaInfoPaciente(paciente_encontrado, self.controlador, self)
-                ventana_info.exec()
-            else:
-                QMessageBox.warning(self, "❌ No Encontrado", 
-                                  f"No se encontró ningún paciente con DUI: {dui}")
-        elif ok:
-            QMessageBox.warning(self, "❌ Error", "Debe ingresar un DUI válido")
-    
     def actualizar_label_dui(self):
-        """Actualiza el label del DUI basado en la edad del paciente"""
-        fecha_qdate = self.edad_edit.date()
-        fecha_nacimiento = datetime(fecha_qdate.year(), fecha_qdate.month(), fecha_qdate.day())
-        edad = self.controlador.calcular_edad(fecha_nacimiento)
-        
-        if edad < 18:
-            self.dui_label.setText("DUI del Responsable:")
-            self.dui_edit.setPlaceholderText("DUI del padre, madre o tutor legal")
-        else:
-            self.dui_label.setText("DUI:")
-            self.dui_edit.setPlaceholderText("Documento único de identidad")
+        """Actualiza el label del DUI basado en la edad del paciente (SOLO UI)"""
+        try:
+            fecha_qdate = self.edad_edit.date()
+            fecha_nacimiento = datetime(fecha_qdate.year(), fecha_qdate.month(), fecha_qdate.day())
+            
+            # Calcular edad directamente en la vista para validación visual
+            hoy = datetime.now()
+            edad = hoy.year - fecha_nacimiento.year
+            if hoy.month < fecha_nacimiento.month or (hoy.month == fecha_nacimiento.month and hoy.day < fecha_nacimiento.day):
+                edad -= 1
+            
+            if edad < 18:
+                self.dui_label.setText("📋 DUI del Responsable (Opcional):")
+                self.dui_edit.setPlaceholderText("DUI del padre, madre o tutor legal (opcional)")
+            else:
+                self.dui_label.setText("📋 DUI (Opcional):")
+                self.dui_edit.setPlaceholderText("Documento único de identidad (opcional)")
+        except Exception:
+            self.dui_label.setText("📋 DUI (Opcional):")
     
     def _generar_info_completa(self) -> str:
         """Genera la información completa del paciente con formato mejorado"""
-        paciente_actual = self.controlador.get_paciente_actual()
+        paciente_actual = self.controlador.paciente_actual
         if not paciente_actual:
             return "No hay paciente seleccionado"
         
-        edad = self.controlador.calcular_edad(paciente_actual.fecha_nacimiento)
+        edad = paciente_actual.calcular_edad()
         dui_label = "DUI del Responsable" if edad < 18 else "DUI"
         edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else " (Mayor de edad)")
+        dui_info = paciente_actual.dui if paciente_actual.tiene_dui() else "No registrado"
             
         separador = "=" * 60
         info = f"""
@@ -1396,113 +919,157 @@ class PacienteWindow(QMainWindow):
 🏥 INFORMACIÓN DEL PACIENTE - CLÍNICA DENTAL
 {separador}
 
-👤 DATOS PERSONALES:
+🆔 IDENTIFICACIÓN:
+   ▪ ID del Paciente: #{paciente_actual.id_paciente}
    ▪ Nombre Completo: {paciente_actual.nombre} {paciente_actual.apellido}
+
+👤 DATOS PERSONALES:
    ▪ Edad: {edad_info}
-   ▪ {dui_label}: {paciente_actual.dui}
-   ▪ Teléfono: {self.controlador.formatear_telefono(paciente_actual.telefono)}
+   ▪ {dui_label}: {dui_info}
+   ▪ Teléfono: {paciente_actual.telefono}
    ▪ Correo Electrónico: {paciente_actual.correo if paciente_actual.correo else 'No especificado'}
 
 💰 INFORMACIÓN FINANCIERA:
    ▪ Saldo Pendiente: ${paciente_actual.saldo_pendiente:,.2f}
    ▪ Estado: {'🔴 Pendiente de pago' if paciente_actual.saldo_pendiente > 0 else '🟢 Al día'}
 
-📊 RESUMEN MÉDICO:
-   ▪ Tratamientos Realizados: {len(paciente_actual.historial_medico)}
-   ▪ Citas Agendadas: {len(paciente_actual.citas)}
-   ▪ Costo Total Tratamientos: ${paciente_actual.calcular_total_tratamientos():,.2f}
-   ▪ Costo Total Citas: ${paciente_actual.calcular_total_citas():,.2f}
+📅 INFORMACIÓN ADICIONAL:
+   ▪ Fecha de Registro: {paciente_actual.fecha_registro}
+   ▪ Tipo de Paciente: {'Menor de edad' if edad < 18 else 'Mayor de edad'}
+
+💡 FUNCIONALIDADES DISPONIBLES:
+   ▪ Gestión de Datos Básicos del Paciente
+   ▪ Búsqueda y Consulta de Información Personal
+   ▪ Administración de Datos de Contacto
 
 ⏰ Última Actualización: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
 {separador}
 """
         return info
+
+    # ==========================================
+    # MÉTODOS DE BÚSQUEDA DE PACIENTES
+    # ==========================================
     
-    def _generar_historial_detallado(self) -> str:
-        """Genera el historial médico detallado con formato mejorado"""
-        paciente_actual = self.controlador.get_paciente_actual()
-        if not paciente_actual:
-            return "No hay paciente seleccionado"
+    def buscar_pacientes_por_nombre(self):
+        """Busca pacientes por nombre y/o apellido y actualiza el ComboBox"""
+        nombre_busqueda = str(self.buscar_nombre_edit.text())
+        apellido_busqueda = str(self.buscar_apellido_edit.text())
         
-        edad = self.controlador.calcular_edad(paciente_actual.fecha_nacimiento)
-        dui_label = "DUI del Responsable" if edad < 18 else "DUI"
-        edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else " (Mayor de edad)")
+        # Limpiar espacios manualmente
+        if nombre_busqueda.startswith(" "):
+            nombre_busqueda = nombre_busqueda[1:]
+        if nombre_busqueda.endswith(" "):
+            nombre_busqueda = nombre_busqueda[:-1]
+        if apellido_busqueda.startswith(" "):
+            apellido_busqueda = apellido_busqueda[1:]
+        if apellido_busqueda.endswith(" "):
+            apellido_busqueda = apellido_busqueda[:-1]
+        
+        # Limpiar el ComboBox
+        self.pacientes_combo.clear()
+        self.pacientes_combo.addItem("-- Seleccione un paciente --")
+        
+        # Si no hay texto en ningún campo, no buscar
+        if not nombre_busqueda and not apellido_busqueda:
+            return
+        
+        # Usar el método del controlador para la búsqueda
+        pacientes_encontrados = self.controlador.buscar_pacientes_por_nombre_apellido(
+            nombre_busqueda, apellido_busqueda
+        )
+        
+        # Agregar pacientes encontrados al ComboBox
+        if pacientes_encontrados:
+            for paciente in pacientes_encontrados:
+                # Crear texto descriptivo con nombre completo, ID y edad
+                edad = paciente.calcular_edad()
+                dui_info = f"DUI: {paciente.dui}" if paciente.tiene_dui() else "Sin DUI"
+                texto_combo = f"#{paciente.id_paciente} - {paciente.nombre} {paciente.apellido} ({edad} años) - {dui_info}"
+                self.pacientes_combo.addItem(texto_combo, paciente)  # El segundo parámetro es el objeto paciente
             
-        separador_principal = "=" * 60
-        separador_seccion = "-" * 40
-        
-        historial = f"""
-{separador_principal}
-📋 HISTORIAL MÉDICO COMPLETO
-{separador_principal}
-
-👤 Paciente: {paciente_actual.nombre} {paciente_actual.apellido} - {edad_info}
-📅 Fecha de Consulta: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
-
-{separador_seccion}
-🩺 TRATAMIENTOS REALIZADOS ({len(paciente_actual.historial_medico)})
-{separador_seccion}
-"""
-        
-        if not paciente_actual.historial_medico:
-            historial += "\n   📝 No hay tratamientos registrados en el historial.\n"
+            # Mostrar información adicional en el área de resultados
+            self.mostrar_resultados_busqueda(pacientes_encontrados)
         else:
-            for i, tratamiento in enumerate(paciente_actual.historial_medico, 1):
-                estado_icon = self.controlador.get_estado_icon(tratamiento.estado)
-                historial += f"""
-   ┌─ Tratamiento #{i:02d}
-   │ 🆔 ID: {tratamiento.id_tratamiento}
-   │ 📄 Descripción: {tratamiento.descripcion}
-   │ 💵 Costo: ${tratamiento.costo:,.2f}
-   │ 📅 Fecha: {tratamiento.fecha_realizacion}
-   │ {estado_icon} Estado: {tratamiento.estado}
-   │ 👨‍⚕️ Doctor: Dr. {tratamiento.doctor.nombre} {tratamiento.doctor.apellido}
-   └─────────────────────────────────────────────────
-"""
-        
-        historial += f"""
-{separador_seccion}
-📅 CITAS PROGRAMADAS ({len(paciente_actual.citas)})
-{separador_seccion}
-"""
-        
-        if not paciente_actual.citas:
-            historial += "\n   📝 No hay citas programadas.\n"
-        else:
-            for i, cita in enumerate(paciente_actual.citas, 1):
-                estado_icon = self.controlador.get_estado_icon(cita.estado)
-                historial += f"""
-   ┌─ Cita #{i:02d}
-   │ 🆔 ID: {cita.id_cita}
-   │ ⏰ Inicio: {cita.hora_inicio}
-   │ ⏰ Fin: {cita.hora_fin}
-   │ 💵 Costo: ${cita.costo_cita:,.2f}
-   │ {estado_icon} Estado: {cita.estado}
-   │ 👨‍⚕️ Doctor: Dr. {cita.doctor.nombre} {cita.doctor.apellido}
-   └─────────────────────────────────────────────────
-"""
-        
-        # Resumen financiero
-        total_tratamientos = paciente_actual.calcular_total_tratamientos()
-        total_citas = paciente_actual.calcular_total_citas()
-        total_general = total_tratamientos + total_citas
-        
-        historial += f"""
-{separador_seccion}
-💰 RESUMEN FINANCIERO
-{separador_seccion}
+            self.pacientes_combo.addItem("❌ No se encontraron pacientes")
+            self.resultado_text.setText("🔍 No se encontraron pacientes que coincidan con la búsqueda.")
+    
+    def mostrar_resultados_busqueda(self, pacientes_encontrados):
+        """Muestra información detallada de los pacientes encontrados"""
+        separador = "=" * 60
+        info = f"""
+{separador}
+🔍 RESULTADOS DE BÚSQUEDA - {len(pacientes_encontrados)} PACIENTE(S) ENCONTRADO(S)
+{separador}
 
-   📊 Estadísticas:
-   ▪ Total de Tratamientos: {len(paciente_actual.historial_medico)} - ${total_tratamientos:,.2f}
-   ▪ Total de Citas: {len(paciente_actual.citas)} - ${total_citas:,.2f}
-   ▪ Subtotal General: ${total_general:,.2f}
-   ▪ Saldo Pendiente: ${paciente_actual.saldo_pendiente:,.2f}
-   
-   💳 Balance Final: ${paciente_actual.get_balance_total():,.2f}
-
-{separador_principal}
 """
-        return historial
+        
+        for i, paciente in enumerate(pacientes_encontrados, 1):
+            edad = paciente.calcular_edad()
+            edad_info = f"{edad} años" + (" (Menor)" if edad < 18 else " (Mayor)")
+            dui_info = paciente.dui if paciente.tiene_dui() else "No registrado"
+            
+            info += f"""
+┌─ PACIENTE #{i:02d}
+│ 🆔 ID: #{paciente.id_paciente}
+│ 👤 Nombre: {paciente.nombre} {paciente.apellido}
+│ 🎂 Edad: {edad_info}
+│ 📋 DUI: {dui_info}
+│ 📞 Teléfono: {paciente.telefono}
+│ 💰 Saldo: ${paciente.saldo_pendiente:,.2f}
+│ 📅 Registro: {paciente.fecha_registro}
+└─────────────────────────────────────────────────
+"""
+        
+        info += f"""
+💡 INSTRUCCIONES:
+• Seleccione un paciente del ComboBox de arriba para verlo como paciente actual
+• Use el botón "🧹 Limpiar Búsqueda" para comenzar una nueva búsqueda
+
+{separador}
+"""
+        
+        self.resultado_text.setText(info)
+    
+    def seleccionar_paciente_desde_combo(self, texto_seleccionado):
+        """Selecciona un paciente desde el ComboBox y lo establece como paciente actual"""
+        if not texto_seleccionado or texto_seleccionado.startswith("--") or texto_seleccionado.startswith("❌"):
+            return
+        
+        # Obtener el paciente asociado al item seleccionado
+        indice_actual = self.pacientes_combo.currentIndex()
+        if indice_actual > 0:  # Ignorar el primer item que es el placeholder
+            paciente_seleccionado = self.pacientes_combo.itemData(indice_actual)
+            
+            if paciente_seleccionado:
+                # Establecer como paciente actual
+                self.controlador.paciente_actual = paciente_seleccionado
+                
+                # Mostrar mensaje de confirmación
+                edad = self.controlador.calcular_edad(paciente_seleccionado.fecha_nacimiento)
+                dui_info = f"DUI: {paciente_seleccionado.dui}" if paciente_seleccionado.tiene_dui() else "DUI: No registrado"
+                
+                QMessageBox.information(self, "✅ Paciente Seleccionado", 
+                                      f"Paciente #{paciente_seleccionado.id_paciente}: {paciente_seleccionado.nombre} {paciente_seleccionado.apellido} "
+                                      f"ha sido seleccionado como paciente actual.\n\n"
+                                      f"ID: #{paciente_seleccionado.id_paciente}\n"
+                                      f"Edad: {edad} años\n"
+                                      f"{dui_info}\n\n"
+                                      f"Ahora puede usar todas las funciones con este paciente.")
+                
+                # Mostrar información completa del paciente seleccionado
+                self.resultado_text.setText(self._generar_info_completa())
+    
+    def limpiar_busqueda(self):
+        """Limpia los campos de búsqueda y el ComboBox"""
+        self.buscar_nombre_edit.clear()
+        self.buscar_apellido_edit.clear()
+        self.pacientes_combo.clear()
+        self.pacientes_combo.addItem("-- Seleccione un paciente --")
+        
+        # Limpiar el área de resultados
+        self.resultado_text.setText("🧹 Búsqueda limpiada. Ingrese nombre y/o apellido para buscar pacientes.")
 
 def main():
     app = QApplication([])
