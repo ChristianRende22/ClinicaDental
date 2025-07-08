@@ -22,12 +22,18 @@ from Modelos.PacienteModelo import Paciente
 # PROPÓSITO: Ventana principal del sistema de gestión de pacientes
 # ==========================================
 class PacienteWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, controlador=None):
         super().__init__()
         self.setWindowTitle("Gestión de Pacientes - Clínica Dental")
         self.setGeometry(100, 100, 900, 700)
-        # Inicializar el controlador
-        self.controlador = PacienteControlador()
+        
+        # Usar el controlador pasado o crear uno nuevo
+        if controlador:
+            self.controlador = controlador
+            self.controlador.set_vista(self)  # Establecer referencia bidireccional
+        else:
+            self.controlador = PacienteControlador()
+            self.controlador.set_vista(self)
         
         # Color scheme 
         self.colors = {
@@ -669,6 +675,104 @@ class PacienteWindow(QMainWindow):
         # Inicializar el ComboBox de búsqueda
         self.pacientes_combo.addItem("-- Seleccione un paciente --")
     
+    def actualizar_interfaz(self):
+        """Actualiza toda la interfaz con los datos actuales del controlador"""
+        self.actualizar_lista_pacientes()
+        if self.controlador.paciente_actual:
+            self.cargar_datos_paciente_actual()
+    
+    def actualizar_lista_pacientes(self):
+        """Actualiza el ComboBox con todos los pacientes"""
+        self.pacientes_combo.clear()
+        self.pacientes_combo.addItem("-- Seleccione un paciente --")
+        
+        for paciente in self.controlador.get_todos_los_pacientes():
+            edad = paciente.calcular_edad()
+            dui_info = f"DUI: {paciente.dui}" if paciente.tiene_dui() else "Sin DUI"
+            texto_combo = f"#{paciente.id_paciente} - {paciente.nombre} {paciente.apellido} ({edad} años) - {dui_info}"
+            self.pacientes_combo.addItem(texto_combo, paciente)
+    
+    def cargar_datos_paciente_actual(self):
+        """Carga los datos del paciente actual en los campos de la vista"""
+        paciente = self.controlador.paciente_actual
+        if paciente:
+            self.nombre_edit.setText(paciente.nombre)
+            self.apellido_edit.setText(paciente.apellido)
+            # Convertir datetime a QDate
+            fecha_qt = QDate(paciente.fecha_nacimiento.year, 
+                           paciente.fecha_nacimiento.month, 
+                           paciente.fecha_nacimiento.day)
+            self.edad_edit.setDate(fecha_qt)
+            self.dui_edit.setText(paciente.dui)
+            self.telefono_edit.setText(str(paciente.telefono))
+            self.correo_edit.setText(paciente.correo)
+            self.saldo_edit.setValue(paciente.saldo_pendiente)
+    
+    def mostrar_mensaje(self, titulo: str, mensaje: str, tipo: str = "info"):
+        """Muestra un mensaje al usuario"""
+        from PyQt6.QtWidgets import QMessageBox
+        if tipo == "info":
+            QMessageBox.information(self, titulo, mensaje)
+        elif tipo == "warning":
+            QMessageBox.warning(self, titulo, mensaje)
+        elif tipo == "error":
+            QMessageBox.critical(self, titulo, mensaje)
+    
+    def seleccionar_paciente_desde_combo(self, texto):
+        """Selecciona un paciente desde el ComboBox"""
+        current_index = self.pacientes_combo.currentIndex()
+        if current_index > 0:  # Si no es "-- Seleccione un paciente --"
+            paciente = self.pacientes_combo.itemData(current_index)
+            if paciente:
+                self.controlador.seleccionar_paciente(paciente)
+                self.cargar_datos_paciente_actual()
+    
+    def buscar_pacientes_por_nombre(self):
+        """Busca pacientes basado en los campos de búsqueda"""
+        nombre = self.buscar_nombre_edit.text()
+        apellido = self.buscar_apellido_edit.text()
+        
+        if nombre or apellido:
+            pacientes_encontrados = self.controlador.buscar_pacientes_por_nombre_apellido(nombre, apellido)
+            
+            # Actualizar el ComboBox con los resultados
+            self.pacientes_combo.clear()
+            self.pacientes_combo.addItem("-- Seleccione un paciente --")
+            
+            for paciente in pacientes_encontrados:
+                edad = paciente.calcular_edad()
+                dui_info = f"DUI: {paciente.dui}" if paciente.tiene_dui() else "Sin DUI"
+                texto_combo = f"#{paciente.id_paciente} - {paciente.nombre} {paciente.apellido} ({edad} años) - {dui_info}"
+                self.pacientes_combo.addItem(texto_combo, paciente)
+                
+            self.resultado_text.setText(f"🔍 Búsqueda realizada: {len(pacientes_encontrados)} paciente(s) encontrado(s)")
+        else:
+            # Si no hay criterios de búsqueda, mostrar todos
+            self.actualizar_lista_pacientes()
+    
+    def limpiar_busqueda(self):
+        """Limpia los campos de búsqueda y muestra todos los pacientes"""
+        self.buscar_nombre_edit.clear()
+        self.buscar_apellido_edit.clear()
+        self.actualizar_lista_pacientes()
+        self.resultado_text.setText("🧹 Búsqueda limpiada - Mostrando todos los pacientes")
+    
+    def actualizar_label_dui(self):
+        """Actualiza el label del DUI basado en la edad del paciente"""
+        fecha_nacimiento = self.edad_edit.date().toPython()
+        hoy = datetime.now().date()
+        edad = hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+        
+        if edad >= 18:
+            self.dui_label.setText("DUI (Obligatorio):")
+            self.dui_edit.setStyleSheet(f"""
+                border: 2px solid #e74c3c;
+                background-color: #fff5f5;
+            """)
+        else:
+            self.dui_label.setText("DUI (Opcional):")
+            self.dui_edit.setStyleSheet("")  # Estilo normal
+    
     def limpiar_campos(self):
         """Limpia todos los campos de entrada para agregar un nuevo paciente"""
         self.nombre_edit.clear()
@@ -880,6 +984,22 @@ utilice los módulos especializados correspondientes.
         
         self.resultado_text.setText(self._generar_info_completa())
     
+    def _generar_info_completa(self):
+        """Genera información completa del paciente actual"""
+        paciente = self.controlador.paciente_actual
+        if not paciente:
+            return "No hay paciente seleccionado"
+        
+        # Usar el método del controlador para generar la información
+        info_basica = self.controlador.generar_info_basica_paciente(paciente)
+        info_financiera = self.controlador.generar_resumen_financiero(paciente)
+        
+        return f"""
+{info_basica}
+
+{info_financiera}
+        """
+    
     def actualizar_label_dui(self):
         """Actualiza el label del DUI basado en la edad del paciente (SOLO UI)"""
         try:
@@ -901,52 +1021,6 @@ utilice los módulos especializados correspondientes.
         except Exception:
             self.dui_label.setText("📋 DUI (Opcional):")
     
-    def _generar_info_completa(self) -> str:
-        """Genera la información completa del paciente con formato mejorado"""
-        paciente_actual = self.controlador.paciente_actual
-        if not paciente_actual:
-            return "No hay paciente seleccionado"
-        
-        edad = paciente_actual.calcular_edad()
-        dui_label = "DUI del Responsable" if edad < 18 else "DUI"
-        edad_info = f"{edad} años" + (" (Menor de edad)" if edad < 18 else " (Mayor de edad)")
-        dui_info = paciente_actual.dui if paciente_actual.tiene_dui() else "No registrado"
-            
-        separador = "=" * 60
-        info = f"""
-{separador}
-🏥 INFORMACIÓN DEL PACIENTE - CLÍNICA DENTAL
-{separador}
-
-🆔 IDENTIFICACIÓN:
-   ▪ ID del Paciente: #{paciente_actual.id_paciente}
-   ▪ Nombre Completo: {paciente_actual.nombre} {paciente_actual.apellido}
-
-👤 DATOS PERSONALES:
-   ▪ Edad: {edad_info}
-   ▪ {dui_label}: {dui_info}
-   ▪ Teléfono: {paciente_actual.telefono}
-   ▪ Correo Electrónico: {paciente_actual.correo if paciente_actual.correo else 'No especificado'}
-
-💰 INFORMACIÓN FINANCIERA:
-   ▪ Saldo Pendiente: ${paciente_actual.saldo_pendiente:,.2f}
-   ▪ Estado: {'🔴 Pendiente de pago' if paciente_actual.saldo_pendiente > 0 else '🟢 Al día'}
-
-📅 INFORMACIÓN ADICIONAL:
-   ▪ Fecha de Registro: {paciente_actual.fecha_registro}
-   ▪ Tipo de Paciente: {'Menor de edad' if edad < 18 else 'Mayor de edad'}
-
-💡 FUNCIONALIDADES DISPONIBLES:
-   ▪ Gestión de Datos Básicos del Paciente
-   ▪ Búsqueda y Consulta de Información Personal
-   ▪ Administración de Datos de Contacto
-
-⏰ Última Actualización: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
-
-{separador}
-"""
-        return info
-
     # ==========================================
     # MÉTODOS DE BÚSQUEDA DE PACIENTES
     # ==========================================

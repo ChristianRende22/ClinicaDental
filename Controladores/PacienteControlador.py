@@ -7,7 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 # IMPORTACIONES: Clases del modelo y librerías necesarias
 # ==========================================
 
-from Modelos.PacienteModelo import Paciente
+from Modelos.PacienteModelo import *
 from Modelos.CitaModelo import Cita
 from Modelos.TratamientoModelo import Tratamiento
 from datetime import datetime
@@ -25,9 +25,55 @@ class PacienteControlador:
     def __init__(self):
         self.pacientes_registrados: List[Paciente] = []
         self.paciente_actual: Paciente = None
+        self.vista = None  # Referencia a la vista
         # Inicializar el contador de IDs de manera robusta
         Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
     
+    def set_vista(self, vista):
+        """Establece la referencia a la vista"""
+        self.vista = vista
+    
+    def inicializar_vista(self):
+        """Inicializa y muestra la vista"""
+        if not self.vista:
+            # Importación tardía para evitar dependencias circulares
+            from Vistas.PacienteVista import PacienteWindow
+            self.vista = PacienteWindow(self)  # Pasar el controlador a la vista
+        
+        self.vista.show()
+        return self.vista
+    
+    def cerrar_vista(self):
+        """Cierra la vista"""
+        if self.vista:
+            self.vista.close()
+            self.vista = None
+
+    # ==========================================
+    # MÉTODOS DE COMUNICACIÓN CON LA VISTA
+    # PROPÓSITO: Manejar la comunicación bidireccional con la vista
+    # ==========================================
+    
+    def actualizar_vista(self):
+        """Actualiza la vista con los datos actuales"""
+        if self.vista:
+            self.vista.actualizar_interfaz()
+    
+    def mostrar_mensaje_en_vista(self, titulo: str, mensaje: str, tipo: str = "info"):
+        """Muestra un mensaje en la vista"""
+        if self.vista:
+            self.vista.mostrar_mensaje(titulo, mensaje, tipo)
+    
+    def actualizar_lista_pacientes_en_vista(self):
+        """Actualiza la lista de pacientes en la vista"""
+        if self.vista:
+            self.vista.actualizar_lista_pacientes()
+    
+    def limpiar_campos_vista(self):
+        """Limpia los campos de la vista"""
+        if self.vista:
+            self.vista.limpiar_campos()
+
     # ==========================================
     # MÉTODOS DE VALIDACIÓN Y REGLAS DE NEGOCIO
     # PROPÓSITO: Validar datos y aplicar reglas de negocio
@@ -183,6 +229,9 @@ class PacienteControlador:
             
             # Actualizar el contador basado en todos los pacientes existentes (redundancia por seguridad)
             Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
+            
+            # Actualizar la vista automáticamente
+            self.actualizar_vista()
             
             return True, f"Paciente #{nuevo_paciente.id_paciente}: {nombre} {apellido} creado exitosamente"
             
@@ -436,3 +485,51 @@ class PacienteControlador:
         # Mantenemos por compatibilidad pero delegamos al modelo
         temp_paciente = Paciente("temp", "temp", fecha_nacimiento, "00000000-0", 12345678, "")
         return temp_paciente.calcular_edad()
+    
+# ==========================================
+# QUERYS EJECUNTANDOSE DESDE EL MODELO  
+# ==========================================
+
+# ==========================================
+# EJECUCIÓN AUTOMÁTICA DEL CONTROLADOR
+# PROPÓSITO: Inicializar la aplicación directamente desde el controlador ##tentativo para iniciar la vista
+# ==========================================
+
+def ejecutar_aplicacion_pacientes():
+    """Función para ejecutar la aplicación de gestión de pacientes"""
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    
+    # Crear la aplicación Qt si no existe
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+    
+    # Crear el controlador
+    controlador = PacienteControlador()
+    
+    # Inicializar la vista desde el controlador
+    vista = controlador.inicializar_vista()
+    
+    # Mensaje de bienvenida
+    controlador.mostrar_mensaje_en_vista(
+        "Sistema de Gestión de Pacientes", 
+        "¡Bienvenido al sistema de gestión de pacientes!\n\nPuede comenzar creando un nuevo paciente o buscando pacientes existentes.", 
+        "info"
+    )
+    
+    # Ejecutar la aplicación
+    try:
+        if app:
+            app.exec()
+    except SystemExit:
+        pass
+    
+    return controlador, vista
+
+# Si este archivo se ejecuta directamente, iniciar la aplicación
+if __name__ == "__main__":
+    ejecutar_aplicacion_pacientes()
+
+
+

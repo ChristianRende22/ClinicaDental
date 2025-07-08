@@ -1,4 +1,6 @@
 # Agregar el directorio padre al path
+import mysql.connector
+from mysql.connector import Error
 import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -289,5 +291,34 @@ class Paciente:
     def __repr__(self):
         return f"Paciente(id={self.id_paciente}, nombre='{self.nombre}', apellido='{self.apellido}', dui='{self.dui}')"
     
-    
-    
+    # ==========================================
+    # QUERYS PARA LLAMADO DE LA BASE DE DATOS 
+    # ==========================================
+
+    @staticmethod
+    def obtener_Paciente():
+        """Obtiene todos los pacientes de la base de datos"""
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,  
+                user='root',
+                password='1234',
+                database='ClinicaDental'
+            )
+
+            cursor = conexion.cursor()
+            cursor.execute("SELECT P.ID_Paciente, P.Nombre, P.Apellido, P.Fecha_Nacimiento, P.DUI FROM paciente P;")
+            
+            resultados = cursor.fetchall()
+            pacientes = []
+            
+        except mysql.connector.Error as error:
+            print(f"Error en la base de datos: {error}")
+            return []
+            
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conexion' in locals():
+                conexion.close()
