@@ -87,6 +87,7 @@ class Paciente:
     
 
 
+    @classmethod
     def _obtener_siguiente_id(cls) -> int:
         """Obtiene el siguiente ID disponible de forma robusta"""
         # Buscar el siguiente ID que no esté en uso
@@ -100,6 +101,7 @@ class Paciente:
     
 
 
+    @classmethod
     def inicializar_contador_desde_pacientes(cls, pacientes_existentes: List['Paciente']):
         """Inicializa el contador basado en pacientes existentes"""
         if not pacientes_existentes:
@@ -194,12 +196,14 @@ class Paciente:
     
 
 
+    @classmethod
     def get_next_id(cls) -> int:
         """Obtiene el próximo ID disponible sin incrementar el contador"""
         return cls._contador_id
     
 
 
+    @classmethod
     def set_contador_id(cls, nuevo_contador: int):
         """Establece el contador de ID (útil para cargar datos existentes)"""
         if nuevo_contador > cls._contador_id:
@@ -239,6 +243,7 @@ class Paciente:
     
 
 
+    @staticmethod
     def validar_formato_dui(dui: str) -> bool:
         """Valida que el DUI tenga el formato correcto (########-#)"""
         patron = r'^\d{8}-\d{1}$'
@@ -246,6 +251,7 @@ class Paciente:
     
 
 
+    @staticmethod
     def validar_formato_email(email: str) -> bool:
         """Valida que el email tenga un formato correcto"""
         if not email:
@@ -255,6 +261,7 @@ class Paciente:
     
 
 
+    @staticmethod
     def validar_telefono(telefono: int) -> bool:
         """Valida que el teléfono tenga al menos 8 dígitos"""
         return len(str(telefono)) >= 8
@@ -281,3 +288,6 @@ class Paciente:
     
     def __repr__(self):
         return f"Paciente(id={self.id_paciente}, nombre='{self.nombre}', apellido='{self.apellido}', dui='{self.dui}')"
+    
+    
+    

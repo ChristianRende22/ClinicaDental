@@ -26,7 +26,6 @@ class PacienteWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Gestión de Pacientes - Clínica Dental")
         self.setGeometry(100, 100, 900, 700)
-        
         # Inicializar el controlador
         self.controlador = PacienteControlador()
         
