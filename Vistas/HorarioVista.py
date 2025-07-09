@@ -7,13 +7,14 @@ from PyQt6.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton,
     QTextEdit, QFormLayout, QMessageBox,
     QDialog, QDialogButtonBox, QInputDialog, QComboBox,
-    QDateEdit, QCalendarWidget
+    QDateEdit, QCalendarWidget, QTimeEdit
 )
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtCore import Qt, QDate, QTime
 from PyQt6.QtGui import QFont
 from typing import List
 from Controladores.HorarioControlador import HorarioController
 from Modelos.DoctorModelo import Doctor 
+
 
 class AgregarHorarioDialog(QDialog):
     def __init__(self, doctores: List[Doctor], parent=None):
@@ -23,6 +24,7 @@ class AgregarHorarioDialog(QDialog):
         self.setModal(True)
         self.resize(600, 500)
         
+        # Usar los mismos colores que la ventana principal
         self.colors = {
             'primary': '#130760',      # Dark blue-purple 
             'secondary': '#756f9f',    # Medium purple
@@ -141,7 +143,7 @@ class AgregarHorarioDialog(QDialog):
         titulo = QLabel("📅 Agregar Nuevo Horario")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         titulo.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        titulo.setStyleSheet(f"color: {self.colors['accent']}; margin: 10px;")
+        titulo.setStyleSheet(f"color: {self.colors['accent']}; margin: 8px;")
         main_layout.addWidget(titulo)
         
         # Formulario
@@ -163,11 +165,13 @@ class AgregarHorarioDialog(QDialog):
         self.fecha_edit.setCalendarWidget(calendar)
         
         # Campos de hora
-        self.hora_inicio_edit = QLineEdit()
-        self.hora_inicio_edit.setPlaceholderText("Ejemplo: 09:00")
+        self.hora_inicio_edit = QTimeEdit()
+        self.hora_inicio_edit.setDisplayFormat("HH:mm")
+        self.hora_inicio_edit.setTime(QTime(9, 0))  # Hora por defecto 09:00
         
-        self.hora_fin_edit = QLineEdit()
-        self.hora_fin_edit.setPlaceholderText("Ejemplo: 17:00")
+        self.hora_fin_edit = QTimeEdit()
+        self.hora_fin_edit.setDisplayFormat("HH:mm")
+        self.hora_fin_edit.setTime(QTime(9,30))#ra por defecto 17:00
         
         # ComboBox para seleccionar doctor
         self.doctor_combo = QComboBox()
@@ -176,7 +180,7 @@ class AgregarHorarioDialog(QDialog):
         
         # Agregar campos al formulario
         form_layout.addRow("🆔 ID Horario:", self.id_edit)
-        form_layout.addRow("📅 Fecha:", self.fecha_edit)
+        #form_layout.addRow("📅 Fecha:", self.fecha_edit)
         form_layout.addRow("⏰ Hora Inicio:", self.hora_inicio_edit)
         form_layout.addRow("⏳ Hora Fin:", self.hora_fin_edit)
         form_layout.addRow("👨‍⚕️ Médico:", self.doctor_combo)
@@ -225,8 +229,8 @@ class AgregarHorarioDialog(QDialog):
         return {
             'id_horario': self.id_edit.text().strip(),
             'dia': self.fecha_edit.date().toString("dd/MM/yyyy"),
-            'hora_inicio': self.hora_inicio_edit.text().strip(),
-            'hora_fin': self.hora_fin_edit.text().strip(),
+            'hora_inicio': self.hora_inicio_edit.time().toString("HH:mm"),
+            'hora_fin': self.hora_fin_edit.time().toString("HH:mm"),
             'doctor': self.doctor_combo.currentData()
         }
 
@@ -237,6 +241,7 @@ class HorarioView(QMainWindow):
         self.setWindowTitle("🕒 Gestión de Horarios - Clínica Dental")
         self.setGeometry(100, 100, 900, 700)
         
+        # Usar exactamente los mismos colores que la ventana principal
         self.colors = {
             'primary': '#130760',      # Dark blue-purple 
             'secondary': '#756f9f',    # Medium purple
@@ -406,7 +411,7 @@ class HorarioView(QMainWindow):
             return None
         
         item, ok = QInputDialog.getItem(
-            self, "🗑️ Eliminar Horario", 
+            self, "🗑️ Eliminar horario", 
             "Seleccione un horario a eliminar:", horarios_info, 0, False)
         
         if ok and item:
@@ -431,7 +436,7 @@ class HorarioView(QMainWindow):
             return
         
         for dia, horarios in horarios_por_dia.items():
-            self.resultados.append(f"\n📅 {dia.upper()}")
+            self.resultados.append(f"\n📅 HORARIOS DE HOY")
             self.resultados.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             for horario in sorted(horarios, key=lambda h: h.hora_inicio):
                 self.resultados.append(f"   {str(horario)}")
@@ -439,7 +444,7 @@ class HorarioView(QMainWindow):
     
     def obtener_info_horarios_para_eliminar(self, horarios):
         """Genera la lista de información de horarios para el diálogo de eliminación."""
-        return [f"{h.id_horario} | {h.dia} {h.hora_inicio}-{h.hora_fin} (Dr. {h.doctor.nombre} {h.doctor.apellido})"
+        return [f"{h.id_horario} |  {h.hora_inicio}-{h.hora_fin} (Dr. {h.doctor.nombre} {h.doctor.apellido})"
                 for h in horarios]
     
     def mostrar_mensaje(self, tipo: str, titulo: str, mensaje: str):
