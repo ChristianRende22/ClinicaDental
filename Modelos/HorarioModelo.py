@@ -14,7 +14,8 @@ class Horario:
     def __str__(self):
         status = "✅ Disponible" if self.disponible else "❌ Ocupado" 
         return (f"🆔 ID Horario: {self.id_horario}\n"
-                f"📅 Día: {self.dia} | ⏰ {self.hora_inicio} - {self.hora_fin}\n"
+                # f"📅 Día: {self.dia} 
+                f"⏰ {self.hora_inicio} - {self.hora_fin}\n"
                 f"👨‍⚕️ Médico: {self.doctor.nombre} {self.doctor.apellido}\n" # Acceder a nombre y apellido del doctor
                 f" {status}\n"
                 )
