@@ -8,6 +8,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 # ==========================================
 
 from Modelos.PacienteModelo import *
+from Modelos.PacienteModelo import Paciente
+
 from Modelos.CitaModelo import Cita
 from Modelos.TratamientoModelo import Tratamiento
 from datetime import datetime
@@ -223,23 +225,24 @@ class PacienteControlador:
                 nombre, apellido, fecha_nacimiento, telefono, correo, dui, saldo_pendiente
             )
             
-            # Agregar a la lista de pacientes registrados
+            # Insertar en la base de datos
+            if not Paciente.insertar_en_bd(nuevo_paciente):
+                return False, "Error al insertar paciente en la base de datos"
+
+            # Agregar a la lista local
             self.pacientes_registrados.append(nuevo_paciente)
             self.paciente_actual = nuevo_paciente
-            
-            # Actualizar el contador basado en todos los pacientes existentes (redundancia por seguridad)
+
+            # Actualizar el contador
             Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
-            
-            # Actualizar la vista automáticamente
-            self.actualizar_vista()
-            
+
             return True, f"Paciente #{nuevo_paciente.id_paciente}: {nombre} {apellido} creado exitosamente"
-            
+
         except ValueError as e:
-            return False, f"Error al crear paciente: {str(e)}"
+                return False, f"Error al crear paciente: {str(e)}"
         except Exception as e:
-            return False, f"Error inesperado: {str(e)}"
-    
+                return False, f"Error inesperado: {str(e)}"
+            
     def seleccionar_paciente(self, paciente: Paciente) -> bool:
         """Selecciona un paciente como el actual"""
         if paciente in self.pacientes_registrados:
@@ -489,47 +492,25 @@ class PacienteControlador:
 # ==========================================
 # QUERYS EJECUNTANDOSE DESDE EL MODELO  
 # ==========================================
+    def buscar_pacientes_desde_bd(self, nombre, apellido):
+        """Busca pacientes directamente en la base de datos"""
+        print(f"🧠 Buscando pacientes en BD: nombre='{nombre}', apellido='{apellido}'")
+        return Paciente.buscar_pacientes_por_nombre_apellido(nombre, apellido)
+
 
 # ==========================================
 # EJECUCIÓN AUTOMÁTICA DEL CONTROLADOR
 # PROPÓSITO: Inicializar la aplicación directamente desde el controlador ##tentativo para iniciar la vista
 # ==========================================
 
-def ejecutar_aplicacion_pacientes():
-    """Función para ejecutar la aplicación de gestión de pacientes"""
-    from PyQt6.QtWidgets import QApplication
-    import sys
-    
-    # Crear la aplicación Qt si no existe
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    
-    # Crear el controlador
-    controlador = PacienteControlador()
-    
-    # Inicializar la vista desde el controlador
-    vista = controlador.inicializar_vista()
-    
-    # Mensaje de bienvenida
-    controlador.mostrar_mensaje_en_vista(
-        "Sistema de Gestión de Pacientes", 
-        "¡Bienvenido al sistema de gestión de pacientes!\n\nPuede comenzar creando un nuevo paciente o buscando pacientes existentes.", 
-        "info"
-    )
-    
-    # Ejecutar la aplicación
-    try:
-        if app:
-            app.exec()
-    except SystemExit:
-        pass
-    
-    return controlador, vista
-
-# Si este archivo se ejecuta directamente, iniciar la aplicación
 if __name__ == "__main__":
-    ejecutar_aplicacion_pacientes()
+    from PyQt6.QtWidgets import QApplication
+    from Vistas.PacienteVista import PacienteWindow  # Ajustá si tu estructura de carpetas es diferente
+
+    app = QApplication([])
+    ventana = PacienteWindow()
+    ventana.show()
+    app.exec()
 
 
 

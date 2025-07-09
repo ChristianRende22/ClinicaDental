@@ -294,30 +294,122 @@ class Paciente:
     # ==========================================
     # QUERYS PARA LLAMADO DE LA BASE DE DATOS 
     # ==========================================
-
+    
     @staticmethod
-    def obtener_Paciente():
-        """Obtiene todos los pacientes de la base de datos"""
+    def buscar_pacientes_por_nombre_apellido(nombre="", apellido=""):
+        """
+        Consulta a la base de datos para buscar pacientes por nombre y/o apellido
+        
+        Args:
+            nombre (str): Nombre del paciente a buscar (búsqueda parcial)
+            apellido (str): Apellido del paciente a buscar (búsqueda parcial)
+            
+        Returns:
+            List[Paciente]: Lista de objetos Paciente que coinciden con los criterios de búsqueda
+        """
         try:
+            print(f"📡 Ejecutando búsqueda SQL con: nombre='{nombre}', apellido='{apellido}'")
+            
+            # Establecer conexión con la base de datos MySQL
             conexion = mysql.connector.connect(
                 host='localhost',
-                port=3307,  
+                port=3307,
                 user='root',
                 password='1234',
                 database='ClinicaDental'
             )
-
             cursor = conexion.cursor()
-            cursor.execute("SELECT P.ID_Paciente, P.Nombre, P.Apellido, P.Fecha_Nacimiento, P.DUI FROM paciente P;")
             
+            # Query con LIKE para búsqueda parcial en nombre y apellido
+            query = """
+                SELECT ID_Paciente, Nombre, Apellido, Fecha_Nacimiento, DUI
+                FROM paciente
+                WHERE Nombre LIKE %s AND Apellido LIKE %s
+            """
+            
+            # Ejecutar consulta con parámetros de búsqueda (% para wildcards)
+            cursor.execute(query, (f"%{nombre}%", f"%{apellido}%"))
             resultados = cursor.fetchall()
+            print("✅ Resultados:", resultados)
+
+            # Convertir resultados de BD a objetos Paciente
             pacientes = []
+            for fila in resultados:
+                id_paciente, nombre, apellido, fecha_nac, dui = fila
+                # Crear objeto Paciente con los datos básicos de la BD
+                paciente = Paciente(
+                    nombre=nombre,
+                    apellido=apellido,
+                    fecha_nacimiento=fecha_nac,
+                    telefono=0,  # Valor por defecto ya que no se consulta
+                    correo="",   # Valor por defecto ya que no se consulta
+                    dui=dui,
+                    id_paciente=id_paciente
+                )
+                pacientes.append(paciente)
+            return pacientes
             
-        except mysql.connector.Error as error:
-            print(f"Error en la base de datos: {error}")
-            return []
+        except mysql.connector.Error as e:
+            print(f"❌ Error al buscar pacientes: {e}")
+            return []  # Retornar lista vacía en caso de error
             
         finally:
+            # Cerrar cursor y conexión para liberar recursos
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conexion' in locals():
+                conexion.close()
+                    
+    @staticmethod
+    def insertar_en_bd(paciente: 'Paciente') -> bool:
+        """
+        Inserta un nuevo paciente en la base de datos con todos sus datos
+        
+        Args:
+            paciente (Paciente): Objeto Paciente a insertar en la BD
+            
+        Returns:
+            bool: True si la inserción fue exitosa, False en caso contrario
+        """
+        try:
+            # Establecer conexión con la base de datos MySQL
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,
+                user='root',
+                password='1234',
+                database='ClinicaDental'
+            )
+            cursor = conexion.cursor()
+
+            # Query INSERT con todos los campos del paciente
+            query = """
+            INSERT INTO paciente (Nombre, Apellido, Fecha_Nacimiento, DUI, Telefono, Correo)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            
+            # Ejecutar INSERT con los datos del paciente
+            cursor.execute(query, (
+                paciente.nombre,
+                paciente.apellido,
+                paciente.fecha_nacimiento.strftime('%Y-%m-%d'),  # Formato fecha para MySQL
+                paciente.dui,
+                str(paciente.telefono),  # Convertir a string para consistencia
+                paciente.correo
+            ))
+            
+            # Confirmar transacción en la base de datos
+            conexion.commit()
+
+            print("✅ Paciente insertado en la base de datos.")
+            return True
+
+        except mysql.connector.Error as e:
+            print(f"❌ Error al insertar paciente: {e}")
+            return False  # Retornar False si hay error en la inserción
+
+        finally:
+            # Cerrar cursor y conexión para liberar recursos
             if 'cursor' in locals():
                 cursor.close()
             if 'conexion' in locals():

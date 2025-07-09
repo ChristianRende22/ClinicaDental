@@ -430,11 +430,13 @@ class PacienteWindow(QMainWindow):
         # Campos de búsqueda
         self.buscar_nombre_edit = QLineEdit()
         self.buscar_nombre_edit.setPlaceholderText("Ingrese nombre para buscar...")
-        self.buscar_nombre_edit.textChanged.connect(self.buscar_pacientes_por_nombre)
         
         self.buscar_apellido_edit = QLineEdit()
         self.buscar_apellido_edit.setPlaceholderText("Ingrese apellido para buscar...")
-        self.buscar_apellido_edit.textChanged.connect(self.buscar_pacientes_por_nombre)
+        
+        # Conectar Enter para ejecutar búsqueda
+        self.buscar_nombre_edit.returnPressed.connect(self.buscar_pacientes_por_nombre)
+        self.buscar_apellido_edit.returnPressed.connect(self.buscar_pacientes_por_nombre)
         
         # ComboBox para mostrar resultados de búsqueda
         self.pacientes_combo = QComboBox()
@@ -511,6 +513,23 @@ class PacienteWindow(QMainWindow):
             }}
         """)
         
+        # Botones de búsqueda y limpiar
+        botones_busqueda_layout = QHBoxLayout()
+        
+        # Botón para buscar pacientes
+        self.buscar_btn = QPushButton("🔍 Buscar Pacientes")
+        self.buscar_btn.clicked.connect(self.buscar_pacientes_por_nombre)
+        self.buscar_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.colors['accent']};
+                font-size: 12px;
+                padding: 8px 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['primary']};
+            }}
+        """)
+        
         # Botón para limpiar búsqueda
         self.limpiar_busqueda_btn = QPushButton("🧹 Limpiar Búsqueda")
         self.limpiar_busqueda_btn.clicked.connect(self.limpiar_busqueda)
@@ -525,10 +544,13 @@ class PacienteWindow(QMainWindow):
             }}
         """)
         
+        botones_busqueda_layout.addWidget(self.buscar_btn)
+        botones_busqueda_layout.addWidget(self.limpiar_busqueda_btn)
+        
         busqueda_layout.addRow("🔤 Nombre:", self.buscar_nombre_edit)
         busqueda_layout.addRow("🔤 Apellido:", self.buscar_apellido_edit)
         busqueda_layout.addRow("📋 Pacientes Encontrados:", self.pacientes_combo)
-        busqueda_layout.addRow("", self.limpiar_busqueda_btn)
+        busqueda_layout.addRow("", botones_busqueda_layout)
         
         busqueda_group.setLayout(busqueda_layout)
         main_layout.addWidget(busqueda_group)
@@ -728,28 +750,32 @@ class PacienteWindow(QMainWindow):
                 self.cargar_datos_paciente_actual()
     
     def buscar_pacientes_por_nombre(self):
-        """Busca pacientes basado en los campos de búsqueda"""
-        nombre = self.buscar_nombre_edit.text()
-        apellido = self.buscar_apellido_edit.text()
-        
-        if nombre or apellido:
-            pacientes_encontrados = self.controlador.buscar_pacientes_por_nombre_apellido(nombre, apellido)
-            
-            # Actualizar el ComboBox con los resultados
-            self.pacientes_combo.clear()
-            self.pacientes_combo.addItem("-- Seleccione un paciente --")
-            
+        """Busca pacientes por nombre y/o apellido y actualiza el ComboBox"""
+        nombre = self.buscar_nombre_edit.text().strip()
+        apellido = self.buscar_apellido_edit.text().strip()
+
+        # Si no hay criterios de búsqueda, mostrar mensaje
+        if not nombre and not apellido:
+            QMessageBox.warning(self, "⚠️ Advertencia", "Debe ingresar al menos un nombre o apellido para buscar.")
+            return
+
+        # Usar el método correcto del controlador
+        pacientes_encontrados = self.controlador.buscar_pacientes_por_nombre_apellido(nombre, apellido)
+
+        self.pacientes_combo.clear()
+        self.pacientes_combo.addItem("-- Seleccione un paciente --")
+
+        if pacientes_encontrados:
             for paciente in pacientes_encontrados:
                 edad = paciente.calcular_edad()
                 dui_info = f"DUI: {paciente.dui}" if paciente.tiene_dui() else "Sin DUI"
-                texto_combo = f"#{paciente.id_paciente} - {paciente.nombre} {paciente.apellido} ({edad} años) - {dui_info}"
-                self.pacientes_combo.addItem(texto_combo, paciente)
-                
-            self.resultado_text.setText(f"🔍 Búsqueda realizada: {len(pacientes_encontrados)} paciente(s) encontrado(s)")
+                texto = f"#{paciente.id_paciente} - {paciente.nombre} {paciente.apellido} ({edad} años) - {dui_info}"
+                self.pacientes_combo.addItem(texto, paciente)
+            self.mostrar_resultados_busqueda(pacientes_encontrados)
         else:
-            # Si no hay criterios de búsqueda, mostrar todos
-            self.actualizar_lista_pacientes()
-    
+            self.pacientes_combo.addItem("❌ No se encontraron pacientes")
+            self.resultado_text.setText("🔍 No se encontraron pacientes que coincidan con la búsqueda.")
+                
     def limpiar_busqueda(self):
         """Limpia los campos de búsqueda y muestra todos los pacientes"""
         self.buscar_nombre_edit.clear()
@@ -1029,7 +1055,7 @@ utilice los módulos especializados correspondientes.
         """Busca pacientes por nombre y/o apellido y actualiza el ComboBox"""
         nombre_busqueda = str(self.buscar_nombre_edit.text())
         apellido_busqueda = str(self.buscar_apellido_edit.text())
-        
+
         # Limpiar espacios manualmente
         if nombre_busqueda.startswith(" "):
             nombre_busqueda = nombre_busqueda[1:]
@@ -1039,34 +1065,31 @@ utilice los módulos especializados correspondientes.
             apellido_busqueda = apellido_busqueda[1:]
         if apellido_busqueda.endswith(" "):
             apellido_busqueda = apellido_busqueda[:-1]
-        
-        # Limpiar el ComboBox
+
+        print(f"🔎 Texto ingresado: nombre='{nombre_busqueda}', apellido='{apellido_busqueda}'")
+
         self.pacientes_combo.clear()
         self.pacientes_combo.addItem("-- Seleccione un paciente --")
-        
-        # Si no hay texto en ningún campo, no buscar
+
         if not nombre_busqueda and not apellido_busqueda:
             return
-        
-        # Usar el método del controlador para la búsqueda
-        pacientes_encontrados = self.controlador.buscar_pacientes_por_nombre_apellido(
+
+        # Llama al controlador para buscar en la base de datos
+        pacientes_encontrados = self.controlador.buscar_pacientes_desde_bd(
             nombre_busqueda, apellido_busqueda
         )
-        
-        # Agregar pacientes encontrados al ComboBox
+
         if pacientes_encontrados:
             for paciente in pacientes_encontrados:
-                # Crear texto descriptivo con nombre completo, ID y edad
                 edad = paciente.calcular_edad()
                 dui_info = f"DUI: {paciente.dui}" if paciente.tiene_dui() else "Sin DUI"
                 texto_combo = f"#{paciente.id_paciente} - {paciente.nombre} {paciente.apellido} ({edad} años) - {dui_info}"
-                self.pacientes_combo.addItem(texto_combo, paciente)  # El segundo parámetro es el objeto paciente
-            
-            # Mostrar información adicional en el área de resultados
+                self.pacientes_combo.addItem(texto_combo, paciente)
             self.mostrar_resultados_busqueda(pacientes_encontrados)
         else:
             self.pacientes_combo.addItem("❌ No se encontraron pacientes")
             self.resultado_text.setText("🔍 No se encontraron pacientes que coincidan con la búsqueda.")
+
     
     def mostrar_resultados_busqueda(self, pacientes_encontrados):
         """Muestra información detallada de los pacientes encontrados"""
@@ -1144,11 +1167,11 @@ utilice los módulos especializados correspondientes.
         # Limpiar el área de resultados
         self.resultado_text.setText("🧹 Búsqueda limpiada. Ingrese nombre y/o apellido para buscar pacientes.")
 
-def main():
-    app = QApplication([])
-    window = PacienteWindow()
-    window.show()
-    app.exec()
+# def main():
+#     app = QApplication([])
+#     window = PacienteWindow()
+#     window.show()
+#     app.exec()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
