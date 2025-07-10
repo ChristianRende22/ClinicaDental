@@ -5,16 +5,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QLineEdit, QPushButton,
-    QTextEdit, QGroupBox, QFormLayout, QMessageBox, QComboBox, QDateTimeEdit, QInputDialog, QScrollArea
+    QTextEdit, QGroupBox, QFormLayout, QMessageBox, QComboBox, QDateTimeEdit, QInputDialog, QScrollArea,
+    QDateEdit
 )
-from PyQt6.QtCore import Qt, QDateTime
+from PyQt6.QtCore import Qt, QDateTime, QDate 
 from PyQt6.QtGui import QFont, QIntValidator, QDoubleValidator
-from Controladores.CitaControlador import ControladorCita # no debe ser de modelo
+from Controladores.CitaControlador import ControladorCita
 
 
 
 class CitaWindow(QMainWindow):
-    def __init__(self):  # Sin parámetros de datos
+    def __init__(self):  
         super().__init__()
         self.setWindowTitle("Gestión de Citas - Clínica Dental")
         self.setGeometry(100, 100, 900, 700)
@@ -184,6 +185,92 @@ class CitaWindow(QMainWindow):
                 border-color: {self.colors['accent']};
                 background-color: {self.colors['surface']};
             }}
+            
+            QDateEdit {{
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                selection-background-color: {self.colors['accent']};
+            }}
+            
+            QDateEdit:focus {{
+                border-color: {self.colors['accent']};
+                background-color: {self.colors['surface']};
+            }}
+            
+            QDateEdit::drop-down {{
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+                border-left: 1px solid {self.colors['secondary']};
+                border-top-right-radius: 6px;
+                border-bottom-right-radius: 6px;
+                background-color: {self.colors['secondary']};
+            }}
+            
+            QDateEdit::drop-down:hover {{
+                background-color: {self.colors['accent']};
+            }}
+            
+            QDateEdit::down-arrow {{
+                image: none;
+                border: 2px solid {self.colors['surface']};
+                width: 6px;
+                height: 6px;
+                border-top: none;
+                border-left: none;
+                transform: rotate(45deg);
+                margin-top: -2px;
+            }}
+            
+            QCalendarWidget {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 8px;
+            }}
+            
+            QCalendarWidget QToolButton {{
+                background-color: {self.colors['secondary']};
+                color: {self.colors['surface']};
+                border: none;
+                border-radius: 4px;
+                padding: 5px;
+                margin: 2px;
+            }}
+            
+            QCalendarWidget QToolButton:hover {{
+                background-color: {self.colors['accent']};
+            }}
+            
+            QCalendarWidget QMenu {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                border: 1px solid {self.colors['secondary']};
+            }}
+            
+            QCalendarWidget QSpinBox {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                border: 1px solid {self.colors['secondary']};
+                border-radius: 4px;
+                padding: 2px;
+            }}
+            
+            QCalendarWidget QAbstractItemView:enabled {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                selection-background-color: {self.colors['accent']};
+                selection-color: {self.colors['surface']};
+            }}
+            
+            QCalendarWidget QAbstractItemView:disabled {{
+                color: {self.colors['secondary']};
+            }}
         """)
 
         # PRIMERO: Crear la interfaz (sin conexiones)
@@ -231,10 +318,21 @@ class CitaWindow(QMainWindow):
         self.doctor_combo = QComboBox()
         self.tratamiento_combo = QComboBox()
 
-        self.fecha_inicio_edit = QDateTimeEdit(QDateTime.currentDateTime())
-        self.fecha_inicio_edit.setDisplayFormat("dd/MM/yyyy HH:mm")
-        self.fecha_fin_edit = QDateTimeEdit(QDateTime.currentDateTime())
-        self.fecha_fin_edit.setDisplayFormat("dd/MM/yyyy HH:mm")
+        # Calendario popup
+        self.fecha_edit = QDateEdit(QDate.currentDate())
+        self.fecha_edit.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_edit.setCalendarPopup(True)  
+        
+        # Establecer fecha mínima como hoy (no permite fechas pasadas)
+        self.fecha_edit.setMinimumDate(QDate.currentDate())
+        
+        # Conectar señal para validación en tiempo real
+        self.fecha_edit.dateChanged.connect(self.validar_fecha_seleccionada)
+        
+        self.inicio_edit = QDateTimeEdit(QDateTime.currentDateTime())
+        self.inicio_edit.setDisplayFormat("HH:mm")
+        self.fin_edit = QDateTimeEdit(QDateTime.currentDateTime())
+        self.fin_edit.setDisplayFormat("HH:mm")
         
         self.costo_edit = QLineEdit()
         costo_validator = QDoubleValidator(0.0, 999999.99, 2)
@@ -248,15 +346,16 @@ class CitaWindow(QMainWindow):
         info_layout.addRow("Paciente:", self.paciente_combo)
         info_layout.addRow("Doctor:", self.doctor_combo)
         info_layout.addRow("Tratamiento:", self.tratamiento_combo)
-        info_layout.addRow("Fecha y Hora Inicio:", self.fecha_inicio_edit)
-        info_layout.addRow("Fecha y Hora Fin:", self.fecha_fin_edit)
+        info_layout.addRow("Fecha:", self.fecha_edit)
+        info_layout.addRow("Hora Inicio:", self.inicio_edit)
+        info_layout.addRow("Hora Fin:", self.fin_edit)
         info_layout.addRow("Costo:", self.costo_edit)
         info_layout.addRow("Estado:", self.estado_combo)
 
         info_group.setLayout(info_layout)
         main_layout.addWidget(info_group)
 
-        # Botones - CREAR SIN CONECTAR
+        # Botones 
         # Primera fila de botones
         buttons_row1 = QHBoxLayout()
         self.crear_btn = QPushButton("➕ Crear Cita")
@@ -367,13 +466,12 @@ class CitaWindow(QMainWindow):
             }}
         """)
         
-        # Configurar el comportamiento del scroll
         self.resultado_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.resultado_text.setMinimumHeight(200)
         
         main_layout.addWidget(self.resultado_text)
 
-        # Creamos el Scroll
+        # Scroll
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(central_widget)
@@ -398,13 +496,28 @@ class CitaWindow(QMainWindow):
         for doctor in doctores:
             self.doctor_combo.addItem(str(doctor), doctor)
         
-        self.tratamiento_combo.addItems([t['descripcion'] for t in tratamientos])
+        self.tratamiento_combo.addItems([t.descripcion for t in tratamientos])
 
-def main():
-    app = QApplication([])
-    window = CitaWindow()  # Sin parámetros
-    window.show()
-    app.exec()
+    def validar_fecha_seleccionada(self, fecha_seleccionada):
+        """Valida que la fecha seleccionada no sea pasada"""
+        fecha_actual = QDate.currentDate()
+        
+        if fecha_seleccionada < fecha_actual:
+            # Mostrar mensaje de advertencia
+            QMessageBox.warning(self, "❌ Fecha Inválida", 
+                              "No se pueden programar citas en fechas pasadas.\n"
+                              "Por favor seleccione una fecha actual o futura.")
+            
+            # Restablecer a la fecha actual
+            self.fecha_edit.setDate(fecha_actual)
+            return False
+        return True
 
-if __name__ == "__main__":  
-    main()
+# def main():
+#     app = QApplication([])
+#     window = CitaWindow()
+#     window.show()
+#     app.exec()
+
+# if __name__ == "__main__":  
+#     main()
