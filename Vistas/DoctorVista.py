@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
                              QDialog, QDialogButtonBox,
                              QScrollArea, QComboBox, QTimeEdit
                              )
+
 from PyQt6.QtCore import Qt, QTime
 from PyQt6.QtGui import QFont
 
@@ -226,7 +227,7 @@ class DoctorWindow(QMainWindow):
         info_group = QGroupBox("Información del Doctor")
         info_layout = QFormLayout()
         
-        self.dui_edit = QLineEdit()
+        self.num_junta_medica_edit = QLineEdit()
         self.nombre_edit = QLineEdit()
         self.apellido_edit = QLineEdit()
         self.especialidad_edit = QLineEdit()
@@ -234,7 +235,7 @@ class DoctorWindow(QMainWindow):
         self.correo_edit = QLineEdit()
 
         
-        info_layout.addRow("DUI:", self.dui_edit)
+        info_layout.addRow("Numero de junta Medica:", self.num_junta_medica_edit)
         info_layout.addRow("Nombre:", self.nombre_edit)
         info_layout.addRow("Apellido:", self.apellido_edit)
         info_layout.addRow("Especialidad:", self.especialidad_edit)
@@ -271,19 +272,11 @@ class DoctorWindow(QMainWindow):
         buttons_row2.addWidget(self.mostrar_info_btn)
         buttons_row2.addWidget(self.suprimir_doctor_btn)
         buttons_row2.addWidget(self.actualizar_info_doctor_btn)
-        
-        # Tercer fila de botones 
-        buttons_row3 = QHBoxLayout()
-        buttons_row3.setSpacing(10)
-
-        self.registrar_diagnostico_btn = QPushButton("📝 Registrar Diagnóstico")
-        buttons_row3.addWidget(self.registrar_diagnostico_btn)
 
         # Layout vertical para las filas de botones
         buttons_container = QVBoxLayout()
         buttons_container.addLayout(buttons_row1)
         buttons_container.addLayout(buttons_row2)
-        buttons_container.addLayout(buttons_row3)
         
         main_layout.addLayout(buttons_container)
         
@@ -391,16 +384,15 @@ class DoctorWindow(QMainWindow):
         self.mostrar_info_btn.clicked.connect(self.controlador.mostrar_info_doctor)
         self.suprimir_doctor_btn.clicked.connect(self.controlador.suprimir_doctor)
         self.actualizar_info_doctor_btn.clicked.connect(self.controlador.actualizar_info_doctor)
-        # self.registrar_diagnostico_btn.clicked.connect(self.controlador.registrar_diagnostico)
     
 
 
-def main():
+# def main():
     
-    app = QApplication([])
-    window = DoctorWindow()
-    window.show()
-    app.exec()
+#     app = QApplication([])
+#     window = DoctorWindow()
+#     window.show()
+#     app.exec()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
