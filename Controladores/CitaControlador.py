@@ -3,18 +3,17 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 
 from Modelos.PacienteModelo import Paciente
 from Modelos.DoctorModelo import Doctor
 from Modelos.CitaModelo import Cita
 from Vistas.FacturaVista import FacturacionView
-
-# ...existing imports...
+from Modelos.TratamientoModelo import Tratamiento
 
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
-from PyQt6.QtCore import QDateTime
+from PyQt6.QtCore import QDateTime, QDate
 
 
 class ControladorCita:    
@@ -23,10 +22,9 @@ class ControladorCita:
         self.citas: List[Cita] = []  # Lista para almacenar las citas creadas
         self.editando_cita = None
         
-        # MOVER LOS DATOS AQUÍ
         self.doctores = [
-            Doctor("Melisa", "Rivas", "12345678-9", "Cirujano Dentista", 12345678, "correo@gmail.com"), 
-            Doctor("Carlos", "López", "98765432-1", "Ortodontista", 87654321, "coreo1@gmail.com")
+            Doctor("Melisa", "Rivas", "1234", "Cirujano Dentista", 12345678, "correo@gmail.com"), 
+            Doctor("Carlos", "López", "2345", "Ortodontista", 87654321, "coreo1@gmail.com")
         ]
         
         self.pacientes = [
@@ -35,7 +33,8 @@ class ControladorCita:
         ]
         
         self.tratamientos = [
-            {'descripcion': 'Limpieza', 'costo': 20.0}
+            Tratamiento(1, "Limpieza Dental", 50.0, "05-12-2023",  "Sin realizar", self.doctores[0]),
+            Tratamiento(2, "Ortodoncia", 200.0, "06-15-2023", "En proceso", self.doctores[1])
         ]
         
         # Inicializar la vista con los datos
@@ -52,10 +51,41 @@ class ControladorCita:
         paciente_idx = self.vista.paciente_combo.currentIndex()
         doctor_idx = self.vista.doctor_combo.currentIndex()
         tratamiento_idx = self.vista.tratamiento_combo.currentIndex()
-        hora_inicio = self.vista.fecha_inicio_edit.dateTime().toPyDateTime()
-        hora_fin = self.vista.fecha_fin_edit.dateTime().toPyDateTime()
+        fecha = self.vista.fecha_edit.date().toPyDate()
+        hora_inicio_dt = self.vista.inicio_edit.dateTime().toPyDateTime()
+        hora_fin_dt = self.vista.fin_edit.dateTime().toPyDateTime()
+        hora_inicio = hora_inicio_dt.time()
+        hora_fin = hora_fin_dt.time()
         costo = self.vista.costo_edit.text().strip()
         estado = self.vista.estado_combo.currentText()
+
+        # Validaciones básicas
+        if not all([id_cita, costo]):
+            QMessageBox.warning(self.vista, "❌ Error", "ID de cita y costo son campos obligatorios")
+            return
+
+        # Verificar que la fecha no sea pasada
+        fecha_actual = date.today()
+        if fecha < fecha_actual:
+            QMessageBox.warning(self.vista, "❌ Error", 
+                              "No se pueden crear citas en fechas pasadas.\n"
+                              "Por favor seleccione una fecha actual o futura.")
+            return
+
+        # Validar que la hora de fin sea posterior a la hora de inicio
+        if hora_inicio >= hora_fin:
+            QMessageBox.warning(self.vista, "❌ Error", "La hora de fin debe ser posterior a la hora de inicio")
+            return
+
+        # Si es hoy, verificar que la hora no haya pasado
+        if fecha == fecha_actual:
+            hora_actual = datetime.now().time()
+            if hora_inicio <= hora_actual:
+                QMessageBox.warning(self.vista, "❌ Error", 
+                                  f"No se pueden crear citas en horarios pasados.\n"
+                                  f"Hora actual: {hora_actual.strftime('%H:%M')}\n"
+                                  f"Por favor seleccione una hora futura.")
+                return
 
         # Verificar disponibilidad del doctor
         doctor = self.doctores[doctor_idx]
@@ -71,24 +101,23 @@ class ControladorCita:
         try:
             costo_float = float(costo)
             if costo_float <= 0:
-                QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser mayor que 0.")
+                QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser mayor a 0")
                 return
         except ValueError:
-            QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser un número válido.")
+            QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser un número válido")
             return
-
 
         # Valida que no se repita el id de cita
         for cita in self.citas:
             if cita.id_cita == id_cita:
-                QMessageBox.warning(self.vista, "❌ Error", "Ya existe una cita con ese ID.")
+                QMessageBox.warning(self.vista, "❌ Error", "Ya existe una cita con ese ID")
                 return
 
-        # Usar datos del controlador, no de la vista
         paciente = self.pacientes[paciente_idx]
         doctor = self.doctores[doctor_idx]
         tratamiento = self.tratamientos[tratamiento_idx]
-        nueva_cita = Cita(id_cita, paciente, doctor, hora_inicio, hora_fin, float(costo))
+        
+        nueva_cita = Cita(id_cita, paciente, doctor, fecha, hora_inicio, hora_fin, costo_float)
         nueva_cita.tratamiento = tratamiento
         nueva_cita.estado = estado
 
@@ -104,9 +133,8 @@ class ControladorCita:
             self.vista.resultado_text.append("No hay citas registradas...")
             return
         
-        self.vista.resultado_text.append("📃Citas registradas:")
         for cita in self.citas:
-            self.vista.resultado_text.append(str(cita))
+            self.vista.resultado_text.append(f"{cita}\n" + "-"*50 + "\n")
 
     def cancelar_cita(self):
         """Cancela una cita por ID"""
@@ -141,8 +169,11 @@ class ControladorCita:
                 paciente_idx = self.vista.paciente_combo.currentIndex()
                 doctor_idx = self.vista.doctor_combo.currentIndex()
                 tratamiento_idx = self.vista.tratamiento_combo.currentIndex()
-                hora_inicio = self.vista.fecha_inicio_edit.dateTime().toPyDateTime()
-                hora_fin = self.vista.fecha_fin_edit.dateTime().toPyDateTime()
+                fecha = self.vista.fecha_edit.date().toPyDate()
+                hora_inicio_dt = self.vista.inicio_edit.dateTime().toPyDateTime()
+                hora_fin_dt = self.vista.fin_edit.dateTime().toPyDateTime()
+                hora_inicio = hora_inicio_dt.time()
+                hora_fin = hora_fin_dt.time()
                 costo = self.vista.costo_edit.text().strip()
                 estado = self.vista.estado_combo.currentText()
                 
@@ -150,6 +181,24 @@ class ControladorCita:
                 if paciente_idx == -1 or doctor_idx == -1 or tratamiento_idx == -1 or not costo:
                     QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios.")
                     return
+                
+                # Verificar que la fecha no sea pasada
+                fecha_actual = date.today()
+                if fecha < fecha_actual:
+                    QMessageBox.warning(self.vista, "❌ Error", 
+                                      "No se pueden modificar citas a fechas pasadas.\n"
+                                      "Por favor seleccione una fecha actual o futura.")
+                    return
+
+                # Si es hoy, verificar que la hora no haya pasado
+                if fecha == fecha_actual:
+                    hora_actual = datetime.now().time()
+                    if hora_inicio <= hora_actual:
+                        QMessageBox.warning(self.vista, "❌ Error", 
+                                          f"No se pueden modificar citas a horarios pasados.\n"
+                                          f"Hora actual: {hora_actual.strftime('%H:%M')}\n"
+                                          f"Por favor seleccione una hora futura.")
+                        return
                 
                 try:
                     costo_float = float(costo)
@@ -166,6 +215,7 @@ class ControladorCita:
                 cita.paciente = self.pacientes[paciente_idx]
                 cita.doctor = self.doctores[doctor_idx]
                 cita.tratamiento = self.tratamientos[tratamiento_idx]
+                cita.fecha = fecha
                 cita.hora_inicio = hora_inicio
                 cita.hora_fin = hora_fin
                 cita.costo_cita = costo_float
@@ -177,8 +227,9 @@ class ControladorCita:
                     f"ID: {cita.id_cita}\n"
                     f"Paciente: {cita.paciente.nombre} {cita.paciente.apellido}\n"
                     f"Doctor: {cita.doctor.nombre} {cita.doctor.apellido}\n"
-                    f"Fecha inicio: {cita.hora_inicio.strftime('%d/%m/%Y %H:%M')}\n"
-                    f"Fecha fin: {cita.hora_fin.strftime('%d/%m/%Y %H:%M')}\n"
+                    f"Fecha: {cita.fecha.strftime('%d/%m/%Y')}\n"
+                    f"Hora inicio: {cita.hora_inicio.strftime('%H:%M')}\n"
+                    f"Hora fin: {cita.hora_fin.strftime('%H:%M')}\n"
                     f"Costo: ${cita.costo_cita:.2f}\n"
                     f"Estado: {cita.estado}\n"
                 )
@@ -222,7 +273,7 @@ class ControladorCita:
                 break
         
         for i, doctor in enumerate(self.doctores):
-            if doctor.dui == cita_encontrada.doctor.dui:
+            if doctor.num_junta_medica == cita_encontrada.doctor.num_junta_medica:
                 self.vista.doctor_combo.setCurrentIndex(i)
                 break
         
@@ -233,8 +284,22 @@ class ControladorCita:
                     break
         
         # Establecer fechas y otros campos
-        self.vista.fecha_inicio_edit.setDateTime(QDateTime(cita_encontrada.hora_inicio))
-        self.vista.fecha_fin_edit.setDateTime(QDateTime(cita_encontrada.hora_fin))
+        if hasattr(cita_encontrada, 'fecha'):
+            if hasattr(cita_encontrada.fecha, 'year'):
+                qdate = QDate(cita_encontrada.fecha.year, cita_encontrada.fecha.month, cita_encontrada.fecha.day)
+                self.vista.fecha_edit.setDate(qdate)
+            else:
+                self.vista.fecha_edit.setDate(QDate.currentDate())
+
+        from datetime import datetime, time
+        if isinstance(cita_encontrada.hora_inicio, time):
+            dt_inicio = datetime.combine(datetime.today().date(), cita_encontrada.hora_inicio)
+            self.vista.inicio_edit.setDateTime(QDateTime(dt_inicio))
+    
+        if isinstance(cita_encontrada.hora_fin, time):
+            dt_fin = datetime.combine(datetime.today().date(), cita_encontrada.hora_fin)
+            self.vista.fin_edit.setDateTime(QDateTime(dt_fin))
+
         self.vista.costo_edit.setText(str(cita_encontrada.costo_cita))
         self.vista.estado_combo.setCurrentText(cita_encontrada.estado)
         
@@ -275,17 +340,14 @@ class ControladorCita:
         for cita in self.citas:
             if cita.id_cita == id_cita.strip():
                 costo_cita = cita.costo_cita
-                costo_tratamiento = getattr(cita, 'tratamiento', {}).get('costo', 0)
+                # Cambiar el acceso a los atributos del tratamiento
+                costo_tratamiento = getattr(cita, 'tratamiento', None)
+                if costo_tratamiento:
+                    costo_tratamiento = costo_tratamiento.costo
+                else:
+                    costo_tratamiento = 0
                 total = costo_cita + costo_tratamiento
-                
-                # Mostrar el cálculo en el área de resultados
-                self.vista.resultado_text.append(
-                    f"Monto a pagar para la cita {cita.id_cita}:\n"
-                    f"Consulta: ${costo_cita:.2f}\n"
-                    f"Tratamiento: ${costo_tratamiento:.2f}\n"
-                    f"Total: ${total:.2f}\n"
-                )
-                
+
                 # Mostrar mensaje con el total
                 respuesta = QMessageBox.question(
                     self.vista, 
@@ -293,6 +355,7 @@ class ControladorCita:
                     f"Total a pagar: ${total:.2f}\n\n¿Desea generar una factura?",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
+                
                 
                 # Si el usuario acepta, abrir la vista de factura
                 if respuesta == QMessageBox.StandardButton.Yes:
@@ -310,7 +373,8 @@ class ControladorCita:
                         # Crear descripción del servicio
                         descripcion_servicio = f"Consulta médica"
                         if hasattr(cita, 'tratamiento') and cita.tratamiento:
-                            descripcion_servicio += f", {cita.tratamiento.get('descripcion', 'Tratamiento')}"
+                            # Cambiar el acceso al atributo descripcion
+                            descripcion_servicio += f", {cita.tratamiento.descripcion}"
                         
                         self.factura_window.servicio_edit.setText(descripcion_servicio)
                         self.factura_window.monto_edit.setText(f"{costo_cita}, {costo_tratamiento}")
@@ -325,23 +389,46 @@ class ControladorCita:
                         # Mensaje en el área de resultados
                         self.vista.resultado_text.append(f"🧾 Ventana de facturación abierta para la cita {cita.id_cita}")
                         
+                        # Mostrar el cálculo en el área de resultados
+                        self.vista.resultado_text.append(
+                            f"Monto a pagar para la cita {cita.id_cita}:\n"
+                            f"Consulta: ${costo_cita:.2f}\n"
+                            f"Tratamiento: ${costo_tratamiento:.2f}\n"
+                            f"Total: ${total:.2f}\n"
+                        )
+                        
                     except Exception as e:
                         QMessageBox.critical(self.vista, "❌ Error", 
                                            f"Error al abrir la ventana de facturación: {str(e)}")
-                
-                return
-        
+            
+            return
+    
         QMessageBox.warning(self.vista, "❌ Error", "No se encontró la cita.")
 
     def limpiar_campos(self):
         self.vista.id_edit.clear()
         self.vista.id_edit.setReadOnly(False)  # Rehabilitar el campo ID
-        self.vista.fecha_inicio_edit.setDateTime(QDateTime.currentDateTime())
-        self.vista.fecha_fin_edit.setDateTime(QDateTime.currentDateTime())
+        self.vista.fecha_edit.setDate(QDate.currentDate())
+        self.vista.inicio_edit.setDateTime(QDateTime.currentDateTime())
+        self.vista.fin_edit.setDateTime(QDateTime.currentDateTime())
         self.vista.costo_edit.clear()
         self.vista.estado_combo.setCurrentIndex(0)
         self.vista.paciente_combo.setCurrentIndex(0)
         self.vista.doctor_combo.setCurrentIndex(0)
         self.vista.tratamiento_combo.setCurrentIndex(0)
         self.editando_cita = None  # Resetear el modo edición
+
+# ==========================================
+# EJECUCIÓN AUTOMÁTICA DEL CONTROLADOR
+# PROPÓSITO: Inicializar la aplicación directamente desde el controlador
+# ==========================================
+
+if __name__ == "__main__":  
+    from PyQt6.QtWidgets import QApplication
+    from Vistas.CitaVista import CitaWindow
+
+    app = QApplication([])
+    window = CitaWindow()
+    window.show()
+    app.exec()
 
