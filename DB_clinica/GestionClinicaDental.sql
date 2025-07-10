@@ -15,7 +15,7 @@ CREATE TABLE Paciente (
 
 -- Tabla: Doctor
 CREATE TABLE Doctor (
-	ID_Doctor INT AUTO_INCREMENT PRIMARY KEY,
+	ID_Doctor INT PRIMARY KEY,
 	Nombre VARCHAR(50) NOT NULL,
 	Apellido VARCHAR(50) NOT NULL,
 	Especialidad VARCHAR(50) NOT NULL,
@@ -128,15 +128,15 @@ CREATE TABLE Asistente_Factura (
 );
 
 
-INSERT INTO Paciente (Nombre, Apellido, Fecha_Nacimiento, DUI, Telefono, Correo) VALUES
-('Laura', 'Mendoza', '1991-04-12', '12345678-9', '70112233', 'laura.mendoza@correo.com'),
-('Ricardo', 'Vásquez', '1987-09-23', '23456789-0', '70223344', 'ricardo.vas@correo.com'),
-('Carla', 'López', '1995-06-15', '34567890-1', '70334455', 'carla.lopez@correo.com');
+INSERT INTO Paciente (Nombre, Apellido, Fecha_Nacimiento, Telefono, Correo) VALUES
+('Laura', 'Mendoza', '1991-04-12', '70112233', 'laura.mendoza@correo.com'),
+('Ricardo', 'Vásquez', '1987-09-23', '70223344', 'ricardo.vas@correo.com'),
+('Carla', 'López', '1995-06-15', '70334455', 'carla.lopez@correo.com');
 
-INSERT INTO Doctor (Nombre, Apellido, Especialidad, Telefono, Correo, Contrasena) VALUES
-('Daniela', 'Pineda', 'Odontología General', '71112233', 'daniela.pineda@doc.com', 'clave123'),
-('Luis', 'Zelaya', 'Ortodoncia', '72223344', 'luis.zelaya@doc.com', 'clave234'),
-('Rebeca', 'García', 'Endodoncia', '73334455', 'rebeca.garcia@doc.com', 'clave345');
+INSERT INTO Doctor (ID_Doctor, Nombre, Apellido, Especialidad, Telefono, Correo, Contrasena) VALUES
+(1234, 'Daniela', 'Pineda', 'Odontología General', '71112233', 'daniela.pineda@doc.com', 'clave123'),
+(2345, 'Luis', 'Zelaya', 'Ortodoncia', '72223344', 'luis.zelaya@doc.com', 'clave234'),
+(3456, 'Rebeca', 'García', 'Endodoncia', '73334455', 'rebeca.garcia@doc.com', 'clave345');
 
 INSERT INTO Historial_Medico (ID_Paciente, Fecha_Creacion, Notas_Generales) VALUES
 (1, '2024-05-01', 'Paciente con caries recurrentes.'),
@@ -144,21 +144,21 @@ INSERT INTO Historial_Medico (ID_Paciente, Fecha_Creacion, Notas_Generales) VALU
 (3, '2024-07-05', 'Control de ortodoncia.');
 
 INSERT INTO Horario (ID_Doctor, Fecha, Hora_Inicio, Hora_Fin, Disponible) VALUES
-(1, '2025-07-01', '08:00:00', '12:00:00', TRUE),
-(2, '2025-07-01', '13:00:00', '17:00:00', TRUE),
-(3, '2025-07-02', '08:00:00', '12:00:00', FALSE);
+(1234, '2025-07-01', '08:00:00', '12:00:00', TRUE),
+(2345, '2025-07-01', '13:00:00', '17:00:00', TRUE),
+(3456, '2025-07-02', '08:00:00', '12:00:00', FALSE);
 
 
 INSERT INTO Tratamiento (ID_Paciente, ID_Doctor, Descripcion, Costo, Fecha, Estado) VALUES
-(1, 1, 'Limpieza dental general', 20.00, '2025-07-01 09:30:00', 'Finalizado'),
-(2, 2, 'Colocación de brackets', 450.00, '2025-07-01 15:00:00', 'En Progreso'),
-(3, 3, 'Tratamiento de conducto', 250.00, '2025-07-02 10:30:00', 'Pendiente');
+(1, 1234, 'Limpieza dental general', 20.00, '2025-07-01 09:30:00', 'Finalizado'),
+(2, 2345, 'Colocación de brackets', 450.00, '2025-07-01 15:00:00', 'En Progreso'),
+(3, 3456, 'Tratamiento de conducto', 250.00, '2025-07-02 10:30:00', 'Pendiente');
 
 
 INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Hora_Fin, Estado, Costo) VALUES
-(1, 1, 1, '2025-07-01 09:00:00', '09:00:00', '09:30:00', 'Confirmada', 20.00),
-(2, 2, 2, '2025-07-01 14:30:00', '14:30:00', '15:00:00', 'Pendiente', 45.00),
-(3, 3, 3, '2025-07-02 10:00:00', '10:00:00', '10:30:00', 'Confirmada', 60.00);
+(1, 1234, 1, '2025-07-01 09:00:00', '09:00:00', '09:30:00', 'Confirmada', 20.00),
+(2, 2345, 2, '2025-07-01 14:30:00', '14:30:00', '15:00:00', 'Pendiente', 45.00),
+(3, 3456, 3, '2025-07-02 10:00:00', '10:00:00', '10:30:00', 'Confirmada', 60.00);
 
 INSERT INTO Factura (ID_Paciente, Fecha_Emision, Monto_Total, Estado_Pago) VALUES
 (1, '2025-07-01', 20.00, 'Pagada'),
