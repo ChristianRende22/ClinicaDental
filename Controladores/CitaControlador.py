@@ -10,6 +10,7 @@ from Modelos.PacienteModelo import Paciente
 from Modelos.DoctorModelo import Doctor
 from Modelos.CitaModelo import Cita
 from Vistas.FacturaVista import FacturacionView
+from Controladores.FacturaControlador import FacturacionController
 from Modelos.TratamientoModelo import Tratamiento
 
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
@@ -23,8 +24,8 @@ class ControladorCita:
         self.editando_cita = None
         
         self.doctores = [
-            Doctor("Melisa", "Rivas", "1234", "Cirujano Dentista", 12345678, "correo@gmail.com"), 
-            Doctor("Carlos", "López", "2345", "Ortodontista", 87654321, "coreo1@gmail.com")
+            Doctor("Melisa", "Rivas", 1234, "Cirujano Dentista", 12345678, "correo@gmail.com"), 
+            Doctor("Carlos", "López", 2345, "Ortodontista", 87654321, "coreo1@gmail.com")
         ]
         
         self.pacientes = [
@@ -33,8 +34,8 @@ class ControladorCita:
         ]
         
         self.tratamientos = [
-            Tratamiento(1, "Limpieza Dental", 50.0, "05-12-2023",  "Sin realizar", self.doctores[0]),
-            Tratamiento(2, "Ortodoncia", 200.0, "06-15-2023", "En proceso", self.doctores[1])
+            Tratamiento(1, 1234, "Limpieza Dental", 50.0, "05-12-2023",  "Sin realizar", self.doctores[0], "12345678-0" ),
+            Tratamiento(2, 2345, "Ortodoncia", 200.0, "06-15-2023", "En proceso", self.doctores[1], "12345678-9")
         ]
         
         # Inicializar la vista con los datos
@@ -340,7 +341,6 @@ class ControladorCita:
         for cita in self.citas:
             if cita.id_cita == id_cita.strip():
                 costo_cita = cita.costo_cita
-                # Cambiar el acceso a los atributos del tratamiento
                 costo_tratamiento = getattr(cita, 'tratamiento', None)
                 if costo_tratamiento:
                     costo_tratamiento = costo_tratamiento.costo
@@ -348,7 +348,6 @@ class ControladorCita:
                     costo_tratamiento = 0
                 total = costo_cita + costo_tratamiento
 
-                # Mostrar mensaje con el total
                 respuesta = QMessageBox.question(
                     self.vista, 
                     "💰 Monto Calculado", 
@@ -356,53 +355,39 @@ class ControladorCita:
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
                 
-                
-                # Si el usuario acepta, abrir la vista de factura
                 if respuesta == QMessageBox.StandardButton.Yes:
                     try:
-                        # Crear y mostrar la ventana de facturación
+                        if hasattr(self, 'factura_window') and self.factura_window is not None:
+                            self.factura_window.close()
+                            self.factura_window = None
+
                         self.factura_window = FacturacionView()
-                        
-                        # Pre-cargar datos de la cita en la factura
-                        self.factura_window.cargar_pacientes([cita.paciente])
-                        
-                        # Pre-llenar algunos campos
+                        self.factura_controller = FacturacionController(self.factura_window)
+                        self.factura_window.cargar_pacientes(self.pacientes)
+
+                        for i in range(self.factura_window.paciente_combo.count()):
+                            paciente_combo = self.factura_window.paciente_combo.itemData(i)
+                            if paciente_combo and hasattr(paciente_combo, "dui") and paciente_combo.dui == cita.paciente.dui:
+                                self.factura_window.paciente_combo.setCurrentIndex(i)
+                                break
+
                         fecha_actual = datetime.now().strftime('%d/%m/%Y')
                         self.factura_window.fecha_edit.setText(fecha_actual)
-                        
-                        # Crear descripción del servicio
                         descripcion_servicio = f"Consulta médica"
                         if hasattr(cita, 'tratamiento') and cita.tratamiento:
-                            # Cambiar el acceso al atributo descripcion
                             descripcion_servicio += f", {cita.tratamiento.descripcion}"
-                        
                         self.factura_window.servicio_edit.setText(descripcion_servicio)
                         self.factura_window.monto_edit.setText(f"{costo_cita}, {costo_tratamiento}")
-                        
-                        # Generar ID de factura automático
                         id_factura = f"FAC-{cita.id_cita}-{datetime.now().strftime('%Y%m%d')}"
                         self.factura_window.id_factura_edit.setText(id_factura)
-                        
-                        # Mostrar la ventana
+
                         self.factura_window.show()
-                        
-                        # Mensaje en el área de resultados
-                        self.vista.resultado_text.append(f"🧾 Ventana de facturación abierta para la cita {cita.id_cita}")
-                        
-                        # Mostrar el cálculo en el área de resultados
-                        self.vista.resultado_text.append(
-                            f"Monto a pagar para la cita {cita.id_cita}:\n"
-                            f"Consulta: ${costo_cita:.2f}\n"
-                            f"Tratamiento: ${costo_tratamiento:.2f}\n"
-                            f"Total: ${total:.2f}\n"
-                        )
-                        
+
                     except Exception as e:
-                        QMessageBox.critical(self.vista, "❌ Error", 
-                                           f"Error al abrir la ventana de facturación: {str(e)}")
-            
-            return
-    
+                        QMessageBox.critical(self.vista, "❌ Error", f"Error al abrir la ventana de facturación: {str(e)}")
+                return  # <-- SOLO aquí, después de procesar la cita encontrada
+
+        # Si no se encontró la cita, muestra el mensaje de error
         QMessageBox.warning(self.vista, "❌ Error", "No se encontró la cita.")
 
     def limpiar_campos(self):
