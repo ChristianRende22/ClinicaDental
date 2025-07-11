@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
                              QDialog, QDialogButtonBox,
                              QScrollArea, QComboBox, QTimeEdit
                              )
+
 from PyQt6.QtCore import Qt, QTime
 from PyQt6.QtGui import QFont
 
@@ -226,7 +227,7 @@ class DoctorWindow(QMainWindow):
         info_group = QGroupBox("Información del Doctor")
         info_layout = QFormLayout()
         
-        self.dui_edit = QLineEdit()
+        self.num_junta_medica_edit = QLineEdit()
         self.nombre_edit = QLineEdit()
         self.apellido_edit = QLineEdit()
         self.especialidad_edit = QLineEdit()
@@ -234,7 +235,7 @@ class DoctorWindow(QMainWindow):
         self.correo_edit = QLineEdit()
 
         
-        info_layout.addRow("DUI:", self.dui_edit)
+        info_layout.addRow("Numero de junta Medica:", self.num_junta_medica_edit)
         info_layout.addRow("Nombre:", self.nombre_edit)
         info_layout.addRow("Apellido:", self.apellido_edit)
         info_layout.addRow("Especialidad:", self.especialidad_edit)
@@ -271,19 +272,11 @@ class DoctorWindow(QMainWindow):
         buttons_row2.addWidget(self.mostrar_info_btn)
         buttons_row2.addWidget(self.suprimir_doctor_btn)
         buttons_row2.addWidget(self.actualizar_info_doctor_btn)
-        
-        # Tercer fila de botones 
-        buttons_row3 = QHBoxLayout()
-        buttons_row3.setSpacing(10)
-
-        self.registrar_diagnostico_btn = QPushButton("📝 Registrar Diagnóstico")
-        buttons_row3.addWidget(self.registrar_diagnostico_btn)
 
         # Layout vertical para las filas de botones
         buttons_container = QVBoxLayout()
         buttons_container.addLayout(buttons_row1)
         buttons_container.addLayout(buttons_row2)
-        buttons_container.addLayout(buttons_row3)
         
         main_layout.addLayout(buttons_container)
         
@@ -385,22 +378,41 @@ class DoctorWindow(QMainWindow):
 
     def conectar_botones(self):
         """Conecta los botones a las funciones del controlador"""
-        self.crear_btn.clicked.connect(self.controlador.crear_doctor)
+        self.crear_btn.clicked.connect(self.crear_doctor)
         self.agregar_horario_btn.clicked.connect(self.controlador.agregar_horario)
         self.ver_cita_btn.clicked.connect(self.controlador.ver_citas)
         self.mostrar_info_btn.clicked.connect(self.controlador.mostrar_info_doctor)
         self.suprimir_doctor_btn.clicked.connect(self.controlador.suprimir_doctor)
         self.actualizar_info_doctor_btn.clicked.connect(self.controlador.actualizar_info_doctor)
-        # self.registrar_diagnostico_btn.clicked.connect(self.controlador.registrar_diagnostico)
     
+    def crear_doctor(self):
+        """Crea un nuevo paciente y lo agrega a la base de datos"""
+        try:
+            num_junta = self.num_junta_medica_edit.text().strip()
+            nombre = self.nombre_edit.text().strip()
+            apellido = self.apellido_edit.text().strip()
+            especialidad = self.especialidad_edit.text().strip()
+            telefono = self.telefono_edit.text().strip()
+            correo = self.correo_edit.text().strip()
+
+            if not all([num_junta, nombre, apellido, especialidad, telefono, correo]):
+                self.resultado_text.append("❌ Error: Todos los campos son obligatorios.")
+                return
+
+            self.controlador.crear_doctor(num_junta, nombre, apellido, especialidad, telefono, correo)
+            self.resultado_text.append(f"✅ Doctor guardado: {nombre} {apellido}")
+        except Exception as e:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "❌ Error", f"Ocurrió un error inesperado: {str(e)}")
+            print(f"[ERROR] obtener_datos_y_guardar_doctor: {e}")
 
 
-def main():
+# def main():
     
-    app = QApplication([])
-    window = DoctorWindow()
-    window.show()
-    app.exec()
+#     app = QApplication([])
+#     window = DoctorWindow()
+#     window.show()
+#     app.exec()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

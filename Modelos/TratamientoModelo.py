@@ -2,11 +2,13 @@ import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import mysql.connector
+
+from Modelos.PacienteModelo import Paciente
 from Modelos.DoctorModelo import Doctor
 from datetime import datetime
 
 class Tratamiento:
-    def __init__(self, id_tratamiento, id_paciente, id_doctor, descripcion, costo, fecha, estado, doctor, paciente):
+    def __init__(self, id_tratamiento, id_paciente, id_doctor, descripcion, costo, fecha, estado, doctor=None, paciente=None):
         self.id_tratamiento = id_tratamiento
         self.id_paciente = id_paciente
         self.id_doctor = id_doctor
@@ -14,8 +16,8 @@ class Tratamiento:
         self.costo = costo
         self.fecha = fecha
         self.estado = estado
-        self.doctor = doctor
-        self.paciente = paciente
+        self.paciente = paciente or self._obtener_paciente(id_paciente)
+        self.doctor = doctor or self._obtener_doctor(id_doctor)
         
     @staticmethod
     def conectar_bd():
@@ -43,6 +45,44 @@ class Tratamiento:
             return nombre, apellido
         else:
             return None, None
+
+    def _obtener_paciente(self, id_paciente):
+        try:
+            conn = Tratamiento.conectar_bd()
+            cursor = conn.cursor()
+            query = """
+                SELECT ID_Paciente, Nombre, Apellido, Fecha_Nacimiento, DUI, Telefono, Correo
+                FROM paciente
+                WHERE ID_Paciente = %s
+            """
+            cursor.execute(query, (id_paciente,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if resultado:
+                from Modelos.PacienteModelo import Paciente
+                id_paciente, nombre, apellido, fecha_nac, dui, telefono, correo = resultado
+                return Paciente(
+                    id_paciente=id_paciente,
+                    nombre=nombre,
+                    apellido=apellido,
+                    fecha_nacimiento=fecha_nac,
+                    dui=dui,
+                    telefono=telefono,
+                    correo=correo
+                )
+        except Exception as e:
+            print(f"❌ Error al obtener paciente: {e}")
+        return None
+
+    def _obtener_doctor(self, id_doctor):
+        try:
+            nombre, apellido = Tratamiento.buscar_doctor_por_codigo(id_doctor)
+            if nombre and apellido:
+                return f"{nombre} {apellido}"
+        except Exception as e:
+            print(f"❌ Error al obtener doctor: {e}")
+        return "Doctor desconocido"
         
     @staticmethod
     def insertar_tratamiento(id_paciente, id_doctor, descripcion, costo, fecha, estado):
