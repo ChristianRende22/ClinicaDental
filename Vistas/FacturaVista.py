@@ -10,12 +10,12 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QDoubleValidator 
 from datetime import datetime
 from typing import List, Dict, Any
-# NO IMPORTAR EL CONTROLADOR AQUÍ - se creará externamente
 
 class FacturacionView(QMainWindow):  
     crear_factura_signal = pyqtSignal(dict)
     mostrar_facturas_signal = pyqtSignal()
     limpiar_campos_signal = pyqtSignal()
+    agregar_tratamiento_signal = pyqtSignal()  # señal para abrir tratamiento
     
     def __init__(self):
         super().__init__()
@@ -33,10 +33,9 @@ class FacturacionView(QMainWindow):
         self.setWindowTitle("Gestión de Facturas - Clínica Dental") 
         self.setGeometry(100, 100, 900, 700)
         
-        self.setup_styles()  # Configurar estilos
-        self.init_ui()       # Inicializar la interfaz
-        # NO CREAR EL CONTROLADOR AQUÍ
-        self.conectar_botones()  # Conectar los botones
+        self.setup_styles()  
+        self.init_ui()      
+        self.conectar_botones()  
 
     def setup_styles(self):
         """Configura los estilos de la aplicación"""
@@ -98,6 +97,16 @@ class FacturacionView(QMainWindow):
                 background-color: {self.colors['accent']};
             }}
             
+            /* Estilo especial para el botón de agregar tratamiento */
+            QPushButton#agregar_tratamiento {{
+                background-color: #28a745;
+                color: white;
+            }}
+            
+            QPushButton#agregar_tratamiento:hover {{
+                background-color: #218838;
+            }}
+            
             QTextEdit {{
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 13px;
@@ -123,11 +132,8 @@ class FacturacionView(QMainWindow):
         title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         main_layout.addWidget(title)
         
-        # Formulario
         self.create_form_group(main_layout)
-        # Botones de acción
         self.create_buttons(main_layout)
-        # Área de resultados
         self.create_results_area(main_layout)
 
         # Creamos el ScrollArea para envolver todo el contenido principal
@@ -137,50 +143,36 @@ class FacturacionView(QMainWindow):
         self.setCentralWidget(scroll_area)
     
     def create_form_group(self, main_layout):
-        # Grupo formulario
-        form_group = QGroupBox("Datos de Facturación")
+        # solo ID factura y paciente
+        form_group = QGroupBox("Datos Básicos de Facturación")
         form_layout = QFormLayout()
         
-        # Campos del formulario
         self.id_factura_edit = QLineEdit()
         self.id_factura_edit.setPlaceholderText("Ej: FAC-001")
         
-        self.fecha_edit = QLineEdit(datetime.now().strftime('%d/%m/%Y'))
-        self.fecha_edit.setPlaceholderText("DD/MM/YYYY")
-        
-        self.servicio_edit = QLineEdit()
-        self.servicio_edit.setPlaceholderText("Ej: Limpieza dental, extracción molar, radiografía")
-        
-        self.monto_edit = QLineEdit()
-        self.monto_edit.setPlaceholderText("Ej: 50.00, 120.00, 30.00 (en el mismo orden)")
-        costo_validator = QDoubleValidator(0.0, 999999.99, 2)
-        self.monto_edit.setValidator(costo_validator)
-        
         self.paciente_combo = QComboBox()
-        self.estado_pago_combo = QComboBox()
-        self.estado_pago_combo.addItems(["Pendiente", "Pagado", "Cancelado"])
         
         form_layout.addRow("🆔 ID Factura:", self.id_factura_edit)
         form_layout.addRow("👤 Paciente:", self.paciente_combo)
-        form_layout.addRow("📅 Fecha:", self.fecha_edit)
-        form_layout.addRow("🩺 Servicio:", self.servicio_edit)
-        form_layout.addRow("💵 Monto ($):", self.monto_edit)
-        form_layout.addRow("💰 Estado Pago:", self.estado_pago_combo)
         
         form_group.setLayout(form_layout)
         main_layout.addWidget(form_group)
     
     def create_buttons(self, main_layout):
-        # Botones de acción
         buttons_layout = QHBoxLayout()
         
+        # Botones 
         self.crear_btn = QPushButton("➕ Crear Factura")
         self.mostrar_btn = QPushButton("📋 Mostrar Facturas")
         self.limpiar_btn = QPushButton("🗑️ Limpiar")
+        self.agregar_tratamiento_btn = QPushButton("🩺 Agregar Tratamiento")
+        self.agregar_tratamiento_btn.setObjectName("agregar_tratamiento")  
         
         buttons_layout.addWidget(self.crear_btn)
         buttons_layout.addWidget(self.mostrar_btn)
         buttons_layout.addWidget(self.limpiar_btn)
+        buttons_layout.addWidget(self.agregar_tratamiento_btn)
+        
         main_layout.addLayout(buttons_layout)
     
     def create_results_area(self, main_layout):
@@ -198,6 +190,7 @@ class FacturacionView(QMainWindow):
         self.crear_btn.clicked.connect(self.on_crear_factura)
         self.mostrar_btn.clicked.connect(self.on_mostrar_facturas)
         self.limpiar_btn.clicked.connect(self.on_limpiar_campos)
+        self.agregar_tratamiento_btn.clicked.connect(self.on_agregar_tratamiento)  # Nueva conexión
     
     def cargar_pacientes(self, pacientes):
         # Carga la lista de pacientes en el ComboBox
@@ -209,23 +202,19 @@ class FacturacionView(QMainWindow):
             self.paciente_combo.addItem("No hay pacientes disponibles", None)
     
     def obtener_datos_formulario(self) -> Dict[str, Any]:
-        # Obtiene los datos del formulario
+        # Obtiene los datos del formulario simplificado
         return {
             'id_factura': self.id_factura_edit.text().strip(),
-            'paciente': self.paciente_combo.currentData(),
-            'fecha': self.fecha_edit.text().strip(),
-            'servicios': self.servicio_edit.text().strip(),
-            'montos': self.monto_edit.text().strip(),
-            'estado_pago': self.estado_pago_combo.currentText()
+            'paciente': self.paciente_combo.currentData()
         }
+    
+    def obtener_paciente_seleccionado(self):
+        """Obtiene el paciente seleccionado actualmente"""
+        return self.paciente_combo.currentData()
     
     def limpiar_formulario(self):
         # Limpiar campos
         self.id_factura_edit.clear()
-        self.fecha_edit.setText(datetime.now().strftime('%d/%m/%Y'))
-        self.servicio_edit.clear()
-        self.monto_edit.clear()
-        self.estado_pago_combo.setCurrentIndex(0)
         self.resultado_text.clear()
     
     def mostrar_mensaje(self, tipo: str, titulo: str, mensaje: str):
@@ -252,6 +241,12 @@ class FacturacionView(QMainWindow):
     def on_crear_factura(self):
         # Evento de crear factura
         datos = self.obtener_datos_formulario()
+        if not datos['paciente']:
+            self.mostrar_mensaje("error", "⚠️ Error", "Debe seleccionar un paciente.")
+            return
+        if not datos['id_factura']:
+            self.mostrar_mensaje("error", "⚠️ Error", "Debe ingresar un ID de factura.")
+            return
         self.crear_factura_signal.emit(datos)
     
     def on_mostrar_facturas(self):
@@ -261,23 +256,13 @@ class FacturacionView(QMainWindow):
     def on_limpiar_campos(self):
         # Evento de limpiar campos
         self.limpiar_campos_signal.emit()
-
-# Función principal para ejecutar la aplicación
-def main():
-    app = QApplication(sys.argv)
     
-    # Crear la vista
-    view = FacturacionView()
-    
-    # Crear el controlador y pasarle la vista
-    from Controladores.FacturaControlador import FacturacionController
-    controller = FacturacionController(view)
-    
-    # Mostrar la ventana
-    view.show()
-    
-    # Ejecutar la aplicación
-    sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main()
+    def on_agregar_tratamiento(self):
+        # Evento para abrir la ventana de tratamiento
+        paciente_seleccionado = self.obtener_paciente_seleccionado()
+        if not paciente_seleccionado:
+            self.mostrar_mensaje("error", "⚠️ Error", "Debe seleccionar un paciente para agregar tratamiento.")
+            return
+        
+        # Emitir señal para que el controlador maneje la apertura de tratamiento
+        self.agregar_tratamiento_signal.emit()
