@@ -13,9 +13,8 @@ from Vistas.DoctorVista import DoctorWindow
 from Controladores.DoctorControlador import ControladorDoctor
 
 class AgregarTratamientoDialog(QDialog):
-    def __init__(self, paciente, controlador=None):
+    def __init__(self, controlador=None):
         super().__init__()
-        self.paciente = paciente
         self.controlador = controlador
 
         self.setWindowTitle("🩺 Agregar Tratamiento")
@@ -178,7 +177,7 @@ class AgregarTratamientoDialog(QDialog):
         if not self.controlador.validar_datos(descripcion, costo, fecha, estado, carnet_doctor):
             return
 
-        fecha_str = fecha.toString("dd-MM-YYYY") + " 00:00:00"
+        fecha_str = fecha.toString("dd-MM-yyyy") + " 00:00:00"
 
         id_tratamiento = self.controlador.guardar_tratamiento(
             descripcion=descripcion,
