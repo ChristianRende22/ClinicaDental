@@ -7,8 +7,8 @@ from Vistas.TratamientoVista import AgregarTratamientoDialog
 from PyQt6.QtWidgets import QApplication, QDialog
 
 class TratamientoControlador:
-    def __init__(self, paciente):
-        self.paciente = paciente
+    def __init__(self, doctor):
+        self.doctor = doctor
         self.vista = None 
         
     def mostrar_vista(self):
@@ -17,7 +17,7 @@ class TratamientoControlador:
             app = QApplication([])  # Creas QApplication si no existe
 
         if self.vista is None:
-            self.vista = AgregarTratamientoDialog(self.paciente, controlador=self)
+            self.vista = AgregarTratamientoDialog(controlador=self)
 
         resultado = self.vista.exec()
         if resultado == QDialog.accepted:
@@ -80,8 +80,7 @@ class TratamientoControlador:
     
     def guardar_tratamiento(self, descripcion, costo, fecha, estado, carnet_doctor):
         id_tratamiento = Tratamiento.insertar_tratamiento(
-            id_paciente=self.paciente.id_paciente,
-            id_doctor=carnet_doctor,
+            id_doctor= carnet_doctor,
             descripcion=descripcion,
             costo=costo,
             fecha=fecha,
