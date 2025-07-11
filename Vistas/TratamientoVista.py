@@ -57,9 +57,9 @@ class AgregarTratamientoDialog(QDialog):
 
         form = QFormLayout()
         
-        patient_label = QLabel(f"Paciente: {self.paciente.nombre} {self.paciente.apellido}")
-        patient_label.setStyleSheet("color: #10b8b9; font-weight: bold; font-size: 16px;")
-        form.addRow(patient_label)
+        tratamiento_label = QLabel(f"Ingresa los datos: ")
+        tratamiento_label.setStyleSheet("color: #10b8b9; font-weight: bold; font-size: 16px;")
+        form.addRow(tratamiento_label)
 
         # Tratamientos comunes (combo)
         self.tratamientos = {
