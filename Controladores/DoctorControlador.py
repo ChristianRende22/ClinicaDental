@@ -26,13 +26,14 @@ class ControladorDoctor:
     # ====================================
     # ========== VALIDACIONES ============
     # ====================================
-
-    def validar_email(self, email: str) -> bool:
+    @staticmethod
+    def validar_email(email: str) -> bool:
         """Valida el formato del email"""
         patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return re.match(patron, email) is not None
     
-    def validar_num_junta_medica(self, num_junta_medica: str) -> bool:
+    @staticmethod
+    def validar_num_junta_medica( num_junta_medica: str) -> bool:
         """Valida el formato y largo del numero de junta medica (4-7 dígitos)"""
         # Verificar que solo contenga dígitos
         if not num_junta_medica.isdigit():
@@ -41,9 +42,11 @@ class ControladorDoctor:
         # Verificar que tenga entre 4 y 7 dígitos 
         return 4 <= len(num_junta_medica) <= 7
     
-    def validar_telefono(self, telefono: str) -> bool:
+    @staticmethod
+    def validar_telefono( telefono: str) -> bool:
         """Valida que el teléfono tenga al menos 8 dígitos"""
-        return telefono.isdigit() and len(telefono) >= 8
+        return  len(telefono) == 8
+    
     
     def limpiar_campos(self):
         """Limpia todos los campos de entrada para agregar un nuevo paciente"""
@@ -57,92 +60,77 @@ class ControladorDoctor:
         # Enfocar el primer campo para facilitar la entrada
         self.vista.nombre_edit.setFocus()
     
-    def crear_doctor(self):
-        """Crea un nuevo paciente con los datos ingresados"""
+    def crear_doctor(self, num_junta_medica: int, nombre: str, apellido: str, especialidad: str, telefono: str, correo: str):
         try:
-            self.vista.resultado_text.clear()  # Limpia el área de resultados antes de mostrar nuevos datos
-
-            nombre = self.vista.nombre_edit.text().strip().title()
-            apellido = self.vista.apellido_edit.text().strip().title()
-            especialidad = self.vista.especialidad_edit.text().strip().title()
-            num_junta_medica = self.vista.num_junta_medica_edit.text().strip()
-            telefono_str = self.vista.telefono_edit.text().strip()
-            correo = self.vista.correo_edit.text().strip().lower()
+            if not nombre or not apellido or not num_junta_medica or not especialidad or not telefono or not correo:
+                QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios")
+                return None
             
-            # Validaciones básicas
-            if not all([nombre, apellido, num_junta_medica, especialidad]):
-                QMessageBox.warning(self.vista, "❌ Error", "Nombre, Apellido, N° Junta Medica y Especialidad son campos obligatorios")
-                return
-            
-            # Validación Numero de junta medica
             if not self.validar_num_junta_medica(num_junta_medica):
-                QMessageBox.warning(self.vista, "❌ Error de Formato", 
-                                  "El N° Junta Medica debe tener entre 4 y 7 dígitos")
-                return
+                QMessageBox.warning(self.vista, "❌ Error", "El número de junta médica debe tener entre 4 y 7 dígitos")
+                return None
             
-            # Verificar si ya existe un paciente con el mismo numero de junta medica
-            for doctor in self.doctores:
-                if doctor['num_junta_medica'] == num_junta_medica:
-                    QMessageBox.warning(self.vista, "❌ Error", 
-                                      f"Ya existe un doctor registrado con el mismo Numero de junta medica: {num_junta_medica}")
-                    return
+            if not self.validar_telefono(telefono):
+                QMessageBox.warning(self.vista, "❌ Error", "El teléfono debe tener al menos 8 dígitos")
+                return None
             
-            # Validación teléfono
-            if telefono_str and not self.validar_telefono(telefono_str):
-                QMessageBox.warning(self.vista, "❌ Error de Formato", 
-                                  "El teléfono debe contener al menos 8 dígitos")
-                return
+            if not self.validar_email(correo):
+                QMessageBox.warning(self.vista, "❌ Error", "El correo electrónico no es válido")
+                return None
             
-            telefono = int(telefono_str) if telefono_str else 0
-            
-            # Validación email
-            if correo and not self.validar_email(correo):
-                QMessageBox.warning(self.vista, "❌ Error de Formato", 
-                                  "El email no tiene un formato válido")
-                return
-               
-            # Crear datos del nuevo paciente
-            nuevo_doctor = {
-                'nombre': nombre,
-                'apellido': apellido,
-                'num_junta_medica': num_junta_medica,
-                'especialidad': especialidad,
-                'telefono': telefono,
-                'correo': correo,
-                'citas': [],
-                'fecha_registro': datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
-            }
-            
-            # Agregar a la lista de doctores registrados
+            # Crear el objeto Doctor
+            nuevo_doctor = Doctor(
+                num_junta_medica=int(num_junta_medica),
+                nombre=nombre.title(),
+                apellido=apellido.title(),
+                especialidad=especialidad.title(),
+                telefono=telefono,
+                correo=correo.lower()
+            )
+
+            # Insercion en la base de datos
+            if not Doctor.insert_doc_db(nuevo_doctor):
+                raise Exception("No se pudo insertar en la base de datos.")
+
             self.doctores.append(nuevo_doctor)
+            QMessageBox.information(self.vista, "✅ Éxito", "Doctor creado exitosamente")
+
+        except Exception as e:
+            QMessageBox.critical(self.vista, "❌ Error", f"Error al crear el doctor: {str(e)}")
+            print(f"[ERROR] al crear doctor: {e}")
+
+
+    # def crear_doctor(self):
+    #     """Crea un doctor con los datos de los campos de la vista"""
+    #     # Obtener datos de los campos de la vista
+    #     nombre = self.vista.nombre_edit.text().strip()
+    #     apellido = self.vista.apellido_edit.text().strip()
+    #     num_junta_medica = self.vista.num_junta_medica_edit.text().strip()
+    #     especialidad = self.vista.especialidad_edit.text().strip()
+    #     telefono = self.vista.telefono_edit.text().strip()
+    #     correo = self.vista.correo_edit.text().strip()
+        
+        
+    #     # Crear el objeto Doctor si todos los campos son válidos
+    #     doctor = Doctor(
+    #         nombre=nombre.title(),
+    #         apellido=apellido.title(),
+    #         num_junta_medica=int(num_junta_medica),
+    #         especialidad=especialidad.title(),
+    #         telefono=telefono,
+    #         correo=correo.lower()
+    #     )
+        
+    #     # Agregar doctor en la base de datos
+    #     try:
+    #         Doctor.insert_doc_db(doctor)
+    #         QMessageBox.information(self.vista, "✅ Éxito", "Doctor creado exitosamente")
+    #         self.vista.resultado_text.append(f"✅ Doctor creado: Dr. {doctor.nombre} {doctor.apellido}")
+    #         self.limpiar_campos()
+    #     except Exception as e:
+    #         QMessageBox.critical(self.vista, "❌ Error", f"Error al agregar el doctor a la base de datos: {str(e)}")
             
-            # Establecer como doctor  actual
-            self.nombre = nombre
-            self.apellido = apellido
-            self.especialidad = especialidad
-            self.num_junta_medica = num_junta_medica
-            self.telefono = telefono
-            self.correo = correo
-            self.citas = []
-            
-            # Mostrar mensaje de éxito
-            QMessageBox.information(self.vista, "✅ Éxito", 
-                                  f"Doctor {nombre} {apellido} creado exitosamente.\n\n"
-                                  f"Total de pacientes registrados: {len(self.doctores)}")
-            
-            # Mostrar información del paciente creado
-            self.vista.resultado_text.append(f"Doctor creado: {nombre} {apellido}\n"
-                                       f"N° Junta Medica: {num_junta_medica}\n"
-                                       f"Especialidad: {especialidad}\n"
-                                       f"Teléfono: {telefono}\n"
-                                       f"Correo: {correo}\n"
-                                       f"Fecha de registro: {nuevo_doctor['fecha_registro']}\n")
-            
-            # Limpiar campos automáticamente para el siguiente paciente
-            self.limpiar_campos()
-            
-        except ValueError as e:
-            QMessageBox.warning(self.vista, "❌ Error", f"Error en el formato de los datos: {str(e)}")
+    #     return doctor
     
     def agregar_horario(self):
         """Abre el diálogo de HorarioVista para agregar un horario"""
@@ -173,7 +161,7 @@ class ControladorDoctor:
                 data = dialog.get_data()
                 
                 # Validar que todos los campos están completos
-                if not all([data['id_horario'], data['dia'], data['hora_inicio'], data['hora_fin'], data['doctor']]):
+                if not all([data['id_horario'], data['hora_inicio'], data['hora_fin'], data['doctor']]):
                     QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios")
                     return
                 
@@ -182,7 +170,6 @@ class ControladorDoctor:
 🕒 Horario agregado exitosamente:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 ID Horario: {data['id_horario']}
-📅 Día: {data['dia']}
 ⏰ Hora Inicio: {data['hora_inicio']}
 ⏳ Hora Fin: {data['hora_fin']}
 👨‍⚕️ Doctor: Dr. {data['doctor'].nombre} {data['doctor'].apellido}
@@ -199,18 +186,28 @@ class ControladorDoctor:
 
     def mostrar_info_doctor(self):
         """ Muestra un diálogo con la información de todos los doctores registrados """
-        self.vista.resultado_text.clear()  # Limpia el área de resultados antes de mostrar nuevos datos
-
-        if not self.doctores:
-            QMessageBox.information(self.vista, "ℹ️ Información", "No hay doctores registrados")
-            return
-    
-        for doctor in self.doctores:
-            self.vista.resultado_text.append(f"""- N° Junta Medica: {doctor['num_junta_medica']}
-Dr. {doctor['nombre']} {doctor['apellido']}
-Especialidad: {doctor['especialidad']}
-Teléfono: {doctor['telefono']}
-Correo: {doctor['correo']}\n""")
+        try:
+            print("Intentando obtener doctores...")  # Debug
+            doctores = Doctor.obtener_doctores_desde_db()
+            print(f"Doctores obtenidos: {len(doctores)}")  # Debug
+            
+            self.vista.resultado_text.clear()
+            if not doctores:
+                self.vista.resultado_text.append("No hay doctores registrados.")
+            else:
+                self.vista.resultado_text.append("📋 Listado de Doctores:")
+                self.vista.resultado_text.append("=" * 50)
+                for doctor in doctores:
+                    print(f"Mostrando doctor: {doctor}")  # Debug
+                    self.vista.resultado_text.append(f"👨‍⚕️ Dr. {doctor}")
+                    self.vista.resultado_text.append(f"   📞 Teléfono: {doctor.telefono}")
+                    self.vista.resultado_text.append(f"   📧 Correo: {doctor.correo}")
+                    self.vista.resultado_text.append(f"   🆔 N° Junta Médica: {doctor.num_junta_medica}")
+                    self.vista.resultado_text.append("-" * 30)
+        except Exception as e:
+            print(f"Error en mostrar_info_doctor: {e}")  # Debug
+            self.vista.resultado_text.clear()
+            self.vista.resultado_text.append(f"❌ Error al obtener doctores: {str(e)}")
             
     def suprimir_doctor(self):
         """
@@ -324,4 +321,3 @@ if __name__ == "__main__":
     window = DoctorWindow()
     window.show()
     app.exec()
-
