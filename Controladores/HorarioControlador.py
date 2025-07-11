@@ -7,7 +7,7 @@ from typing import List
 
 from Modelos.HorarioModelo import Horario, HorarioModel
 from Modelos.DoctorModelo import Doctor 
-from PyQt6.QtWidgets import QMessageBox, QInputDialog
+from PyQt6.QtWidgets import QMessageBox, QInputDialog, QApplication
 from PyQt6.QtCore import QDateTime 
 
 class HorarioController:
@@ -42,6 +42,7 @@ class HorarioController:
             hora_inicio = datos['hora_inicio']
             hora_fin = datos['hora_fin']
             doctor = datos['doctor'] 
+
             # Validar formato de hora 
             try:
                 datetime.strptime(hora_inicio, "%H:%M")
@@ -100,3 +101,11 @@ class HorarioController:
         """Actualiza la vista con los datos del modelo."""
         horarios_por_dia = self.modelo.obtener_horarios_agrupados_por_dia()
         self.vista.actualizar_lista_horarios(horarios_por_dia)
+ 
+if __name__ == "__main__":
+    from Vistas.HorarioVista import HorarioView # Importar la vista
+    app = QApplication(sys.argv)
+    window = HorarioView()
+    controller = HorarioController(window) # Pasar la instancia de la vista al controlador
+    window.show()
+    sys.exit(app.exec())
