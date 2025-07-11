@@ -9,7 +9,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QDate
 
-from Modelos.PacienteModelo import Paciente
+from Vistas.DoctorVista import DoctorWindow
+from Controladores.DoctorControlador import ControladorDoctor
 
 class AgregarTratamientoDialog(QDialog):
     def __init__(self, paciente, controlador=None):
@@ -154,7 +155,9 @@ class AgregarTratamientoDialog(QDialog):
         return respuesta == QMessageBox.StandardButton.Yes
 
     def abrir_registro_doctor(self):
-        QMessageBox.information(self, "Registro Doctor", "Aquí abriría la ventana para registrar un doctor.")
+        self.registro_doctor_window = DoctorWindow()
+        self.controlador_doctor = ControladorDoctor(self.registro_doctor_window)
+        self.registro_doctor_window.show()
 
     def on_accepted(self):
         descripcion = self.descripcion_edit.toPlainText()
