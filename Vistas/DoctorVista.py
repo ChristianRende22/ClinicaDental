@@ -378,13 +378,33 @@ class DoctorWindow(QMainWindow):
 
     def conectar_botones(self):
         """Conecta los botones a las funciones del controlador"""
-        self.crear_btn.clicked.connect(self.controlador.crear_doctor)
+        self.crear_btn.clicked.connect(self.crear_doctor)
         self.agregar_horario_btn.clicked.connect(self.controlador.agregar_horario)
         self.ver_cita_btn.clicked.connect(self.controlador.ver_citas)
         self.mostrar_info_btn.clicked.connect(self.controlador.mostrar_info_doctor)
         self.suprimir_doctor_btn.clicked.connect(self.controlador.suprimir_doctor)
         self.actualizar_info_doctor_btn.clicked.connect(self.controlador.actualizar_info_doctor)
     
+    def crear_doctor(self):
+        """Crea un nuevo paciente y lo agrega a la base de datos"""
+        try:
+            num_junta = self.num_junta_medica_edit.text().strip()
+            nombre = self.nombre_edit.text().strip()
+            apellido = self.apellido_edit.text().strip()
+            especialidad = self.especialidad_edit.text().strip()
+            telefono = self.telefono_edit.text().strip()
+            correo = self.correo_edit.text().strip()
+
+            if not all([num_junta, nombre, apellido, especialidad, telefono, correo]):
+                self.resultado_text.append("❌ Error: Todos los campos son obligatorios.")
+                return
+
+            self.controlador.crear_doctor(num_junta, nombre, apellido, especialidad, telefono, correo)
+            self.resultado_text.append(f"✅ Doctor guardado: {nombre} {apellido}")
+        except Exception as e:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "❌ Error", f"Ocurrió un error inesperado: {str(e)}")
+            print(f"[ERROR] obtener_datos_y_guardar_doctor: {e}")
 
 
 # def main():
