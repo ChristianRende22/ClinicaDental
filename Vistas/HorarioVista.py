@@ -457,11 +457,11 @@ class HorarioView(QMainWindow):
             QMessageBox.information(self, titulo, mensaje)
 
 
-def main():
-    app = QApplication(sys.argv)
-    window = HorarioView()
-    window.show()
-    sys.exit(app.exec())
+#def main():
+    #app = QApplication(sys.argv)
+    #window = HorarioView()
+    #window.show()
+    #sys.exit(app.exec())
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+   # main()
