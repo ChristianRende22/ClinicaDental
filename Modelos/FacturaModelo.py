@@ -36,6 +36,7 @@ class FacturacionModel:
     # Modelo que maneja la lógica de negocio y la colección de facturas
     def __init__(self):
         self.facturas: List[Factura] = []
+
     def crear_factura(self, 
                      id_factura: str, 
                      paciente: Paciente,
@@ -55,17 +56,24 @@ class FacturacionModel:
         )
         self.facturas.append(nueva_factura)
         return nueva_factura
+    
     def obtener_facturas_por_paciente(self, paciente: Paciente) -> List[Factura]:
+        # Filtra facturas por paciente
         return [f for f in self.facturas if f.paciente.dui == paciente.dui]
+    
     def actualizar_saldo_paciente(self, paciente: Paciente):
+        # Actualiza el saldo pendiente del paciente con sus facturas pendientes
         facturas_pendientes = [
             f for f in self.facturas 
             if f.paciente.dui == paciente.dui and f.estado_pago == "Pendiente"
         ]
         paciente.saldo_pendiente = sum(f.monto_total for f in facturas_pendientes)
+
     def obtener_todas_las_facturas(self) -> List[Factura]:
         """Retorna todas las facturas registradas."""
-        return self.facturas  
+        return self.facturas
+    
     def factura_existe(self, id_factura: str) -> bool:
         """Verifica si una factura con el ID dado ya existe."""
         return any(f.id_factura == id_factura for f in self.facturas)
+
