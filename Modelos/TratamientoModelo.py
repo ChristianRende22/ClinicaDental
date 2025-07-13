@@ -3,7 +3,6 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import mysql.connector
 
-from Modelos.PacienteModelo import Paciente
 from Modelos.DoctorModelo import Doctor
 from datetime import datetime
 from PyQt6.QtCore import QDate
