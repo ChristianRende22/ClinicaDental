@@ -414,3 +414,233 @@ class Paciente:
                 cursor.close()
             if 'conexion' in locals():
                 conexion.close()
+    
+    @staticmethod
+    def obtener_todos_los_pacientes():
+        """
+        Consulta a la base de datos para obtener todos los pacientes registrados
+        
+        Returns:
+            List[Paciente]: Lista de todos los objetos Paciente en la base de datos
+        """
+        try:
+            print("📡 Cargando todos los pacientes desde la base de datos...")
+            
+            # Establecer conexión con la base de datos MySQL
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,
+                user='root',
+                password='1234',
+                database='ClinicaDental'
+            )
+            cursor = conexion.cursor()
+            
+            # Query para obtener todos los pacientes con todos sus campos
+            query = """
+                SELECT ID_Paciente, Nombre, Apellido, Fecha_Nacimiento, DUI, Telefono, Correo
+                FROM paciente
+                ORDER BY ID_Paciente
+            """
+            
+            # Ejecutar consulta
+            cursor.execute(query)
+            resultados = cursor.fetchall()
+            print(f"✅ Se encontraron {len(resultados)} pacientes en la base de datos")
+
+            # Primero, limpiar contadores para evitar conflictos
+            Paciente._pacientes_existentes = []
+            
+            # Obtener todos los IDs existentes de la BD para inicializar correctamente
+            ids_existentes = [fila[0] for fila in resultados]  # ID_Paciente es el primer campo
+            if ids_existentes:
+                # Establecer el contador al siguiente ID disponible
+                Paciente._contador_id = max(ids_existentes) + 1
+                print(f"🔧 Contador de IDs inicializado a: {Paciente._contador_id}")
+
+            # Convertir resultados de BD a objetos Paciente
+            pacientes = []
+            for fila in resultados:
+                id_paciente, nombre, apellido, fecha_nac, dui, telefono, correo = fila
+                
+                # Manejar valores nulos de la base de datos
+                dui = dui if dui else ""
+                telefono = int(telefono) if telefono and str(telefono).isdigit() else 0
+                correo = correo if correo else ""
+                
+                # Crear objeto Paciente con todos los datos de la BD
+                # Pasar explícitamente el id_paciente para evitar que se genere automáticamente
+                paciente = Paciente(
+                    nombre=nombre,
+                    apellido=apellido,
+                    fecha_nacimiento=fecha_nac,
+                    telefono=telefono,
+                    correo=correo,
+                    dui=dui,
+                    saldo_pendiente=0.0,  # Por ahora ponemos 0, luego se puede agregar este campo a la BD
+                    id_paciente=id_paciente  # IMPORTANTE: Usar el ID de la BD
+                )
+                pacientes.append(paciente)
+            
+            print(f"📊 IDs cargados: {[p.id_paciente for p in pacientes]}")
+            return pacientes
+            
+        except mysql.connector.Error as e:
+            print(f"❌ Error al cargar pacientes: {e}")
+            return []  # Retornar lista vacía en caso de error
+            
+        finally:
+            # Cerrar cursor y conexión para liberar recursos
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conexion' in locals():
+                conexion.close()
+
+    # ==========================================
+    # MÉTODOS DE HISTORIAL MÉDICO CON BASE DE DATOS
+    # ==========================================
+    
+    @staticmethod
+    def obtener_historial_medico_desde_bd(id_paciente: int) -> List[dict]:
+        """
+        Obtiene el historial médico de un paciente desde la base de datos
+        
+        Args:
+            id_paciente (int): ID del paciente
+            
+        Returns:
+            List[dict]: Lista de registros del historial médico
+        """
+        try:
+            # Conectar a la base de datos
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            
+            # Query para obtener el historial médico
+            query = """
+                SELECT ID_Historial, ID_Paciente, Fecha_Creacion, Notas_Generales, Estado
+                FROM Historial_Medico
+                WHERE ID_Paciente = %s
+                ORDER BY Fecha_Creacion DESC
+            """
+            
+            cursor.execute(query, (id_paciente,))
+            resultados = cursor.fetchall()
+            
+            # Convertir resultados a lista de diccionarios
+            historial = []
+            for fila in resultados:
+                id_historial, id_pac, fecha_creacion, notas, estado = fila
+                historial.append({
+                    'id_historial': id_historial,
+                    'id_paciente': id_pac,
+                    'fecha_creacion': fecha_creacion,
+                    'notas_generales': notas if notas else 'Sin notas registradas',
+                    'estado': estado if estado else 'Activo'
+                })
+            
+            print(f"📋 Se encontraron {len(historial)} registros médicos para paciente #{id_paciente}")
+            return historial
+            
+        except mysql.connector.Error as e:
+            print(f"❌ Error al obtener historial médico: {e}")
+            return []
+            
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conexion' in locals():
+                conexion.close()
+    
+    @staticmethod
+    def insertar_historial_medico_en_bd(id_paciente: int, notas_generales: str, estado: str = "Activo") -> bool:
+        """
+        Inserta un nuevo registro de historial médico en la base de datos
+        
+        Args:
+            id_paciente (int): ID del paciente
+            notas_generales (str): Notas médicas generales
+            estado (str): Estado del registro (por defecto "Activo")
+            
+        Returns:
+            bool: True si se insertó exitosamente, False en caso contrario
+        """
+        try:
+            # Conectar a la base de datos
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            
+            # Query para insertar historial médico
+            query = """
+                INSERT INTO Historial_Medico (ID_Paciente, Fecha_Creacion, Notas_Generales, Estado)
+                VALUES (%s, %s, %s, %s)
+            """
+            
+            fecha_actual = datetime.now()
+            cursor.execute(query, (id_paciente, fecha_actual, notas_generales, estado))
+            
+            # Confirmar los cambios
+            conexion.commit()
+            
+            print(f"✅ Historial médico insertado para paciente #{id_paciente}")
+            return True
+            
+        except mysql.connector.Error as e:
+            print(f"❌ Error al insertar historial médico: {e}")
+            return False
+            
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conexion' in locals():
+                conexion.close()
+
+    # ==========================================
+    # MÉTODOS DE HISTORIAL MÉDICO INTEGRADOS EN LA CLASE
+    # ==========================================
+
+    def obtener_historial_medico_completo(self) -> List[dict]:
+        """
+        Obtiene el historial médico completo del paciente desde la base de datos
+        
+        Returns:
+            List[dict]: Lista completa del historial médico
+        """
+        return Paciente.obtener_historial_medico_desde_bd(self.id_paciente)
+    
+    def agregar_nota_historial_medico(self, notas: str, estado: str = "Activo") -> bool:
+        """
+        Agrega una nueva nota al historial médico del paciente
+        
+        Args:
+            notas (str): Notas médicas a agregar
+            estado (str): Estado del registro
+            
+        Returns:
+            bool: True si se agregó exitosamente
+        """
+        return Paciente.insertar_historial_medico_en_bd(self.id_paciente, notas, estado)
+    
+    def tiene_historial_medico(self) -> bool:
+        """
+        Verifica si el paciente tiene historial médico registrado en la BD
+        
+        Returns:
+            bool: True si tiene historial médico
+        """
+        historial = self.obtener_historial_medico_completo()
+        return len(historial) > 0

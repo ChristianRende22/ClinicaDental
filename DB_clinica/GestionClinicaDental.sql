@@ -15,13 +15,13 @@ CREATE TABLE Paciente (
 
 -- Tabla: Doctor
 CREATE TABLE Doctor (
-	ID_Doctor INT PRIMARY KEY,
-	Nombre VARCHAR(50) NOT NULL,
-	Apellido VARCHAR(50) NOT NULL,
-	Especialidad VARCHAR(50) NOT NULL,
-	Telefono CHAR(8) NOT NULL,
-	Correo VARCHAR(25) NOT NULL,
-	Contrasena VARCHAR(255) NOT NULL
+	ID_Doctor VARCHAR(10) UNIQUE PRIMARY KEY,
+	Nombre VARCHAR(50) ,
+	Apellido VARCHAR(50) ,
+	Especialidad VARCHAR(50) ,
+	Telefono CHAR(8)  ,
+	Correo VARCHAR(25) ,
+	Contrasena VARCHAR(255) 
 );
 
 -- Tabla: Horario

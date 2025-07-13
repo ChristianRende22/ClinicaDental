@@ -236,7 +236,29 @@ class PacienteControlador:
             # Actualizar el contador
             Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
 
-            return True, f"Paciente #{nuevo_paciente.id_paciente}: {nombre} {apellido} creado exitosamente"
+            # Registrar la creación del paciente en el historial médico
+            notas_creacion = f"""
+PACIENTE REGISTRADO EN EL SISTEMA:
+• Nombre Completo: {nombre} {apellido}
+• Fecha de Nacimiento: {fecha_nacimiento.strftime('%d/%m/%Y')}
+• Edad: {nuevo_paciente.calcular_edad()} años
+• DUI: {dui if dui else 'No proporcionado'}
+• Teléfono: {self.formatear_telefono(telefono)}
+• Correo: {correo if correo else 'No proporcionado'}
+• Saldo Inicial: ${saldo_pendiente:,.2f}
+• Fecha de Registro: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Paciente registrado exitosamente en la Clínica Dental.
+Bienvenido/a al sistema de gestión médica.
+            """
+            
+            # Insertar registro inicial en historial médico
+            nuevo_paciente.agregar_nota_historial_medico(
+                notas_creacion.strip(), 
+                "Activo"
+            )
+
+            return True, f"Paciente #{nuevo_paciente.id_paciente}: {nombre} {apellido} creado exitosamente y registrado en historial médico"
 
         except ValueError as e:
                 return False, f"Error al crear paciente: {str(e)}"
@@ -298,7 +320,7 @@ class PacienteControlador:
     # ==========================================
     
     def agregar_tratamiento_a_paciente(self, tratamiento: Tratamiento) -> tuple[bool, str]:
-        """Agrega un tratamiento al paciente actual con validaciones"""
+        """Agrega un tratamiento al paciente actual con validaciones y lo registra en el historial médico"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
         
@@ -306,13 +328,38 @@ class PacienteControlador:
             return False, "El tratamiento no puede estar vacío"
         
         try:
+            # Agregar tratamiento a la memoria del paciente
             self.paciente_actual.agregar_tratamiento(tratamiento)
-            return True, f"Tratamiento agregado exitosamente a {self.paciente_actual.nombre}"
+            
+            # Registrar el tratamiento en el historial médico de la base de datos
+            notas_tratamiento = f"""
+NUEVO TRATAMIENTO REGISTRADO:
+• Tipo de Tratamiento: {getattr(tratamiento, 'tipo', 'No especificado')}
+• Descripción: {getattr(tratamiento, 'descripcion', 'Sin descripción')}
+• Costo: ${getattr(tratamiento, 'costo', 0):,.2f}
+• Estado: {getattr(tratamiento, 'estado', 'Pendiente')}
+• Doctor: {getattr(tratamiento, 'doctor', 'No especificado')}
+• Fecha de Registro: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Tratamiento agregado exitosamente al paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
+            """
+            
+            # Insertar en el historial médico de la base de datos
+            exito_historial = self.paciente_actual.agregar_nota_historial_medico(
+                notas_tratamiento.strip(), 
+                "Activo"
+            )
+            
+            if exito_historial:
+                return True, f"Tratamiento agregado exitosamente a {self.paciente_actual.nombre} y registrado en historial médico"
+            else:
+                return True, f"Tratamiento agregado a {self.paciente_actual.nombre} pero no se pudo registrar en historial médico"
+                
         except Exception as e:
             return False, f"Error al agregar tratamiento: {str(e)}"
     
     def agregar_cita_a_paciente(self, cita: Cita) -> tuple[bool, str]:
-        """Agrega una cita al paciente actual con validaciones"""
+        """Agrega una cita al paciente actual con validaciones y la registra en el historial médico"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
         
@@ -324,8 +371,39 @@ class PacienteControlador:
             return False, "El paciente ya tiene una cita en ese horario"
         
         try:
+            # Agregar cita a la memoria del paciente
             self.paciente_actual.agregar_cita(cita)
-            return True, f"Cita agregada exitosamente a {self.paciente_actual.nombre}"
+            
+            # Registrar la cita en el historial médico de la base de datos
+            fecha_cita = getattr(cita, 'fecha', 'No especificada')
+            hora_cita = getattr(cita, 'hora_inicio', 'No especificada')
+            
+            notas_cita = f"""
+NUEVA CITA PROGRAMADA:
+• Fecha de la Cita: {fecha_cita}
+• Hora de Inicio: {hora_cita}
+• Tipo de Consulta: {getattr(cita, 'tipo_consulta', 'Consulta general')}
+• Doctor: {getattr(cita, 'doctor', 'No especificado')}
+• Estado: {getattr(cita, 'estado', 'Programada')}
+• Duración Estimada: {getattr(cita, 'duracion', 'No especificada')}
+• Costo de la Cita: ${getattr(cita, 'costo_cita', 0):,.2f}
+• Observaciones: {getattr(cita, 'observaciones', 'Sin observaciones')}
+• Fecha de Registro: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
+            """
+            
+            # Insertar en el historial médico de la base de datos
+            exito_historial = self.paciente_actual.agregar_nota_historial_medico(
+                notas_cita.strip(), 
+                "Activo"
+            )
+            
+            if exito_historial:
+                return True, f"Cita agregada exitosamente a {self.paciente_actual.nombre} y registrada in historial médico"
+            else:
+                return True, f"Cita agregada a {self.paciente_actual.nombre} pero no se pudo registrar en historial médico"
+                
         except Exception as e:
             return False, f"Error al agregar cita: {str(e)}"
     
@@ -342,7 +420,7 @@ class PacienteControlador:
         return False
     
     def cancelar_cita(self, id_cita: str) -> tuple[bool, str]:
-        """Cancela una cita específica"""
+        """Cancela una cita específica y registra la cancelación en el historial médico"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
         
@@ -354,11 +432,38 @@ class PacienteControlador:
         if cita.hora_inicio <= datetime.now():
             return False, "No se puede cancelar una cita que ya comenzó"
         
-        cita.estado = "Cancelada"
-        return True, "Cita cancelada exitosamente"
+        try:
+            # Actualizar el estado de la cita
+            estado_anterior = cita.estado
+            cita.estado = "Cancelada"
+            
+            # Registrar la cancelación en el historial médico
+            notas_cancelacion = f"""
+CITA CANCELADA:
+• ID de la Cita: {id_cita}
+• Fecha Original: {getattr(cita, 'fecha', 'No especificada')}
+• Hora Original: {getattr(cita, 'hora_inicio', 'No especificada')}
+• Estado Anterior: {estado_anterior}
+• Estado Actual: Cancelada
+• Motivo: Cancelación solicitada
+• Fecha de Cancelación: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Cita cancelada para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
+            """
+            
+            # Insertar en el historial médico de la base de datos
+            self.paciente_actual.agregar_nota_historial_medico(
+                notas_cancelacion.strip(), 
+                "Activo"
+            )
+            
+            return True, "Cita cancelada exitosamente y registrada en historial médico"
+            
+        except Exception as e:
+            return False, f"Error al cancelar cita: {str(e)}"
     
     def finalizar_tratamiento(self, id_tratamiento: str) -> tuple[bool, str]:
-        """Finaliza un tratamiento específico"""
+        """Finaliza un tratamiento específico y registra la finalización en el historial médico"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
         
@@ -366,8 +471,36 @@ class PacienteControlador:
         if not tratamiento:
             return False, "Tratamiento no encontrado"
         
-        tratamiento.estado = "Completado"
-        return True, "Tratamiento finalizado exitosamente"
+        try:
+            # Actualizar el estado del tratamiento
+            estado_anterior = tratamiento.estado
+            tratamiento.estado = "Completado"
+            
+            # Registrar la finalización en el historial médico
+            notas_finalizacion = f"""
+TRATAMIENTO FINALIZADO:
+• ID del Tratamiento: {id_tratamiento}
+• Tipo de Tratamiento: {getattr(tratamiento, 'tipo', 'No especificado')}
+• Descripción: {getattr(tratamiento, 'descripcion', 'Sin descripción')}
+• Estado Anterior: {estado_anterior}
+• Estado Actual: Completado
+• Costo Total: ${getattr(tratamiento, 'costo', 0):,.2f}
+• Doctor: {getattr(tratamiento, 'doctor', 'No especificado')}
+• Fecha de Finalización: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Tratamiento completado exitosamente para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
+            """
+            
+            # Insertar en el historial médico de la base de datos
+            self.paciente_actual.agregar_nota_historial_medico(
+                notas_finalizacion.strip(), 
+                "Completado"
+            )
+            
+            return True, "Tratamiento finalizado exitosamente y registrado en historial médico"
+            
+        except Exception as e:
+            return False, f"Error al finalizar tratamiento: {str(e)}"
     
     # ==========================================
     # MÉTODOS DE CONSULTA Y REPORTES (LÓGICA DE NEGOCIO)
@@ -489,6 +622,239 @@ class PacienteControlador:
         temp_paciente = Paciente("temp", "temp", fecha_nacimiento, "00000000-0", 12345678, "")
         return temp_paciente.calcular_edad()
     
+    def cargar_todos_los_pacientes_desde_bd(self) -> tuple[bool, str]:
+        """
+        Carga todos los pacientes desde la base de datos y los almacena en memoria
+        
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        try:
+            # Obtener todos los pacientes desde la base de datos
+            pacientes_bd = Paciente.obtener_todos_los_pacientes()
+            
+            if not pacientes_bd:
+                return False, "No se encontraron pacientes en la base de datos"
+            
+            # Actualizar la lista de pacientes registrados
+            self.pacientes_registrados = pacientes_bd
+            
+            # IMPORTANTE: Inicializar correctamente el contador de IDs basado en los IDs existentes en la BD
+            if pacientes_bd:
+                # Obtener el ID más alto de los pacientes cargados
+                max_id = max(p.id_paciente for p in pacientes_bd)
+                # Establecer el contador para el siguiente ID disponible
+                Paciente._contador_id = max_id + 1
+                # Registrar todos los IDs existentes
+                Paciente._pacientes_existentes = [p.id_paciente for p in pacientes_bd]
+                print(f"🔧 Contador de IDs inicializado. Próximo ID disponible: {Paciente._contador_id}")
+                print(f"📊 IDs existentes registrados: {sorted(Paciente._pacientes_existentes)}")
+            
+            # Actualizar la vista si está disponible
+            if self.vista:
+                self.vista.actualizar_lista_pacientes()
+            
+            mensaje = f"✅ Se cargaron {len(pacientes_bd)} pacientes desde la base de datos"
+            print(mensaje)
+            return True, mensaje
+            
+        except Exception as e:
+            mensaje_error = f"❌ Error al cargar pacientes desde la BD: {str(e)}"
+            print(mensaje_error)
+            return False, mensaje_error
+    
+    def obtener_todos_los_pacientes_para_vista(self) -> List[Paciente]:
+        """
+        Obtiene todos los pacientes para mostrar en la vista
+        Si no hay pacientes en memoria, intenta cargarlos desde la BD
+        
+        Returns:
+            List[Paciente]: Lista de todos los pacientes disponibles
+        """
+        # Si no hay pacientes en memoria, intentar cargar desde BD
+        if not self.pacientes_registrados:
+            exito, mensaje = self.cargar_todos_los_pacientes_desde_bd()
+            if not exito:
+                print(f"⚠️ No se pudieron cargar pacientes desde BD: {mensaje}")
+        
+        return self.pacientes_registrados.copy()
+
+    def obtener_historial_medico_paciente_actual(self) -> List[dict]:
+        """
+        Obtiene el historial médico del paciente actual desde la base de datos
+        
+        Returns:
+            List[dict]: Lista del historial médico o lista vacía si no hay paciente seleccionado
+        """
+        if not self.paciente_actual:
+            return []
+        
+        return self.paciente_actual.obtener_historial_medico_completo()
+    
+    def agregar_nota_historial_medico_actual(self, notas: str, estado: str = "Activo") -> tuple[bool, str]:
+        """
+        Agrega una nueva nota al historial médico del paciente actual
+        
+        Args:
+            notas (str): Notas médicas a agregar
+            estado (str): Estado del registro
+            
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        if not self.paciente_actual:
+            return False, "No hay paciente seleccionado"
+        
+        if not notas or not notas.strip():
+            return False, "Las notas médicas no pueden estar vacías"
+        
+        try:
+            exito = self.paciente_actual.agregar_nota_historial_medico(notas.strip(), estado)
+            if exito:
+                return True, f"Nota médica agregada exitosamente al historial de {self.paciente_actual.nombre} {self.paciente_actual.apellido}"
+            else:
+                return False, "Error al agregar la nota médica a la base de datos"
+        except Exception as e:
+            return False, f"Error al agregar nota médica: {str(e)}"
+
+    def registrar_evento_en_historial(self, evento: str, descripcion: str, estado: str = "Activo") -> tuple[bool, str]:
+        """
+        Registra un evento general en el historial médico del paciente actual
+        
+        Args:
+            evento (str): Tipo de evento (ej: "CONSULTA", "EXAMEN", "PROCEDIMIENTO")
+            descripcion (str): Descripción detallada del evento
+            estado (str): Estado del registro
+            
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        if not self.paciente_actual:
+            return False, "No hay paciente seleccionado"
+        
+        if not evento or not descripcion:
+            return False, "El evento y la descripción son obligatorios"
+        
+        try:
+            notas_evento = f"""
+{evento.upper()}:
+{descripcion}
+
+• Paciente: {self.paciente_actual.nombre} {self.paciente_actual.apellido}
+• Fecha del Evento: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+• Estado: {estado}
+            """
+            
+            exito = self.paciente_actual.agregar_nota_historial_medico(
+                notas_evento.strip(), 
+                estado
+            )
+            
+            if exito:
+                return True, f"Evento '{evento}' registrado exitosamente en el historial médico"
+            else:
+                return False, "Error al registrar el evento en la base de datos"
+                
+        except Exception as e:
+            return False, f"Error al registrar evento: {str(e)}"
+
+    def probar_conexion_bd(self) -> tuple[bool, str]:
+        """
+        Prueba la conexión a la base de datos
+        
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        try:
+            import mysql.connector
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            cursor.execute("SELECT 1")
+            resultado = cursor.fetchone()
+            
+            cursor.close()
+            conexion.close()
+            
+            if resultado:
+                return True, "✅ Conexión a la base de datos exitosa"
+            else:
+                return False, "❌ Error en la consulta de prueba"
+                
+        except Exception as e:
+            return False, f"❌ Error de conexión a la base de datos: {str(e)}"
+
+    def crear_historial_medico_inicial(self) -> tuple[bool, str]:
+        """
+        Crea un historial médico inicial para el paciente actual si no tiene uno
+        
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        if not self.paciente_actual:
+            return False, "No hay paciente seleccionado"
+        
+        # Primero probar la conexión a la BD
+        conexion_ok, mensaje_conexion = self.probar_conexion_bd()
+        if not conexion_ok:
+            return False, f"Error de conexión a la base de datos: {mensaje_conexion}"
+        
+        # Verificar si ya tiene historial médico
+        try:
+            if self.paciente_actual.tiene_historial_medico():
+                return False, f"El paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido} ya tiene historial médico registrado"
+        except Exception as e:
+            return False, f"Error al verificar historial existente: {str(e)}"
+        
+        try:
+            # Crear historial médico inicial
+            notas_inicial = f"""
+HISTORIAL MÉDICO INICIAL CREADO:
+
+• Paciente: {self.paciente_actual.nombre} {self.paciente_actual.apellido}
+• ID del Paciente: #{self.paciente_actual.id_paciente}
+• Edad: {self.paciente_actual.calcular_edad()} años
+• DUI: {self.paciente_actual.dui if self.paciente_actual.dui else 'No proporcionado'}
+• Fecha de Nacimiento: {self.paciente_actual.fecha_nacimiento.strftime('%d/%m/%Y')}
+• Teléfono: {self.formatear_telefono(self.paciente_actual.telefono)}
+• Correo: {self.paciente_actual.correo if self.paciente_actual.correo else 'No proporcionado'}
+
+INFORMACIÓN MÉDICA INICIAL:
+• Estado de Salud: A evaluar en primera consulta
+• Alergias: Por determinar
+• Medicamentos Actuales: Por consultar
+• Antecedentes Médicos: Por revisar
+• Observaciones Iniciales: Historial médico creado para seguimiento
+
+PRÓXIMOS PASOS:
+1. Programar primera consulta médica
+2. Realizar evaluación inicial completa
+3. Registrar antecedentes médicos detallados
+4. Establecer plan de tratamiento si es necesario
+
+Historial médico inicial creado el: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+Sistema: Clínica Dental - Gestión de Pacientes
+            """
+            
+            exito = self.paciente_actual.agregar_nota_historial_medico(
+                notas_inicial.strip(), 
+                "Activo"
+            )
+            
+            if exito:
+                return True, f"Historial médico inicial creado exitosamente para {self.paciente_actual.nombre} {self.paciente_actual.apellido}"
+            else:
+                return False, "Error al crear el historial médico inicial en la base de datos"
+                
+        except Exception as e:
+            return False, f"Error al crear historial médico inicial: {str(e)}"
+
 # ==========================================
 # QUERYS EJECUNTANDOSE DESDE EL MODELO  
 # ==========================================

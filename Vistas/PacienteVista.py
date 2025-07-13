@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QFont
 from datetime import datetime
+from typing import List
 import os
 import sys
 
@@ -354,6 +355,20 @@ class PacienteWindow(QMainWindow):
         """)
         
         self.init_ui()
+        
+        # Cargar pacientes desde la base de datos al iniciar
+        self.cargar_pacientes_iniciales()
+    
+    def cargar_pacientes_iniciales(self):
+        """Carga los pacientes desde la base de datos al iniciar la aplicación"""
+        try:
+            exito, mensaje = self.controlador.cargar_todos_los_pacientes_desde_bd()
+            if exito:
+                print(f"✅ {mensaje}")
+            else:
+                print(f"⚠️ {mensaje}")
+        except Exception as e:
+            print(f"❌ Error al cargar pacientes iniciales: {e}")
     
     def init_ui(self):
         # Creamos el widget central real
@@ -544,8 +559,25 @@ class PacienteWindow(QMainWindow):
             }}
         """)
         
+        # Botón para ver historial médico
+        self.historial_medico_btn = QPushButton("🏥 Historial Médico")
+        self.historial_medico_btn.clicked.connect(self.mostrar_historial_medico)
+        self.historial_medico_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #e74c3c;
+                color: white;
+                font-size: 12px;
+                padding: 8px 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: #c0392b;
+            }}
+        """)
+        
         botones_busqueda_layout.addWidget(self.buscar_btn)
         botones_busqueda_layout.addWidget(self.limpiar_busqueda_btn)
+        botones_busqueda_layout.addWidget(self.historial_medico_btn)
         
         busqueda_layout.addRow("🔤 Nombre:", self.buscar_nombre_edit)
         busqueda_layout.addRow("🔤 Apellido:", self.buscar_apellido_edit)
@@ -587,9 +619,33 @@ class PacienteWindow(QMainWindow):
         self.mostrar_todos_btn = QPushButton("📚 Todos los Pacientes")
         self.mostrar_todos_btn.clicked.connect(self.mostrar_todos_pacientes)
         
+        # Botón para crear historial médico inicial
+        self.crear_historial_btn = QPushButton("📋 Crear Historial Médico")
+        self.crear_historial_btn.clicked.connect(self.crear_historial_medico_inicial)
+        self.crear_historial_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #27ae60;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 12px;
+                min-width: 160px;
+            }}
+            QPushButton:hover {{
+                background-color: #229954;
+                transform: translateY(-2px);
+            }}
+            QPushButton:pressed {{
+                background-color: #1e8449;
+            }}
+        """)
+        
         buttons_row2.addWidget(self.ver_info_basica_btn)
         buttons_row2.addWidget(self.mostrar_info_btn)
         buttons_row2.addWidget(self.mostrar_todos_btn)
+        buttons_row2.addWidget(self.crear_historial_btn)
         
         # Layout vertical para las filas de botones
         buttons_container = QVBoxLayout()
@@ -898,11 +954,12 @@ class PacienteWindow(QMainWindow):
 
     
     def _generar_resumen_todos_pacientes(self) -> str:
-        """Genera un resumen básico de todos los pacientes (sin información médica)"""
+        """Genera un resumen básico de todos los pacientes desde la base de datos"""
         separador_principal = "=" * 80
         separador_paciente = "-" * 60
         
-        pacientes = self.controlador.pacientes_registrados
+        # Obtener todos los pacientes desde la base de datos
+        pacientes = self.controlador.obtener_todos_los_pacientes_para_vista()
         
         resumen = f"""
 {separador_principal}
@@ -912,6 +969,7 @@ class PacienteWindow(QMainWindow):
 📊 INFORMACIÓN GENERAL:
    ▪ Total de Pacientes Registrados: {len(pacientes)}
    ▪ Fecha de Consulta: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+   ▪ Fuente: Base de Datos MySQL
 
 {separador_principal}
 """
@@ -991,11 +1049,13 @@ utilice los módulos especializados correspondientes.
         self.resultado_text.setText(info_basica)
 
     def mostrar_todos_pacientes(self):
-        """Muestra un resumen de todos los pacientes registrados (información básica únicamente)"""
-        pacientes = self.controlador.pacientes_registrados
+        """Muestra un resumen de todos los pacientes registrados desde la base de datos"""
+        # Intentar cargar todos los pacientes desde la base de datos
+        pacientes = self.controlador.obtener_todos_los_pacientes_para_vista()
+        
         if not pacientes:
             QMessageBox.information(self, "ℹ️ Información", 
-                                  "No hay pacientes registrados en el sistema.")
+                                  "No hay pacientes registrados en la base de datos.")
             return
         
         resumen_completo = self._generar_resumen_todos_pacientes()
@@ -1166,6 +1226,246 @@ utilice los módulos especializados correspondientes.
         
         # Limpiar el área de resultados
         self.resultado_text.setText("🧹 Búsqueda limpiada. Ingrese nombre y/o apellido para buscar pacientes.")
+
+    def mostrar_historial_medico(self):
+        """Muestra el historial médico del paciente actual o seleccionado"""
+        paciente_actual = self.controlador.paciente_actual
+        
+        if not paciente_actual:
+            QMessageBox.warning(self, "❌ Error", 
+                              "Debe buscar y seleccionar un paciente primero para ver su historial médico.\n\n"
+                              "Use la sección de 'Búsqueda de Pacientes' para encontrar y seleccionar un paciente.")
+            return
+        
+        # Obtener historial médico real desde la base de datos
+        historial_bd = self.controlador.obtener_historial_medico_paciente_actual()
+        
+        # Generar historial médico completo con datos reales
+        historial_completo = self._generar_historial_medico_completo(paciente_actual, historial_bd)
+        self.resultado_text.setText(historial_completo)
+    
+    def _generar_historial_medico_completo(self, paciente: 'Paciente', historial_bd: List[dict]) -> str:
+        """Genera un historial médico completo y detallado del paciente con datos reales de la BD"""
+        separador_principal = "=" * 80
+        separador_seccion = "-" * 60
+        
+        # Información básica del paciente
+        edad = paciente.calcular_edad()
+        tipo_paciente = "👶 Menor de edad" if paciente.es_menor_de_edad() else "👤 Mayor de edad"
+        dui_info = f"📋 DUI: {paciente.dui}" if paciente.tiene_dui() else "📋 DUI: No registrado"
+        estado_saldo = "🔴 Con saldo pendiente" if paciente.tiene_saldo_pendiente() else "🟢 Al día"
+        
+        historial = f"""
+{separador_principal}
+🏥 HISTORIAL MÉDICO COMPLETO - CLÍNICA DENTAL
+{separador_principal}
+
+👤 INFORMACIÓN DEL PACIENTE:
+   ▪ ID del Paciente: #{paciente.id_paciente}
+   ▪ Nombre Completo: {paciente.nombre} {paciente.apellido}
+   ▪ Edad: {edad} años ({tipo_paciente})
+   ▪ {dui_info}
+   ▪ Teléfono: {self.controlador.formatear_telefono(paciente.telefono)}
+   ▪ Correo: {paciente.correo if paciente.correo else 'No especificado'}
+   ▪ Fecha de Registro: {paciente.fecha_registro}
+   ▪ Estado Financiero: {estado_saldo}
+   ▪ Saldo Pendiente: {self.controlador.formatear_moneda(paciente.saldo_pendiente)}
+
+{separador_principal}
+"""
+        
+        # Sección de historial médico real desde la base de datos
+        historial += f"""
+🩺 HISTORIAL MÉDICO REGISTRADO:
+{separador_seccion}
+"""
+        
+        if historial_bd:
+            for i, registro in enumerate(historial_bd, 1):
+                fecha_creacion = registro['fecha_creacion']
+                if isinstance(fecha_creacion, str):
+                    fecha_str = fecha_creacion
+                else:
+                    fecha_str = fecha_creacion.strftime('%d/%m/%Y - %H:%M:%S')
+                
+                historial += f"""
+📋 REGISTRO MÉDICO #{i}:
+   ▪ ID Historial: #{registro['id_historial']}
+   ▪ Fecha de Creación: {fecha_str}
+   ▪ Estado: {registro['estado']}
+   ▪ Notas Médicas: {registro['notas_generales']}
+
+{'-' * 40}
+"""
+        else:
+            historial += f"""
+📝 No hay registros médicos en la base de datos para este paciente.
+   Recomendación: Agregar el primer registro médico utilizando el sistema.
+
+"""
+        
+        # Sección de tratamientos (desde memoria, por ahora simulado)
+        historial += f"""
+{separador_seccion}
+🩺 HISTORIAL DE TRATAMIENTOS EN MEMORIA:
+{separador_seccion}
+"""
+        
+        if paciente.historial_medico:
+            for i, tratamiento in enumerate(paciente.historial_medico, 1):
+                # Obtener información real del tratamiento
+                tipo_tratamiento = getattr(tratamiento, 'tipo', 'Tipo no especificado')
+                descripcion = getattr(tratamiento, 'descripcion', 'Sin descripción')
+                estado = getattr(tratamiento, 'estado', 'Estado no definido')
+                costo = getattr(tratamiento, 'costo', 0.0)
+                doctor = getattr(tratamiento, 'doctor', 'Doctor no asignado')
+                fecha = getattr(tratamiento, 'fecha', 'Fecha no registrada')
+                id_tratamiento = getattr(tratamiento, 'id_tratamiento', f'TRAT-{i:03d}')
+                
+                # Formatear el costo
+                costo_formateado = self.controlador.formatear_moneda(costo)
+                estado_icon = self.controlador.get_estado_icon(estado)
+                
+                historial += f"""
+📋 TRATAMIENTO #{i}:
+   ▪ ID: {id_tratamiento}
+   ▪ Tipo: {tipo_tratamiento}
+   ▪ Descripción: {descripcion}
+   ▪ Doctor: {doctor}
+   ▪ Estado: {estado_icon} {estado}
+   ▪ Costo: {costo_formateado}
+   ▪ Fecha: {fecha}
+
+{'-' * 40}
+"""
+        else:
+            historial += f"""
+� No hay tratamientos registrados en memoria para este paciente.
+   Nota: Los tratamientos se almacenan en la tabla Historial_Medico de la base de datos.
+
+"""
+        
+        # Sección de citas (desde memoria, por ahora simulado)
+        historial += f"""
+{separador_seccion}
+📅 HISTORIAL DE CITAS:
+{separador_seccion}
+"""
+        
+        if paciente.citas:
+            for i, cita in enumerate(paciente.citas, 1):
+                # Obtener información real de la cita
+                fecha_hora = getattr(cita, 'fecha_hora', 'Fecha no registrada')
+                doctor = getattr(cita, 'doctor', 'Doctor no asignado')
+                estado = getattr(cita, 'estado', 'Estado no definido')
+                tipo_cita = getattr(cita, 'tipo_cita', 'Tipo no especificado')
+                motivo = getattr(cita, 'motivo', 'Motivo no registrado')
+                id_cita = getattr(cita, 'id_cita', f'CITA-{i:03d}')
+                
+                estado_icon = self.controlador.get_estado_icon(estado)
+                
+                historial += f"""
+📅 CITA #{i}:
+   ▪ ID: {id_cita}
+   ▪ Fecha y Hora: {fecha_hora}
+   ▪ Doctor: {doctor}
+   ▪ Tipo: {tipo_cita}
+   ▪ Motivo: {motivo}
+   ▪ Estado: {estado_icon} {estado}
+
+{'-' * 40}
+"""
+        else:
+            historial += f"""
+📝 No hay citas registradas en memoria para este paciente.
+   Recomendación: Implementar gestión de citas desde la base de datos.
+
+"""
+        
+        # Resumen con datos reales
+        total_registros_bd = len(historial_bd)
+        total_tratamientos = len(paciente.historial_medico)
+        total_citas = len(paciente.citas)
+        
+        historial += f"""
+{separador_seccion}
+� RESUMEN MÉDICO ESTADÍSTICO:
+{separador_seccion}
+
+� CONTADORES MÉDICOS:
+   ▪ Total Registros Médicos (BD): {total_registros_bd}
+   ▪ Total Tratamientos (Memoria): {total_tratamientos}
+   ▪ Total Citas (Memoria): {total_citas}
+   ▪ TOTAL GENERAL: {total_registros_bd + total_tratamientos + total_citas}
+
+� RESUMEN FINANCIERO:
+   ▪ Saldo Pendiente Actual: {self.controlador.formatear_moneda(paciente.saldo_pendiente)}
+   ▪ Estado Financiero: {estado_saldo}
+
+⚕️ RECOMENDACIONES MÉDICAS:
+   ▪ Revisar historial completo antes de nuevos tratamientos
+   ▪ Mantener actualizada la información de contacto
+   ▪ Integrar todos los registros médicos en la base de datos
+   ▪ Resolver saldos pendientes antes de nuevos tratamientos
+
+{separador_principal}
+📝 NOTAS IMPORTANTES:
+▪ Este historial médico es confidencial y de uso exclusivo del personal médico
+▪ Los datos provienen de la tabla Historial_Medico de la base de datos ClinicaDental
+▪ Cualquier modificación debe ser autorizada por personal médico calificado
+▪ En caso de emergencia, contactar inmediatamente al doctor de cabecera
+
+Fecha de generación del reporte: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+Sistema: Clínica Dental - Gestión de Pacientes v1.0
+{separador_principal}
+"""
+        
+        return historial
+
+    def crear_historial_medico_inicial(self):
+        """Crea un historial médico inicial para el paciente seleccionado"""
+        paciente_actual = self.controlador.paciente_actual
+        
+        if not paciente_actual:
+            QMessageBox.warning(self, "❌ Error", 
+                              "Debe buscar y seleccionar un paciente primero para crear su historial médico.\n\n"
+                              "Use la sección de 'Búsqueda de Pacientes' para encontrar y seleccionar un paciente.")
+            return
+        
+        # Verificar si ya tiene historial médico
+        if paciente_actual.tiene_historial_medico():
+            QMessageBox.information(self, "ℹ️ Información", 
+                                  f"El paciente {paciente_actual.nombre} {paciente_actual.apellido} "
+                                  f"ya tiene historial médico registrado.\n\n"
+                                  f"Puede ver su historial usando el botón 'Historial Médico'.")
+            return
+        
+        # Confirmar la creación del historial médico
+        respuesta = QMessageBox.question(self, "🏥 Crear Historial Médico", 
+                                       f"¿Está seguro de que desea crear un historial médico inicial para:\n\n"
+                                       f"👤 {paciente_actual.nombre} {paciente_actual.apellido}\n"
+                                       f"🆔 ID: #{paciente_actual.id_paciente}\n"
+                                       f"🎂 Edad: {paciente_actual.calcular_edad()} años\n\n"
+                                       f"Esto creará un registro inicial en la base de datos.",
+                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                       QMessageBox.StandardButton.Yes)
+        
+        if respuesta == QMessageBox.StandardButton.Yes:
+            # Crear el historial médico inicial usando el controlador
+            exito, mensaje = self.controlador.crear_historial_medico_inicial()
+            
+            if exito:
+                QMessageBox.information(self, "✅ Éxito", mensaje)
+                
+                # Mostrar el historial médico recién creado
+                historial_completo = self._generar_historial_medico_completo(
+                    paciente_actual, 
+                    self.controlador.obtener_historial_medico_paciente_actual()
+                )
+                self.resultado_text.setText(historial_completo)
+                
+            else:
+                QMessageBox.critical(self, "❌ Error", f"No se pudo crear el historial médico:\n\n{mensaje}")
 
 # def main():
 #     app = QApplication([])
