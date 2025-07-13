@@ -33,8 +33,7 @@ class TratamientoControlador:
             'costo': costo,
             'fecha': fecha,
             'estado': estado,
-            'id_doctor': id_doctor,
-            'id_paciente': self.paciente.id_paciente
+            'id_doctor': id_doctor
         }
         
     def verificar_doctor(self, carnet):
@@ -92,6 +91,5 @@ class TratamientoControlador:
 from Modelos.PacienteModelo import Paciente
 
 if __name__ == "__main__":
-    paciente_prueba = Paciente(id_paciente=1, nombre="Juan", apellido="Pérez", fecha_nacimiento="21/06/2006", telefono=12345678, correo="peloncita@gmail.com")
-    controlador = TratamientoControlador(paciente_prueba)
+    controlador = TratamientoControlador(doctor=None)
     controlador.mostrar_vista()
