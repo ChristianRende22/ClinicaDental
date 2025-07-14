@@ -8,14 +8,14 @@ CREATE TABLE Paciente (
 	Nombre VARCHAR(50) NOT NULL,
 	Apellido VARCHAR(50) NOT NULL,
 	Fecha_Nacimiento DATE NOT NULL,
-	DUI VARCHAR(10) UNIQUE,
+	DUI VARCHAR(10) ,
 	Telefono CHAR(8),
 	Correo VARCHAR(25)
 );
 
 -- Tabla: Doctor
 CREATE TABLE Doctor (
-	ID_Doctor VARCHAR(10) UNIQUE PRIMARY KEY,
+	ID_Doctor VARCHAR(10) UNIQUE PRIMARY key NOT NULL,
 	Nombre VARCHAR(50) ,
 	Apellido VARCHAR(50) ,
 	Especialidad VARCHAR(50) ,
@@ -27,7 +27,7 @@ CREATE TABLE Doctor (
 -- Tabla: Horario
 CREATE TABLE Horario (
 	ID_Horario INT AUTO_INCREMENT PRIMARY KEY,
-	ID_Doctor INT NOT NULL,
+	ID_Doctor VARCHAR(10) NOT NULL,
 	Hora_Inicio TIME NOT NULL,
 	Hora_Fin TIME NOT NULL,
 	Disponible BOOLEAN DEFAULT TRUE,
@@ -47,7 +47,7 @@ CREATE TABLE Historial_Medico (
 -- Tabla: Tratamiento
 CREATE TABLE Tratamiento (
 	ID_Tratamiento INT AUTO_INCREMENT PRIMARY KEY,
-	ID_Doctor INT NOT NULL,
+	ID_Doctor VARCHAR(10) NOT NULL,
 	Descripcion TEXT NOT NULL,
 	Costo DECIMAL(10,2) NOT NULL,
 	Fecha DATETIME NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE Tratamiento (
 CREATE TABLE Cita (
 	ID_Cita INT AUTO_INCREMENT PRIMARY KEY,
 	ID_Paciente INT NOT NULL,
-	ID_Doctor INT NOT NULL,
+	ID_Doctor VARCHAR(10) NOT NULL,
 	ID_Tratamiento INT NOT NULL,
 	Fecha DATETIME NOT NULL,
 	Hora_Inicio TIME NOT NULL,
@@ -140,10 +140,10 @@ INSERT INTO Historial_Medico (ID_Paciente, Fecha_Creacion, Notas_Generales) VALU
 (2, '2024-06-10', 'Evaluación inicial.'),
 (3, '2024-07-05', 'Control de ortodoncia.');
 
-INSERT INTO Horario (ID_Doctor, Fecha, Hora_Inicio, Hora_Fin, Disponible) VALUES
-(1234, '2025-07-01', '08:00:00', '12:00:00', TRUE),
-(2345, '2025-07-01', '13:00:00', '17:00:00', TRUE),
-(3456, '2025-07-02', '08:00:00', '12:00:00', FALSE);
+INSERT INTO Horario (ID_Doctor, Hora_Inicio, Hora_Fin, Disponible) VALUES
+(1234,  '08:00:00', '12:00:00', TRUE),
+(2345, '13:00:00', '17:00:00', TRUE),
+(3456, '08:00:00', '12:00:00', FALSE);
 
 
 INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha, Estado) VALUES
