@@ -177,7 +177,7 @@ class AgregarTratamientoDialog(QDialog):
         if not self.controlador.validar_datos(descripcion, costo, fecha, estado, carnet_doctor):
             return
 
-        fecha_str = fecha.toString("dd-MM-yyyy") + " 00:00:00"
+        fecha_str = fecha.toString("yyyy-MM-dd") + " 00:00:00"
 
         id_tratamiento = self.controlador.guardar_tratamiento(
             descripcion=descripcion,
