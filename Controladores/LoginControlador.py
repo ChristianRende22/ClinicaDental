@@ -35,14 +35,12 @@ class LoginControlador:
         print(f"Login exitoso para usuario tipo: {tipo_usuario}")
         # Aquí puedes agregar lógica adicional como:
         # - Registrar el login en logs
-        # - Abrir la ventana principal de la aplicación
         # - Configurar permisos según el tipo de usuario
         
-        # Cerrar la ventana de login
-        self.vista.close()
+        # NO cerrar la ventana aquí - lo hará el ControladorClinica
+        # self.vista.close()
         
-        # TODO: Abrir ventana principal según el tipo de usuario
-        # self.abrir_ventana_principal(tipo_usuario)
+        # La señal se propaga al ControladorClinica que maneja el flujo
     
     def mostrar(self):
         """Muestra la ventana de login"""

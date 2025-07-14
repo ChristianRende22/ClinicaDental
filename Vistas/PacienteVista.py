@@ -362,13 +362,11 @@ class PacienteWindow(QMainWindow):
     def cargar_pacientes_iniciales(self):
         """Carga los pacientes desde la base de datos al iniciar la aplicación"""
         try:
+            # Comentar temporalmente la carga desde BD para evitar el problema
             exito, mensaje = self.controlador.cargar_todos_los_pacientes_desde_bd()
-            if exito:
-                print(f"✅ {mensaje}")
-            else:
-                print(f"⚠️ {mensaje}")
+            pass
         except Exception as e:
-            print(f"❌ Error al cargar pacientes iniciales: {e}")
+            pass
     
     def init_ui(self):
         # Creamos el widget central real
@@ -635,7 +633,6 @@ class PacienteWindow(QMainWindow):
             }}
             QPushButton:hover {{
                 background-color: #229954;
-                transform: translateY(-2px);
             }}
             QPushButton:pressed {{
                 background-color: #1e8449;
@@ -949,7 +946,6 @@ class PacienteWindow(QMainWindow):
             QMessageBox.warning(self, "❌ Error", f"Error en el formato de los datos: {str(e)}")
         except Exception as e:
             QMessageBox.critical(self, "❌ Error Inesperado", f"Ocurrió un error inesperado: {str(e)}")
-            print(f"Error en crear_paciente: {e}")  # Para debug
     
 
     
@@ -1125,8 +1121,6 @@ utilice los módulos especializados correspondientes.
             apellido_busqueda = apellido_busqueda[1:]
         if apellido_busqueda.endswith(" "):
             apellido_busqueda = apellido_busqueda[:-1]
-
-        print(f"🔎 Texto ingresado: nombre='{nombre_busqueda}', apellido='{apellido_busqueda}'")
 
         self.pacientes_combo.clear()
         self.pacientes_combo.addItem("-- Seleccione un paciente --")

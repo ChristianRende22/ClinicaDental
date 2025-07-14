@@ -223,7 +223,6 @@ class CitaWindow(QMainWindow):
                 height: 6px;
                 border-top: none;
                 border-left: none;
-                transform: rotate(45deg);
                 margin-top: -2px;
             }}
             

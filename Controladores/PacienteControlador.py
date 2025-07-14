@@ -85,6 +85,9 @@ class PacienteControlador:
         """Valida el formato del email usando el modelo"""
         return Paciente.validar_formato_email(email)
     
+    def mostrar(self):
+        self.inicializar_vista()
+
     def validar_dui(self, dui: str) -> bool:
         """Valida el formato del DUI usando el modelo"""
         return Paciente.validar_formato_dui(dui)
@@ -137,26 +140,7 @@ class PacienteControlador:
     # PROPÓSITO: Buscar y verificar existencia de pacientes
     # ==========================================
     
-    def buscar_paciente_por_id(self, id_paciente: int) -> Paciente:
-        """Busca un paciente por su ID único"""
-        for paciente in self.pacientes_registrados:
-            if paciente.id_paciente == id_paciente:
-                return paciente
-        return None
-    
-    def existe_paciente_con_dui(self, dui: str) -> bool:
-        """Verifica si ya existe un paciente con el DUI dado (solo si DUI no está vacío)"""
-        if not dui or len(dui.replace(" ", "")) == 0:
-            return False  # Si no hay DUI, no hay conflicto
-        return any(paciente.dui == dui and paciente.dui for paciente in self.pacientes_registrados)
-    
 
-    def buscar_pacientes_por_nombre(self, nombre: str) -> List[Paciente]:
-        """Busca pacientes que contengan el nombre dado"""
-        nombre_lower = nombre.lower()
-        return [p for p in self.pacientes_registrados 
-                if nombre_lower in p.nombre.lower() or nombre_lower in p.apellido.lower()]
-    
     def buscar_pacientes_por_nombre_apellido(self, nombre: str = "", apellido: str = "") -> List[Paciente]:
         """Busca pacientes por nombre y/o apellido (coincidencia parcial)"""
         pacientes_encontrados = []
@@ -176,15 +160,7 @@ class PacienteControlador:
                 pacientes_encontrados.append(paciente)
         
         return pacientes_encontrados
-    
-    def buscar_pacientes_con_saldo_pendiente(self) -> List[Paciente]:
-        """Obtiene todos los pacientes con saldo pendiente"""
-        return [p for p in self.pacientes_registrados if p.tiene_saldo_pendiente()]
-    
-    def buscar_pacientes_menores_edad(self) -> List[Paciente]:
-        """Obtiene todos los pacientes menores de edad"""
-        return [p for p in self.pacientes_registrados if p.es_menor_de_edad()]
-    
+
     # ==========================================
     # MÉTODOS DE GESTIÓN DE PACIENTES (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Crear, modificar y gestionar pacientes
@@ -406,102 +382,7 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
                 
         except Exception as e:
             return False, f"Error al agregar cita: {str(e)}"
-    
-    def _tiene_conflicto_horario(self, nueva_cita) -> bool:
-        """Verifica si la nueva cita tiene conflicto con citas existentes"""
-        if not self.paciente_actual:
-            return False
-        
-        for cita_existente in self.paciente_actual.citas:
-            # Verificar solapamiento de horarios
-            if (nueva_cita.hora_inicio < cita_existente.hora_fin and 
-                nueva_cita.hora_fin > cita_existente.hora_inicio):
-                return True
-        return False
-    
-    def cancelar_cita(self, id_cita: str) -> tuple[bool, str]:
-        """Cancela una cita específica y registra la cancelación en el historial médico"""
-        if not self.paciente_actual:
-            return False, "No hay paciente seleccionado"
-        
-        cita = self.paciente_actual.obtener_cita_por_id(id_cita)
-        if not cita:
-            return False, "Cita no encontrada"
-        
-        # Regla de negocio: No cancelar citas que ya comenzaron
-        if cita.hora_inicio <= datetime.now():
-            return False, "No se puede cancelar una cita que ya comenzó"
-        
-        try:
-            # Actualizar el estado de la cita
-            estado_anterior = cita.estado
-            cita.estado = "Cancelada"
-            
-            # Registrar la cancelación en el historial médico
-            notas_cancelacion = f"""
-CITA CANCELADA:
-• ID de la Cita: {id_cita}
-• Fecha Original: {getattr(cita, 'fecha', 'No especificada')}
-• Hora Original: {getattr(cita, 'hora_inicio', 'No especificada')}
-• Estado Anterior: {estado_anterior}
-• Estado Actual: Cancelada
-• Motivo: Cancelación solicitada
-• Fecha de Cancelación: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
 
-Cita cancelada para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
-            """
-            
-            # Insertar en el historial médico de la base de datos
-            self.paciente_actual.agregar_nota_historial_medico(
-                notas_cancelacion.strip(), 
-                "Activo"
-            )
-            
-            return True, "Cita cancelada exitosamente y registrada en historial médico"
-            
-        except Exception as e:
-            return False, f"Error al cancelar cita: {str(e)}"
-    
-    def finalizar_tratamiento(self, id_tratamiento: str) -> tuple[bool, str]:
-        """Finaliza un tratamiento específico y registra la finalización en el historial médico"""
-        if not self.paciente_actual:
-            return False, "No hay paciente seleccionado"
-        
-        tratamiento = self.paciente_actual.obtener_tratamiento_por_id(id_tratamiento)
-        if not tratamiento:
-            return False, "Tratamiento no encontrado"
-        
-        try:
-            # Actualizar el estado del tratamiento
-            estado_anterior = tratamiento.estado
-            tratamiento.estado = "Completado"
-            
-            # Registrar la finalización en el historial médico
-            notas_finalizacion = f"""
-TRATAMIENTO FINALIZADO:
-• ID del Tratamiento: {id_tratamiento}
-• Tipo de Tratamiento: {getattr(tratamiento, 'tipo', 'No especificado')}
-• Descripción: {getattr(tratamiento, 'descripcion', 'Sin descripción')}
-• Estado Anterior: {estado_anterior}
-• Estado Actual: Completado
-• Costo Total: ${getattr(tratamiento, 'costo', 0):,.2f}
-• Doctor: {getattr(tratamiento, 'doctor', 'No especificado')}
-• Fecha de Finalización: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
-
-Tratamiento completado exitosamente para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
-            """
-            
-            # Insertar en el historial médico de la base de datos
-            self.paciente_actual.agregar_nota_historial_medico(
-                notas_finalizacion.strip(), 
-                "Completado"
-            )
-            
-            return True, "Tratamiento finalizado exitosamente y registrado en historial médico"
-            
-        except Exception as e:
-            return False, f"Error al finalizar tratamiento: {str(e)}"
-    
     # ==========================================
     # MÉTODOS DE CONSULTA Y REPORTES (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Obtener información procesada para la vista
@@ -758,37 +639,6 @@ Tratamiento completado exitosamente para el paciente {self.paciente_actual.nombr
         except Exception as e:
             return False, f"Error al registrar evento: {str(e)}"
 
-    def probar_conexion_bd(self) -> tuple[bool, str]:
-        """
-        Prueba la conexión a la base de datos
-        
-        Returns:
-            tuple[bool, str]: (éxito, mensaje)
-        """
-        try:
-            import mysql.connector
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                database='ClinicaDental',
-                user='root',
-                password='1234'
-            )
-            
-            cursor = conexion.cursor()
-            cursor.execute("SELECT 1")
-            resultado = cursor.fetchone()
-            
-            cursor.close()
-            conexion.close()
-            
-            if resultado:
-                return True, "✅ Conexión a la base de datos exitosa"
-            else:
-                return False, "❌ Error en la consulta de prueba"
-                
-        except Exception as e:
-            return False, f"❌ Error de conexión a la base de datos: {str(e)}"
 
     def crear_historial_medico_inicial(self) -> tuple[bool, str]:
         """
@@ -855,6 +705,10 @@ Sistema: Clínica Dental - Gestión de Pacientes
         except Exception as e:
             return False, f"Error al crear historial médico inicial: {str(e)}"
 
+    def mostrar(self):
+        """Muestra la vista del controlador de pacientes"""
+        return self.inicializar_vista()
+    
 # ==========================================
 # QUERYS EJECUNTANDOSE DESDE EL MODELO  
 # ==========================================
