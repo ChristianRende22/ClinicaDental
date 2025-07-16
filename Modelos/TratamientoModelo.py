@@ -78,6 +78,56 @@ class Tratamiento:
             cursor.close()
             conn.close()
 
+    @staticmethod
+    def obtener_todos_tratamientos():
+        """Obtiene todos los tratamientos de la base de datos"""
+        conexion = None
+        cursor = None
+        tratamientos = []
+        
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            # CORREGIDO: Agregar más campos a la query
+            query = "SELECT ID_Tratamiento, Descripcion, Costo, ID_Doctor, Fecha, Estado FROM Tratamiento"
+            cursor.execute(query)
+            
+            resultados = cursor.fetchall()
+            print(f"Resultados de tratamientos desde BD: {resultados}")  # Debug
+            
+            for row in resultados:
+                # CORREGIDO: Usar constructor compatible y índices correctos
+                tratamiento = Tratamiento(
+                    id_tratamiento=row[0],           # ID_Tratamiento
+                    id_doctor=row[3] if row[3] else None,  # ID_Doctor
+                    descripcion=row[1] if row[1] else "Sin descripción",  # Descripcion
+                    costo=float(row[2]) if row[2] else 0.0,  # Costo
+                    fecha=row[4] if row[4] else None,  # Fecha
+                    estado=row[5] if row[5] else "Activo",  # Estado
+                    doctor=None  # Se llenará automáticamente por el constructor
+                )
+                
+                tratamientos.append(tratamiento)
+                print(f"Tratamiento agregado: {tratamiento.descripcion}")  # CORREGIDO: usar descripcion
+                        
+            return tratamientos
+            
+        except Error as e:
+            print(f"Error al obtener tratamientos: {e}")
+            return []
+            
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()
+
     def __str__(self):
         return (f"Tratamiento ID: {self.id_tratamiento} \n " 
                 f"Descripción: '{self.descripcion}' \n "
