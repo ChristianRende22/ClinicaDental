@@ -18,123 +18,193 @@ from PyQt6.QtCore import QDateTime, QDate
 
 
 class ControladorCita:    
-    def __init__(self, vista):
-        self.vista = vista
-        self.citas: List[Cita] = []  # Lista para almacenar las citas creadas
+    def __init__(self):
+        self.vista = None  # Vista asociada al controlador
+        self.citas_agendadas: List[Cita] = []  # Lista para almacenar las citas creadas
+        self.cita: Cita = None  # Cita actual que se está editando o creando
+        self.doctores: List[Doctor] = []  # Lista de doctores disponibles
+        self.pacientes: List[Paciente] = []  # Lista de pacientes disponibles
+        self.tratamientos: List[Tratamiento] = []  # Lista de tratamientos disponibles
         self.editando_cita = None
         
-        self.doctores = [
-            Doctor("Melisa", "Rivas", 1234, "Cirujano Dentista", 12345678, "correo@gmail.com"), 
-            Doctor("Carlos", "López", 2345, "Ortodontista", 87654321, "coreo1@gmail.com")
-        ]
-        
-        self.pacientes = [
-            Paciente("Juan", "Pérez", "06-12-05", "12345678-9", 12345567, "correo@gmail.com"), 
-            Paciente("Ana", "Gomex", "07-31-07", "12345678-0", 12345678, "correo1@gmail.com")
-        ]
-        
-        self.tratamientos = [
-            Tratamiento(1, 1234, "Limpieza Dental", 50.0, "05-12-2023",  "Sin realizar", self.doctores[0], "12345678-0" ),
-            Tratamiento(2, 2345, "Ortodoncia", 200.0, "06-15-2023", "En proceso", self.doctores[1], "12345678-9")
-        ]
-        
-        # Inicializar la vista con los datos
-        self.inicializar_vista()
+        # Cargar datos desde la base de datos
+        self.cargar_datos_desde_bd()
+
+    def cargar_datos_desde_bd(self):
+        """Carga todos los datos necesarios desde la base de datos"""
+        try:
+            # Cargar pacientes
+            self.pacientes = Paciente.obtener_todos_pacientes()
+            print(f"Pacientes cargados: {len(self.pacientes)}")
+            
+            # Cargar doctores
+            self.doctores = Doctor.obtener_todos_doctores()
+            print(f"Doctores cargados: {len(self.doctores)}")
+            
+            # Cargar tratamientos
+            self.tratamientos = Tratamiento.obtener_todos_tratamientos()
+            print(f"Tratamientos cargados: {len(self.tratamientos)}")
+            
+        except Exception as e:
+            print(f"Error al cargar datos desde BD: {e}")
+            # En caso de error, usar listas vacías
+            self.pacientes = []
+            self.doctores = []
+            self.tratamientos = []
+
+    def set_vista(self, vista):
+        """Establece la vista asociada al controlador"""
+        self.vista = vista
 
     def inicializar_vista(self):
         """Inicializa la vista con los datos del controlador"""
-        self.vista.actualizar_combos(self.doctores, self.pacientes, self.tratamientos)
+        if not self.vista:
+            from Vistas.CitaVista import CitaWindow
+            self.vista = CitaWindow(self)
+
+        # Actualizar combos con datos de la BD
+        self.actualizar_vista()
+        self.vista.show()
+        return self.vista
+
+    def cerrar_vista(self):
+        """Cierra la vista actual"""
+        if self.vista:
+            self.vista.close()
+            self.vista = None
+
+    def actualizar_vista(self):
+        """Actualiza la vista con los datos actuales del controlador"""
+        if self.vista:
+            self.vista.actualizar_combos(self.doctores, self.pacientes, self.tratamientos)
+            self.vista.resultado_text.clear()
 
     def crear_cita(self):
-        """Crea una nueva cita verificando disponibilidad de la Cita"""
+        """Crea una nueva cita con los datos ingresados en la vista"""
         self.vista.resultado_text.clear()
-        id_cita = self.vista.id_edit.text().strip()
-        paciente_idx = self.vista.paciente_combo.currentIndex()
-        doctor_idx = self.vista.doctor_combo.currentIndex()
-        tratamiento_idx = self.vista.tratamiento_combo.currentIndex()
-        fecha = self.vista.fecha_edit.date().toPyDate()
-        hora_inicio_dt = self.vista.inicio_edit.dateTime().toPyDateTime()
-        hora_fin_dt = self.vista.fin_edit.dateTime().toPyDateTime()
-        hora_inicio = hora_inicio_dt.time()
-        hora_fin = hora_fin_dt.time()
-        costo = self.vista.costo_edit.text().strip()
-        estado = self.vista.estado_combo.currentText()
-
-        # Validaciones básicas
-        if not all([id_cita, costo]):
-            QMessageBox.warning(self.vista, "❌ Error", "ID de cita y costo son campos obligatorios")
-            return
-
-        # Verificar que la fecha no sea pasada
-        fecha_actual = date.today()
-        if fecha < fecha_actual:
-            QMessageBox.warning(self.vista, "❌ Error", 
-                              "No se pueden crear citas en fechas pasadas.\n"
-                              "Por favor seleccione una fecha actual o futura.")
-            return
-
-        # Validar que la hora de fin sea posterior a la hora de inicio
-        if hora_inicio >= hora_fin:
-            QMessageBox.warning(self.vista, "❌ Error", "La hora de fin debe ser posterior a la hora de inicio")
-            return
-
-        # Si es hoy, verificar que la hora no haya pasado
-        if fecha == fecha_actual:
-            hora_actual = datetime.now().time()
-            if hora_inicio <= hora_actual:
-                QMessageBox.warning(self.vista, "❌ Error", 
-                                  f"No se pueden crear citas en horarios pasados.\n"
-                                  f"Hora actual: {hora_actual.strftime('%H:%M')}\n"
-                                  f"Por favor seleccione una hora futura.")
-                return
-
-        # Verificar disponibilidad del doctor
-        doctor = self.doctores[doctor_idx]
-
-        # Esta funcion se implmenetara cuando este lista la clase y controlador de horario
-        # for cita in self.citas:
-        #     """ Verifica si el doctor está disponible en el horario de la cita """
-        #     if cita.doctor == doctor and not (hora_fin <= cita.hora_inicio or hora_inicio >= cita.hora_fin):
-        #         QMessageBox.warning(self.vista, "❌ Error", "El doctor no está disponible en ese horario.")
-        #         return
-
-        # Validar costo (por si acaso)
-        try:
-            costo_float = float(costo)
-            if costo_float <= 0:
-                QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser mayor a 0")
-                return
-        except ValueError:
-            QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser un número válido")
-            return
-
-        # Valida que no se repita el id de cita
-        for cita in self.citas:
-            if cita.id_cita == id_cita:
-                QMessageBox.warning(self.vista, "❌ Error", "Ya existe una cita con ese ID")
-                return
-
-        paciente = self.pacientes[paciente_idx]
-        doctor = self.doctores[doctor_idx]
-        tratamiento = self.tratamientos[tratamiento_idx]
         
-        nueva_cita = Cita(id_cita, paciente, doctor, fecha, hora_inicio, hora_fin, costo_float)
-        nueva_cita.tratamiento = tratamiento
-        nueva_cita.estado = estado
-
-        self.citas.append(nueva_cita)
-        self.vista.resultado_text.append(f"Cita creada:\n{nueva_cita}")
-        QMessageBox.information(self.vista, "✅ Éxito", "Cita creada exitosamente.")
-        self.limpiar_campos()
+        try:
+            # Obtener datos del formulario
+            paciente_idx = self.vista.paciente_combo.currentIndex()
+            doctor_idx = self.vista.doctor_combo.currentIndex()
+            tratamiento_idx = self.vista.tratamiento_combo.currentIndex()
+            fecha = self.vista.fecha_edit.date().toPyDate()
+            hora_inicio_dt = self.vista.inicio_edit.dateTime().toPyDateTime()
+            hora_fin_dt = self.vista.fin_edit.dateTime().toPyDateTime()
+            hora_inicio = hora_inicio_dt.time()
+            hora_fin = hora_fin_dt.time()
+            costo = self.vista.costo_edit.text().strip()
+            estado = self.vista.estado_combo.currentText()
+            
+            # Validaciones básicas (recordar que índice 0 es "-- Seleccionar --")
+            if paciente_idx <= 0:
+                QMessageBox.warning(self.vista, "❌ Error", "Debe seleccionar un paciente.")
+                return
+            
+            if doctor_idx <= 0:
+                QMessageBox.warning(self.vista, "❌ Error", "Debe seleccionar un doctor.")
+                return
+            
+            if not costo:
+                QMessageBox.warning(self.vista, "❌ Error", "Debe ingresar el costo de la cita.")
+                return
+            
+            # Validar fecha
+            fecha_actual = date.today()
+            if fecha < fecha_actual:
+                QMessageBox.warning(self.vista, "❌ Error", 
+                                "No se pueden crear citas en fechas pasadas.\n"
+                                "Por favor seleccione una fecha actual o futura.")
+                return
+            
+            # Si es hoy, verificar que la hora no haya pasado
+            if fecha == fecha_actual:
+                hora_actual = datetime.now().time()
+                if hora_inicio <= hora_actual:
+                    QMessageBox.warning(self.vista, "❌ Error", 
+                                    f"No se pueden crear citas en horarios pasados.\n"
+                                    f"Hora actual: {hora_actual.strftime('%H:%M')}\n"
+                                    f"Por favor seleccione una hora futura.")
+                    return
+            
+            # Validar costo
+            try:
+                costo_float = float(costo)
+                if costo_float < 0:
+                    QMessageBox.warning(self.vista, "❌ Error", "El costo no puede ser negativo.")
+                    return
+            except ValueError:
+                QMessageBox.warning(self.vista, "❌ Error", "El costo debe ser un número válido.")
+                return
+            
+            # Validar horarios
+            if hora_inicio >= hora_fin:
+                QMessageBox.warning(self.vista, "❌ Error", "La hora de fin debe ser posterior a la hora de inicio.")
+                return
+            
+            # Obtener objetos seleccionados (restar 1 porque índice 0 es texto placeholder)
+            paciente_seleccionado = self.pacientes[paciente_idx - 1]
+            doctor_seleccionado = self.doctores[doctor_idx - 1]
+            
+            # Tratamiento es opcional
+            tratamiento_seleccionado = None
+            if tratamiento_idx > 0:
+                tratamiento_seleccionado = self.tratamientos[tratamiento_idx - 1]
+            
+            # Crear la instancia de Cita
+            nueva_cita = Cita(
+                paciente=paciente_seleccionado,
+                doctor=doctor_seleccionado,
+                fecha=fecha,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+                costo_cita=costo_float
+            )
+            
+            # Asignar tratamiento si se seleccionó
+            if tratamiento_seleccionado:
+                nueva_cita.tratamiento = tratamiento_seleccionado
+            
+            # Insertar en la base de datos
+            if Cita.insert_Cita_bd(nueva_cita):
+                # Si la inserción fue exitosa, agregar a la lista local
+                self.citas_agendadas.append(nueva_cita)  # CORREGIDO: usar citas_agendadas
+                
+                QMessageBox.information(self.vista, "✅ Éxito", 
+                                    f"Cita creada correctamente.\nID: {nueva_cita.id_cita}")
+                
+                # Mostrar los detalles de la cita creada
+                self.vista.resultado_text.append(
+                    f"Cita creada exitosamente:\n"
+                    f"ID: {nueva_cita.id_cita}\n"
+                    f"Paciente: {nueva_cita.paciente.nombre} {nueva_cita.paciente.apellido}\n"
+                    f"Doctor: {nueva_cita.doctor.nombre} {nueva_cita.doctor.apellido}\n"
+                    f"Fecha: {nueva_cita.fecha.strftime('%d/%m/%Y')}\n"
+                    f"Hora inicio: {nueva_cita.hora_inicio.strftime('%H:%M')}\n"
+                    f"Hora fin: {nueva_cita.hora_fin.strftime('%H:%M')}\n"
+                    f"Costo: ${nueva_cita.costo_cita:.2f}\n"
+                    f"Estado: {nueva_cita.estado}\n"
+                )
+                
+                # Limpiar el formulario
+                self.limpiar_campos()
+                
+            else:
+                QMessageBox.critical(self.vista, "❌ Error", 
+                                "Error al guardar la cita en la base de datos.")
+                
+        except Exception as e:
+            QMessageBox.critical(self.vista, "❌ Error", 
+                            f"Error inesperado al crear la cita: {str(e)}")
 
     def listar_citas(self):
         """Lista todas las citas creadas"""
         self.vista.resultado_text.clear()
-        if not self.citas:
+        if not self.citas_agendadas:  # CORREGIDO
             self.vista.resultado_text.append("No hay citas registradas...")
             return
         
-        for cita in self.citas:
+        for cita in self.citas_agendadas:  # CORREGIDO
             self.vista.resultado_text.append(f"{cita}\n" + "-"*50 + "\n")
 
     def cancelar_cita(self):
@@ -144,8 +214,8 @@ class ControladorCita:
         id_cita, ok = QInputDialog.getText(self.vista, "Cancelar Cita", "Ingrese el ID de la cita a cancelar:")
         if not ok or not id_cita.strip():
             return
-        for cita in self.citas:
-            if cita.id_cita == id_cita.strip():
+        for cita in self.citas_agendadas:  # CORREGIDO
+            if str(cita.id_cita) == id_cita.strip():  # CORREGIDO: convertir a string
                 cita.estado = "Cancelada"
                 self.vista.resultado_text.append(f"Cita cancelada:\n{cita}")
                 QMessageBox.information(self.vista, "✅ Éxito", "Cita cancelada exitosamente.")
@@ -159,7 +229,7 @@ class ControladorCita:
         """
         self.vista.resultado_text.clear()
 
-        if not self.citas:
+        if not self.citas_agendadas:  # CORREGIDO
             QMessageBox.information(self.vista, "ℹ️ Información", "No hay citas registradas")
             return
 
@@ -254,7 +324,7 @@ class ControladorCita:
         
         # Buscar la cita
         cita_encontrada = None
-        for cita in self.citas:
+        for cita in self.citas_agendadas:  # CORREGIDO
             if cita.id_cita == id_cita.strip():
                 cita_encontrada = cita
                 break
@@ -320,7 +390,7 @@ class ControladorCita:
         if not ok or not id_cita.strip():
             return
         
-        for cita in self.citas:
+        for cita in self.citas_agendadas:  # CORREGIDO
             if cita.id_cita == id_cita.strip():
                 cita.estado = "Confirmada"
                 self.vista.resultado_text.append(f"Asistencia confirmada:\n{cita}")
@@ -338,7 +408,7 @@ class ControladorCita:
         if not ok or not id_cita.strip():
             return
         
-        for cita in self.citas:
+        for cita in self.citas_agendadas:  # CORREGIDO
             if cita.id_cita == id_cita.strip():
                 costo_cita = cita.costo_cita
                 costo_tratamiento = getattr(cita, 'tratamiento', None)
@@ -391,17 +461,26 @@ class ControladorCita:
         QMessageBox.warning(self.vista, "❌ Error", "No se encontró la cita.")
 
     def limpiar_campos(self):
-        self.vista.id_edit.clear()
-        self.vista.id_edit.setReadOnly(False)  # Rehabilitar el campo ID
-        self.vista.fecha_edit.setDate(QDate.currentDate())
-        self.vista.inicio_edit.setDateTime(QDateTime.currentDateTime())
-        self.vista.fin_edit.setDateTime(QDateTime.currentDateTime())
-        self.vista.costo_edit.clear()
-        self.vista.estado_combo.setCurrentIndex(0)
-        self.vista.paciente_combo.setCurrentIndex(0)
-        self.vista.doctor_combo.setCurrentIndex(0)
-        self.vista.tratamiento_combo.setCurrentIndex(0)
-        self.editando_cita = None  # Resetear el modo edición
+        """Limpia todos los campos del formulario"""
+        if self.vista:
+            # Limpiar combos a la primera opción
+            self.vista.paciente_combo.setCurrentIndex(-1)
+            self.vista.doctor_combo.setCurrentIndex(-1)
+            self.vista.tratamiento_combo.setCurrentIndex(-1)
+            
+            # Resetear fecha y hora a valores actuales
+            self.vista.fecha_edit.setDate(QDate.currentDate())
+            self.vista.inicio_edit.setDateTime(QDateTime.currentDateTime())
+            self.vista.fin_edit.setDateTime(QDateTime.currentDateTime())
+            
+            # Limpiar campos de texto
+            self.vista.costo_edit.clear()
+            
+            # Resetear estado a Pendiente
+            self.vista.estado_combo.setCurrentIndex(0)
+            
+            # Resetear modo edición
+            self.editando_cita = None
 
 # ==========================================
 # EJECUCIÓN AUTOMÁTICA DEL CONTROLADOR
@@ -416,4 +495,3 @@ if __name__ == "__main__":
     window = CitaWindow()
     window.show()
     app.exec()
-
