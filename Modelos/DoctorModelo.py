@@ -104,7 +104,7 @@ class Doctor:
             if 'conexion' in locals():
                 conexion.close()
 
-        @staticmethod
+    @staticmethod
     def obtener_todos_doctores():
         """Obtiene todos los doctores de la base de datos"""
         conexion = None
