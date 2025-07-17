@@ -196,6 +196,7 @@ class Cita:
                 host='localhost',
                 database='ClinicaDental',
                 user='root',
+                port=3307,
                 password='1234'
             )
 
@@ -257,6 +258,7 @@ class Cita:
                 host='localhost',
                 database='ClinicaDental',
                 user='root',
+                port=3307,
                 password='1234'
             )
 
@@ -397,6 +399,7 @@ class Cita:
                 host='localhost',
                 database='ClinicaDental',
                 user='root',
+                port=3307,
                 password='1234'
             )
 
