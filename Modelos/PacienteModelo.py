@@ -1,6 +1,33 @@
 # Agregar el directorio padre al path
 import mysql.connector
 from mysql.connector import Error
+def obtener_conexion():
+    """Establece y devuelve una conexión segura a la base de datos MySQL"""
+    try:
+        print("🔄 Intentando conectar a la base de datos...")
+        conexion = mysql.connector.connect(
+            host='localhost',
+            port=3307,
+            user='root',
+            password='1234',
+            database='ClinicaDental'
+        )
+        print("✅ Conexión exitosa a la base de datos")
+        return conexion
+    except mysql.connector.Error as e:
+        print(f"❌ Error de MySQL al conectar a la base de datos: {e}")
+        if e.errno == 2003:
+            print("⚠️  Error 2003: No se puede conectar al servidor MySQL. Verifica que el servidor esté ejecutándose.")
+        elif e.errno == 1049:
+            print("⚠️  Error 1049: Base de datos 'ClinicaDental' no existe.")
+        elif e.errno == 1045:
+            print("⚠️  Error 1045: Acceso denegado. Verifica usuario y contraseña.")
+        print("⚠️  Funcionando en modo sin base de datos")
+        return None
+    except Exception as e:
+        print(f"❌ Error inesperado al conectar a la base de datos: {e}")
+        print("⚠️  Funcionando en modo sin base de datos")
+        return None
 import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -311,14 +338,10 @@ class Paciente:
             print(f"📡 Ejecutando búsqueda SQL con: nombre='{nombre}', apellido='{apellido}'")
             
             # Establecer conexión con la base de datos MySQL
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                user='root',
-                password='1234',
-                database='ClinicaDental'
-            )
-            cursor = conexion.cursor()
+            conexion = obtener_conexion()
+            if not conexion:
+                return False
+            cursor = conexion.cursor()  
             
             # Query con LIKE para búsqueda parcial en nombre y apellido
             query = """
@@ -373,14 +396,10 @@ class Paciente:
         """
         try:
             # Establecer conexión con la base de datos MySQL
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                user='root',
-                password='1234',
-                database='ClinicaDental'
-            )
-            cursor = conexion.cursor()
+            conexion = obtener_conexion()
+            if not conexion:
+                return False
+            cursor = conexion.cursor()  
 
             # Query INSERT con todos los campos del paciente
             query = """
@@ -423,17 +442,17 @@ class Paciente:
         Returns:
             List[Paciente]: Lista de todos los objetos Paciente en la base de datos
         """
+        conexion = None
+        cursor = None
         try:
             print("📡 Cargando todos los pacientes desde la base de datos...")
             
             # Establecer conexión con la base de datos MySQL
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                user='root',
-                password='1234',
-                database='ClinicaDental'
-            )
+            conexion = obtener_conexion()
+            if not conexion:
+                print("⚠️  No se pudo conectar a la base de datos")
+                return []  # Retornar lista vacía en lugar de False
+            
             cursor = conexion.cursor()
             
             # Query para obtener todos los pacientes con todos sus campos
@@ -443,6 +462,7 @@ class Paciente:
                 ORDER BY ID_Paciente
             """
             
+            print("🔍 Ejecutando consulta SQL...")
             # Ejecutar consulta
             cursor.execute(query)
             resultados = cursor.fetchall()
@@ -461,40 +481,51 @@ class Paciente:
             # Convertir resultados de BD a objetos Paciente
             pacientes = []
             for fila in resultados:
-                id_paciente, nombre, apellido, fecha_nac, dui, telefono, correo = fila
-                
-                # Manejar valores nulos de la base de datos
-                dui = dui if dui else ""
-                telefono = int(telefono) if telefono and str(telefono).isdigit() else 0
-                correo = correo if correo else ""
-                
-                # Crear objeto Paciente con todos los datos de la BD
-                # Pasar explícitamente el id_paciente para evitar que se genere automáticamente
-                paciente = Paciente(
-                    nombre=nombre,
-                    apellido=apellido,
-                    fecha_nacimiento=fecha_nac,
-                    telefono=telefono,
-                    correo=correo,
-                    dui=dui,
-                    saldo_pendiente=0.0,  # Por ahora ponemos 0, luego se puede agregar este campo a la BD
-                    id_paciente=id_paciente  # IMPORTANTE: Usar el ID de la BD
-                )
-                pacientes.append(paciente)
+                try:
+                    id_paciente, nombre, apellido, fecha_nac, dui, telefono, correo = fila
+                    
+                    # Manejar valores nulos de la base de datos
+                    dui = dui if dui else ""
+                    telefono = int(telefono) if telefono and str(telefono).isdigit() else 0
+                    correo = correo if correo else ""
+                    
+                    # Crear objeto Paciente con todos los datos de la BD
+                    # Pasar explícitamente el id_paciente para evitar que se genere automáticamente
+                    paciente = Paciente(
+                        nombre=nombre,
+                        apellido=apellido,
+                        fecha_nacimiento=fecha_nac,
+                        telefono=telefono,
+                        correo=correo,
+                        dui=dui,
+                        saldo_pendiente=0.0,  # Por ahora ponemos 0, luego se puede agregar este campo a la BD
+                        id_paciente=id_paciente  # IMPORTANTE: Usar el ID de la BD
+                    )
+                    pacientes.append(paciente)
+                except Exception as e:
+                    print(f"⚠️  Error al procesar paciente {fila}: {e}")
+                    continue
             
             print(f"📊 IDs cargados: {[p.id_paciente for p in pacientes]}")
             return pacientes
             
-        except mysql.connector.Error as e:
-            print(f"❌ Error al cargar pacientes: {e}")
+        except mysql.connector.Error as db_error:
+            print(f"❌ Error de MySQL al cargar pacientes: {db_error}")
+            return []  # Retornar lista vacía en caso de error
+        except Exception as e:
+            print(f"❌ Error inesperado al cargar pacientes: {e}")
             return []  # Retornar lista vacía en caso de error
             
         finally:
             # Cerrar cursor y conexión para liberar recursos
-            if 'cursor' in locals():
-                cursor.close()
-            if 'conexion' in locals():
-                conexion.close()
+            try:
+                if cursor:
+                    cursor.close()
+                if conexion:
+                    conexion.close()
+                print("🔒 Conexión a la base de datos cerrada")
+            except Exception as e:
+                print(f"⚠️  Error al cerrar conexión: {e}")
 
     # ==========================================
     # MÉTODOS DE HISTORIAL MÉDICO CON BASE DE DATOS
@@ -513,15 +544,11 @@ class Paciente:
         """
         try:
             # Conectar a la base de datos
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                database='ClinicaDental',
-                user='root',
-                password='1234'
-            )
+            conexion = obtener_conexion()
+            if not conexion:
+                return False
+            cursor = conexion.cursor()  
             
-            cursor = conexion.cursor()
             
             # Query para obtener el historial médico
             query = """
@@ -573,16 +600,34 @@ class Paciente:
             bool: True si se insertó exitosamente, False en caso contrario
         """
         try:
-            # Conectar a la base de datos
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                database='ClinicaDental',
-                user='root',
-                password='1234'
-            )
+            # Validar datos de entrada
+            if not id_paciente or id_paciente <= 0:
+                print(f"❌ ID de paciente inválido: {id_paciente}")
+                return False
             
-            cursor = conexion.cursor()
+            if not notas_generales or not notas_generales.strip():
+                print("❌ Las notas generales no pueden estar vacías")
+                return False
+            
+            # Truncar notas si exceden el límite de la BD (VARCHAR(100))
+            notas_truncadas = notas_generales[:100] if len(notas_generales) > 100 else notas_generales
+            if len(notas_generales) > 100:
+                print(f"⚠️ Notas truncadas de {len(notas_generales)} a {len(notas_truncadas)} caracteres")
+            
+            # Conectar a la base de datos
+            conexion = obtener_conexion()
+            if not conexion:
+                print("❌ No se pudo establecer conexión a la base de datos")
+                return False
+            
+            cursor = conexion.cursor()  
+            
+            # Verificar que el paciente exista
+            cursor.execute("SELECT ID_Paciente FROM Paciente WHERE ID_Paciente = %s", (id_paciente,))
+            resultado = cursor.fetchone()
+            if not resultado:
+                print(f"❌ No se encontró paciente con ID {id_paciente}")
+                return False
             
             # Query para insertar historial médico
             query = """
@@ -591,23 +636,35 @@ class Paciente:
             """
             
             fecha_actual = datetime.now()
-            cursor.execute(query, (id_paciente, fecha_actual, notas_generales, estado))
+            
+            print(f"🔧 Ejecutando query: {query}")
+            print(f"🔧 Parámetros: ID_Paciente={id_paciente}, Fecha={fecha_actual}, Notas_longitud={len(notas_truncadas)}, Estado={estado}")
+            
+            cursor.execute(query, (id_paciente, fecha_actual, notas_truncadas, estado))
             
             # Confirmar los cambios
             conexion.commit()
             
-            print(f"✅ Historial médico insertado para paciente #{id_paciente}")
+            print(f"✅ Historial médico insertado exitosamente para paciente #{id_paciente}")
             return True
             
         except mysql.connector.Error as e:
-            print(f"❌ Error al insertar historial médico: {e}")
+            print(f"❌ Error MySQL al insertar historial médico: {e}")
+            print(f"❌ Código de error: {e.errno}")
+            print(f"❌ Mensaje SQL: {e.msg}")
+            return False
+        except Exception as e:
+            print(f"❌ Error general al insertar historial médico: {e}")
             return False
             
         finally:
-            if 'cursor' in locals():
-                cursor.close()
-            if 'conexion' in locals():
-                conexion.close()
+            try:
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'conexion' in locals():
+                    conexion.close()
+            except:
+                pass
 
     # ==========================================
     # MÉTODOS DE HISTORIAL MÉDICO INTEGRADOS EN LA CLASE

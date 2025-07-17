@@ -52,3 +52,13 @@ class LoginControlador:
         # Por ahora solo imprime el tipo de usuario
         print(f"Abriendo ventana principal para: {tipo_usuario}")
         pass
+
+if __name__ == "__main__":
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    
+    app = QApplication(sys.argv)
+    controlador = LoginControlador()
+    controlador.mostrar()
+    sys.exit(app.exec())
+        

@@ -28,8 +28,8 @@ class PacienteControlador:
         self.pacientes_registrados: List[Paciente] = []
         self.paciente_actual: Paciente = None
         self.vista = None  # Referencia a la vista
-        # Inicializar el contador de IDs de manera robusta
-        Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
+        # No inicializar el contador aquí - se hará cuando se carguen los datos
+        print("🔧 PacienteControlador inicializado")
     
     def set_vista(self, vista):
         """Establece la referencia a la vista"""
@@ -37,6 +37,11 @@ class PacienteControlador:
     
     def inicializar_vista(self):
         """Inicializa y muestra la vista"""
+        # Inicializar el sistema de IDs secuenciales la primera vez
+        if not hasattr(self, '_sistema_inicializado'):
+            self.inicializar_sistema_ids_secuenciales()
+            self._sistema_inicializado = True
+        
         if not self.vista:
             # Importación tardía para evitar dependencias circulares
             from Vistas.PacienteVista import PacienteWindow
@@ -161,6 +166,52 @@ class PacienteControlador:
         
         return pacientes_encontrados
 
+    def existe_paciente_con_dui(self, dui: str) -> bool:
+        """
+        Verifica si ya existe un paciente registrado con el DUI especificado
+        
+        Args:
+            dui (str): DUI a verificar
+            
+        Returns:
+            bool: True si existe un paciente con ese DUI, False en caso contrario
+        """
+        if not dui or not dui.strip():
+            return False
+        
+        dui_limpio = dui.strip().replace(" ", "").replace("-", "")
+        
+        for paciente in self.pacientes_registrados:
+            if paciente.dui:
+                dui_paciente_limpio = paciente.dui.strip().replace(" ", "").replace("-", "")
+                if dui_limpio == dui_paciente_limpio:
+                    return True
+        
+        return False
+
+    def resetear_contador_ids_secuencial(self):
+        """
+        Resetea el contador de IDs para que sea secuencial basándose en los pacientes en memoria
+        """
+        if not self.pacientes_registrados:
+            # Si no hay pacientes, el próximo ID debería ser 1
+            Paciente._contador_id = 1
+            Paciente._pacientes_existentes = []
+            print("🔄 Contador de IDs reseteado a 1 (sin pacientes)")
+        else:
+            # Renumerar todos los pacientes secuencialmente
+            for i, paciente in enumerate(self.pacientes_registrados, 1):
+                paciente.id_paciente = i
+            
+            # Establecer el contador para el siguiente paciente
+            Paciente._contador_id = len(self.pacientes_registrados) + 1
+            
+            # Actualizar la lista de IDs existentes
+            Paciente._pacientes_existentes = [p.id_paciente for p in self.pacientes_registrados]
+            
+            print(f"🔄 IDs renumerados secuencialmente. Próximo ID: {Paciente._contador_id}")
+            print(f"📊 IDs asignados: {sorted(Paciente._pacientes_existentes)}")
+
     # ==========================================
     # MÉTODOS DE GESTIÓN DE PACIENTES (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Crear, modificar y gestionar pacientes
@@ -209,8 +260,8 @@ class PacienteControlador:
             self.pacientes_registrados.append(nuevo_paciente)
             self.paciente_actual = nuevo_paciente
 
-            # Actualizar el contador
-            Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
+            # Renumerar secuencialmente
+            self.resetear_contador_ids_secuencial()
 
             # Registrar la creación del paciente en el historial médico
             notas_creacion = f"""
@@ -520,22 +571,14 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
             # Actualizar la lista de pacientes registrados
             self.pacientes_registrados = pacientes_bd
             
-            # IMPORTANTE: Inicializar correctamente el contador de IDs basado en los IDs existentes en la BD
-            if pacientes_bd:
-                # Obtener el ID más alto de los pacientes cargados
-                max_id = max(p.id_paciente for p in pacientes_bd)
-                # Establecer el contador para el siguiente ID disponible
-                Paciente._contador_id = max_id + 1
-                # Registrar todos los IDs existentes
-                Paciente._pacientes_existentes = [p.id_paciente for p in pacientes_bd]
-                print(f"🔧 Contador de IDs inicializado. Próximo ID disponible: {Paciente._contador_id}")
-                print(f"📊 IDs existentes registrados: {sorted(Paciente._pacientes_existentes)}")
+            # IMPORTANTE: Renumerar secuencialmente para mantener orden
+            self.resetear_contador_ids_secuencial()
             
             # Actualizar la vista si está disponible
             if self.vista:
                 self.vista.actualizar_lista_pacientes()
             
-            mensaje = f"✅ Se cargaron {len(pacientes_bd)} pacientes desde la base de datos"
+            mensaje = f"✅ Se cargaron {len(pacientes_bd)} pacientes desde la base de datos con IDs secuenciales"
             print(mensaje)
             return True, mensaje
             
@@ -716,6 +759,25 @@ Sistema: Clínica Dental - Gestión de Pacientes
         """Busca pacientes directamente en la base de datos"""
         print(f"🧠 Buscando pacientes en BD: nombre='{nombre}', apellido='{apellido}'")
         return Paciente.buscar_pacientes_por_nombre_apellido(nombre, apellido)
+
+    def inicializar_sistema_ids_secuenciales(self):
+        """
+        Inicializa el sistema asegurando que todos los IDs sean secuenciales
+        Debe llamarse al inicio de la aplicación
+        """
+        print("🔧 Inicializando sistema de IDs secuenciales...")
+        
+        # Cargar pacientes existentes
+        exito, mensaje = self.cargar_todos_los_pacientes_desde_bd()
+        
+        if exito:
+            print(f"✅ {mensaje}")
+        else:
+            print(f"⚠️ {mensaje}")
+            # Si no hay pacientes o hay error, inicializar contador en 1
+            Paciente._contador_id = 1
+            Paciente._pacientes_existentes = []
+            print("🔄 Sistema inicializado sin pacientes existentes")
 
 
 # ==========================================

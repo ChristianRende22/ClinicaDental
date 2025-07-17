@@ -1,46 +1,37 @@
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QLabel, QPushButton, QGridLayout, QFrame, QScrollArea)
+from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
+                            QLabel, QPushButton, QGridLayout, QSpacerItem, QSizePolicy)
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtGui import QFont
 
-class MenuVista(QMainWindow):
-    # Señales para comunicar con el controlador
-    opcion_seleccionada = pyqtSignal(str)  # Emite la acción seleccionada
+class MenuVista(QWidget):
+    # Señales para cada módulo
+    ir_a_pacientes = pyqtSignal()
+    ir_a_doctores = pyqtSignal()
+    ir_a_citas = pyqtSignal()
+    ir_a_tratamientos = pyqtSignal()
+    ir_a_horarios = pyqtSignal()
+    ir_a_facturas = pyqtSignal()
     cerrar_sesion = pyqtSignal()
-    logout_signal = pyqtSignal()  # Señal para cerrar sesión
     
-    def __init__(self):
+    def __init__(self, tipo_usuario="admin"):
         super().__init__()
-        # Esquema de colores consistente con el login
-        self.colors = {
-            'primary': '#130760',
-            'secondary': '#756f9f',
-            'accent': '#10b8b9',
-            'background': '#f7f8fa',
-            'surface': '#ffffff',
-            'text_light': '#2c3e50',
-            'text_dark': '#34495e'
-        }
-        self.opciones = []
-        self.tipo_usuario = ""
+        self.tipo_usuario = tipo_usuario
         self.inicializar_ui()
     
     def inicializar_ui(self):
         """Inicializa la interfaz de usuario"""
-        self.setWindowTitle("🏥 Sistema de Gestión Clínica Dental - Menú Principal")
-        self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle("Sistema de Gestión Clínica Dental")
+        self.setFixedSize(900, 600)
         self.centrar_ventana()
         self.configurar_estilo()
         self.crear_widgets()
     
     def centrar_ventana(self):
         """Centra la ventana en la pantalla"""
-        from PyQt6.QtGui import QScreen
-        screen = self.screen()
+        screen = QApplication.primaryScreen()
         screen_geometry = screen.availableGeometry()
         window_geometry = self.frameGeometry()
         center_point = screen_geometry.center()
@@ -48,238 +39,134 @@ class MenuVista(QMainWindow):
         self.move(window_geometry.topLeft())
     
     def configurar_estilo(self):
-        """Configura el estilo de la ventana"""
-        self.setStyleSheet(f"""
-            QMainWindow {{
-                background-color: {self.colors['background']};
-                font-family: Segoe UI, Arial, sans-serif;
-            }}
+        """Configura el estilo simple y limpio"""
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f5f5f5;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
             
-            QWidget {{
-                background-color: {self.colors['background']};
-                font-family: Segoe UI, Arial, sans-serif;
-                font-size: 14px;
-                color: {self.colors['text_dark']};
-            }}
-            
-            QLabel {{
-                color: {self.colors['text_light']};
+            QLabel {
+                color: #333;
                 background-color: transparent;
-                font-family: Segoe UI, Arial, sans-serif;
-            }}
+            }
             
-            QPushButton {{
-                font-family: Segoe UI, Arial, sans-serif;
+            QPushButton {
+                background-color: white;
+                color: #333;
+                border: 2px solid #130760;
+                border-radius: 8px;
+                padding: 15px;
                 font-size: 14px;
                 font-weight: bold;
-                color: #ffffff;
-                background-color: {self.colors['accent']};
-                border: none;
-                border-radius: 12px;
-                padding: 15px 20px;
-                min-height: 25px;
-                text-align: left;
-            }}
+                min-height: 50px;
+            }
             
-            QPushButton:hover {{
-                background-color: {self.colors['primary']};
-            }}
-            
-            QPushButton:pressed {{
-                background-color: {self.colors['secondary']};
-            }}
-            
-            QPushButton#logout_btn {{
-                background-color: #e74c3c;
+            QPushButton:hover {
+                background-color: #130760;
                 color: white;
-            }}
+            }
             
-            QPushButton#logout_btn:hover {{
-                background-color: #c0392b;
-            }}
-            
-            QFrame {{
-                background-color: {self.colors['surface']};
-                border: 2px solid {self.colors['secondary']};
-                border-radius: 15px;
-            }}
-            
-            QScrollArea {{
-                border: none;
-                background-color: {self.colors['background']};
-            }}
+            QPushButton:pressed {
+                background-color: #0d0540;
+            }
         """)
     
     def crear_widgets(self):
-        """Crea y organiza los widgets de la interfaz"""
-        # Widget central
-        widget_central = QWidget()
-        self.setCentralWidget(widget_central)
+        """Crea los widgets principales"""
+        layout_principal = QVBoxLayout()
+        layout_principal.setSpacing(30)
+        layout_principal.setContentsMargins(40, 40, 40, 40)
         
-        # Layout principal
-        layout_principal = QVBoxLayout(widget_central)
-        layout_principal.setSpacing(20)
-        layout_principal.setContentsMargins(30, 20, 30, 20)
-        
-        # Header con título y usuario
+        # Header simple
         self.crear_header(layout_principal)
         
-        # Área de scroll para las opciones
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # Espaciador
+        layout_principal.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed))
         
-        # Widget contenedor para las opciones
-        self.widget_opciones = QWidget()
-        scroll_area.setWidget(self.widget_opciones)
+        # Grid de botones
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(20)
+        self.crear_botones_servicios(grid_layout)
+        layout_principal.addLayout(grid_layout)
         
-        layout_principal.addWidget(scroll_area)
+        # Espaciador
+        layout_principal.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         
-        # Footer con botón de cerrar sesión
-        self.crear_footer(layout_principal)
+        # Botón cerrar sesión
+        self.crear_boton_cerrar_sesion(layout_principal)
+        
+        self.setLayout(layout_principal)
     
     def crear_header(self, layout_principal):
-        """Crea el header con título y información del usuario"""
-        # Frame del header
-        frame_header = QFrame()
-        frame_header.setFixedHeight(120)
-        layout_header = QHBoxLayout(frame_header)
-        layout_header.setContentsMargins(25, 15, 25, 15)
+        """Crea el header simple"""
+        header_layout = QHBoxLayout()
         
         # Título
         titulo = QLabel("🏥 Clínica Dental")
-        titulo.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
-        titulo.setStyleSheet(f"color: {self.colors['primary']};")
+        titulo.setFont(QFont("Segoe UI", 28, QFont.Weight.Bold))
+        titulo.setStyleSheet("color: #130760; margin-bottom: 10px;")
         
-        # Información del usuario
-        self.label_usuario = QLabel()
-        self.label_usuario.setFont(QFont("Segoe UI", 14))
-        self.label_usuario.setStyleSheet(f"color: {self.colors['secondary']};")
-        self.label_usuario.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        # Usuario
+        usuario_label = QLabel(f"Usuario: {self.tipo_usuario.capitalize()}")
+        usuario_label.setFont(QFont("Segoe UI", 14))
+        usuario_label.setStyleSheet("color: #666;")
+        usuario_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         
-        layout_header.addWidget(titulo)
-        layout_header.addStretch()
-        layout_header.addWidget(self.label_usuario)
+        header_layout.addWidget(titulo)
+        header_layout.addStretch()
+        header_layout.addWidget(usuario_label)
         
-        layout_principal.addWidget(frame_header)
+        layout_principal.addLayout(header_layout)
     
-    def crear_footer(self, layout_principal):
-        """Crea el footer con botón de cerrar sesión"""
-        layout_footer = QHBoxLayout()
-        layout_footer.addStretch()
+    def crear_botones_servicios(self, grid_layout):
+        """Crea los botones de servicios simples"""
+        servicios = [
+            ("👥 Pacientes", self.ir_a_pacientes),
+            ("👨‍⚕️ Doctores", self.ir_a_doctores),
+            ("📅 Citas", self.ir_a_citas),
+            ("🦷 Tratamientos", self.ir_a_tratamientos),
+            ("⏰ Horarios", self.ir_a_horarios),
+            ("💰 Facturas", self.ir_a_facturas),
+        ]
         
-        btn_cerrar_sesion = QPushButton("🚪 Cerrar Sesión")
-        btn_cerrar_sesion.setObjectName("logout_btn")
-        btn_cerrar_sesion.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        btn_cerrar_sesion.clicked.connect(self.logout_signal.emit)
-        
-        layout_footer.addWidget(btn_cerrar_sesion)
-        layout_principal.addLayout(layout_footer)
-    
-    def establecer_usuario(self, tipo_usuario):
-        """Establece la información del usuario en la interfaz"""
-        self.tipo_usuario = tipo_usuario
-        
-        iconos_usuario = {
-            'admin': '👨‍💼',
-            'doctor': '👨‍⚕️',
-            'recepcionista': '👩‍💼'
-        }
-        
-        nombres_usuario = {
-            'admin': 'Administrador',
-            'doctor': 'Doctor',
-            'recepcionista': 'Recepcionista'
-        }
-        
-        icono = iconos_usuario.get(tipo_usuario, '👤')
-        nombre = nombres_usuario.get(tipo_usuario, tipo_usuario.capitalize())
-        
-        self.label_usuario.setText(f"{icono} {nombre}\nSistema de Gestión")
-    
-    def cargar_opciones_menu(self, opciones):
-        """Carga las opciones del menú en la interfaz"""
-        self.opciones = opciones
-        
-        # Limpiar layout anterior si existe
-        if self.widget_opciones.layout():
-            while self.widget_opciones.layout().count():
-                child = self.widget_opciones.layout().takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
-        
-        # Crear nuevo layout en grid
-        layout_opciones = QGridLayout(self.widget_opciones)
-        layout_opciones.setSpacing(15)
-        layout_opciones.setContentsMargins(20, 20, 20, 20)
-        
-        # Crear botones para cada opción
-        row = 0
-        col = 0
-        columnas_por_fila = 2
-        
-        for opcion in opciones:
-            btn_opcion = self.crear_boton_opcion(opcion)
-            layout_opciones.addWidget(btn_opcion, row, col)
+        for i, (texto, signal) in enumerate(servicios):
+            btn = QPushButton(texto)
+            btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+            btn.clicked.connect(signal.emit)
             
-            col += 1
-            if col >= columnas_por_fila:
-                col = 0
-                row += 1
-        
-        # Agregar stretch al final
-        layout_opciones.setRowStretch(row + 1, 1)
+            row = i // 3
+            col = i % 3
+            grid_layout.addWidget(btn, row, col)
     
-    def crear_boton_opcion(self, opcion):
-        """Crea un botón para una opción del menú"""
-        btn = QPushButton()
-        btn.setFixedHeight(100)
-        btn.setMinimumWidth(350)
+    def crear_boton_cerrar_sesion(self, layout_principal):
+        """Crea el botón de cerrar sesión"""
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
         
-        # Texto del botón
-        texto = f"{opcion['nombre']}\n{opcion['descripcion']}"
-        btn.setText(texto)
-        btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        
-        # Conectar acción
-        btn.clicked.connect(lambda checked, accion=opcion['accion']: self.opcion_seleccionada.emit(accion))
-        
-        return btn
-    
-    def mostrar_mensaje_bienvenida(self):
-        """Muestra un mensaje de bienvenida"""
-        from PyQt6.QtWidgets import QMessageBox
-        
-        iconos_usuario = {
-            'admin': '👨‍💼',
-            'doctor': '👨‍⚕️',
-            'recepcionista': '👩‍💼'
-        }
-        
-        icono = iconos_usuario.get(self.tipo_usuario, '👤')
-        
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setWindowTitle("🎉 Bienvenido")
-        msg.setText(f"¡Bienvenido al Sistema de Gestión Clínica Dental!\n\n{icono} Has iniciado sesión como {self.tipo_usuario.capitalize()}")
-        msg.setStyleSheet(f"""
-            QMessageBox {{
-                background-color: {self.colors['surface']};
-                font-family: Segoe UI, Arial, sans-serif;
-                font-size: 14px;
-            }}
-            QMessageBox QPushButton {{
-                background-color: {self.colors['accent']};
+        btn_cerrar = QPushButton("Cerrar Sesión")
+        btn_cerrar.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        btn_cerrar.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
                 color: white;
                 border: none;
-                padding: 10px 20px;
                 border-radius: 6px;
-                min-width: 80px;
+                padding: 10px 20px;
+                font-size: 12px;
                 font-weight: bold;
-            }}
-            QMessageBox QPushButton:hover {{
-                background-color: {self.colors['primary']};
-            }}
+                min-height: 30px;
+                max-width: 120px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
         """)
-        msg.exec()
+        btn_cerrar.clicked.connect(self.cerrar_sesion.emit)
+        
+        btn_layout.addWidget(btn_cerrar)
+        layout_principal.addLayout(btn_layout)
+    
+    def actualizar_usuario(self, tipo_usuario):
+        """Actualiza el tipo de usuario"""
+        self.tipo_usuario = tipo_usuario

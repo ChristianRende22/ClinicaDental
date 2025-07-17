@@ -7,66 +7,60 @@ from Controladores.MenuControlador import MenuControlador
 
 class ControladorClinica:
     def __init__(self):
-        self.app = QApplication(sys.argv)
         self.login_controlador = None
         self.menu_controlador = None
         self.usuario_actual = None
-        self.tipo_usuario = None
-    
+        self.tipo_usuario_actual = None
+        
     def iniciar_aplicacion(self):
-        """Inicia la aplicación mostrando primero el login"""
-        self.mostrar_login()
-        return self.app.exec()
-    
-    def mostrar_login(self):
-        """Muestra la ventana de login"""
+        """Inicia la aplicación mostrando la ventana de login"""
         self.login_controlador = LoginControlador()
         
-        # Conectar el evento de login exitoso
+        # Conectar la señal de login exitoso
         self.login_controlador.vista.login_exitoso.connect(self.on_login_exitoso)
         
-        # Mostrar la ventana de login
+        # Mostrar ventana de login
         self.login_controlador.mostrar()
     
     def on_login_exitoso(self, tipo_usuario):
-        """Maneja el login exitoso y abre la ventana principal del menú"""
-        self.tipo_usuario = tipo_usuario
-        print(f"Usuario {tipo_usuario} ha iniciado sesión correctamente")
+        """Maneja el evento cuando el login es exitoso"""
+        self.tipo_usuario_actual = tipo_usuario
         
-        # Ocultar la ventana de login
-        if self.login_controlador:
-            self.login_controlador.vista.hide()
+        # Cerrar ventana de login
+        self.login_controlador.vista.close()
         
-        # Mostrar el menú principal
-        self.mostrar_menu()
+        # Abrir menú principal
+        self.abrir_menu()
     
-    def mostrar_menu(self):
-        """Muestra el menú principal según el tipo de usuario"""
-        self.menu_controlador = MenuControlador(self.tipo_usuario)
+    def abrir_menu(self):
+        """Abre la ventana del menú principal"""
+        self.menu_controlador = MenuControlador(
+            usuario=self.usuario_actual,
+            tipo_usuario=self.tipo_usuario_actual
+        )
         
-        # Conectar la señal de logout para volver al login
-        self.menu_controlador.vista.logout_signal.connect(self.on_logout)
+        # Conectar señal de cerrar sesión para volver al login
+        self.menu_controlador.vista.cerrar_sesion.connect(self.cerrar_sesion)
         
-        # Mostrar la ventana del menú
+        # Mostrar menú
         self.menu_controlador.mostrar()
     
-    def on_logout(self):
-        """Maneja el logout y vuelve al login"""
-        # Cerrar la ventana del menú
+    def cerrar_sesion(self):
+        """Cierra la sesión actual y vuelve al login"""
+        # Cerrar ventana de menú
         if self.menu_controlador:
-            self.menu_controlador.vista.close()
+            self.menu_controlador.cerrar()
             self.menu_controlador = None
         
-        # Limpiar variables de usuario
+        # Limpiar datos de sesión
         self.usuario_actual = None
-        self.tipo_usuario = None
+        self.tipo_usuario_actual = None
         
-        # Mostrar nuevamente el login
-        self.mostrar_login()
-        
+        # Volver a mostrar login
+        self.iniciar_aplicacion()
 
-
-# Punto de entrada de la aplicación
 if __name__ == "__main__":
+    app = QApplication(sys.argv)
     controlador = ControladorClinica()
-    sys.exit(controlador.iniciar_aplicacion())
+    controlador.iniciar_aplicacion()
+    sys.exit(app.exec())
