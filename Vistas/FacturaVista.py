@@ -15,27 +15,27 @@ class FacturacionView(QMainWindow):
     crear_factura_signal = pyqtSignal(dict)
     mostrar_facturas_signal = pyqtSignal()
     limpiar_campos_signal = pyqtSignal()
-    agregar_tratamiento_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
-
+    
         self.colors = {
             'primary': '#130760',      # Dark blue-purple 
             'secondary': '#756f9f',    # Medium purple
             'accent': '#10b8b9',       # Teal
             'text_light': '#2b2b2b',   # Dark gray
             'text_dark': '#3c3c3c',    # Slightly lighter gray
-            'background': '#f7f8fa',   # White text
-            'surface': '#ffffff'       # Light gray text
+            'background': '#f7f8fa',   # Light background
+            'surface': '#ffffff'       # White surface
         }
 
         self.setWindowTitle("Gestión de Facturas - Clínica Dental") 
-        self.setGeometry(100, 100, 900, 700)
+        self.setGeometry(100, 100, 1000, 750)
         
         self.setup_styles()  
         self.init_ui()      
         self.conectar_botones()  
+        
 
     def setup_styles(self):
         """Configura los estilos de la aplicación"""
@@ -53,7 +53,6 @@ class FacturacionView(QMainWindow):
             
             QLabel {{
                 color: {self.colors['text_light']};
-                background-color: {self.colors['surface']};
                 font-family: 'Segoe UI';
                 font-size: 14px;
             }}
@@ -70,7 +69,7 @@ class FacturacionView(QMainWindow):
                 background-color: {self.colors['surface']};
             }}
             
-            QLineEdit, QSpinBox, QDoubleSpinBox {{
+            QLineEdit, QComboBox {{
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 border: 2px solid {self.colors['secondary']};
@@ -79,6 +78,20 @@ class FacturacionView(QMainWindow):
                 background-color: {self.colors['surface']};
                 color: {self.colors['text_light']};
                 selection-background-color: {self.colors['accent']};
+            }}
+            
+            QComboBox::drop-down {{
+                border: none;
+                background-color: {self.colors['secondary']};
+                width: 20px;
+                border-radius: 4px;
+            }}
+            
+            QComboBox::down-arrow {{
+                image: none;
+                border: 2px solid {self.colors['surface']};
+                width: 6px;
+                height: 6px;
             }}
             
             QPushButton {{
@@ -91,12 +104,16 @@ class FacturacionView(QMainWindow):
                 border-radius: 8px;
                 padding: 12px 20px;
                 margin: 4px;
+                min-width: 120px;
             }}
             
             QPushButton:hover {{
                 background-color: {self.colors['accent']};
             }}
             
+            QPushButton:pressed {{
+                background-color: {self.colors['primary']};
+            }}
             
             QTextEdit {{
                 font-family: 'Consolas', 'Courier New', monospace;
@@ -107,6 +124,12 @@ class FacturacionView(QMainWindow):
                 color: {self.colors['text_dark']};
                 padding: 15px;
                 selection-background-color: {self.colors['accent']};
+                line-height: 1.4;
+            }}
+            
+            QScrollArea {{
+                border: none;
+                background-color: {self.colors['background']};
             }}
         """)
 
@@ -117,32 +140,48 @@ class FacturacionView(QMainWindow):
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Título
+        # Título principal
         title = QLabel("🧾 Sistema de Gestión de Facturas")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        title.setStyleSheet(f"color: {self.colors['primary']}; margin: 10px;")
         main_layout.addWidget(title)
         
+        # Crear formulario
         self.create_form_group(main_layout)
+        
+        # Crear botones
         self.create_buttons(main_layout)
+        
+        # Crear área de resultados
         self.create_results_area(main_layout)
 
-        # Creamos el ScrollArea para envolver todo el contenido principal
+        # ScrollArea para el contenido
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(central_widget)
         self.setCentralWidget(scroll_area)
     
     def create_form_group(self, main_layout):
-        form_group = QGroupBox("Datos Básicos de Facturación")
+        """Crea el grupo de formulario para datos de facturación"""
+        form_group = QGroupBox("📋 Datos de Facturación")
         form_layout = QFormLayout()
+        form_layout.setVerticalSpacing(15)
+        form_layout.setHorizontalSpacing(15)
         
+        # Campo ID Factura
         self.id_factura_edit = QLineEdit()
-        self.id_factura_edit.setPlaceholderText("Ej: FAC-001")
+        self.id_factura_edit.setPlaceholderText("Ej: FAC-001, FACT-2024-001")
         
+        # ComboBox para pacientes
         self.paciente_combo = QComboBox()
-        self.tratamiento_combo = QComboBox()
+        self.paciente_combo.setMinimumHeight(35)
         
+        # ComboBox para tratamientos
+        self.tratamiento_combo = QComboBox()
+        self.tratamiento_combo.setMinimumHeight(35)
+        
+        # Agregar campos al formulario
         form_layout.addRow("🆔 ID Factura:", self.id_factura_edit)
         form_layout.addRow("👤 Paciente:", self.paciente_combo)
         form_layout.addRow("🦷 Tratamiento:", self.tratamiento_combo)
@@ -151,109 +190,129 @@ class FacturacionView(QMainWindow):
         main_layout.addWidget(form_group)
     
     def create_buttons(self, main_layout):
+        """Crea los botones de acción"""
         buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
         
         self.crear_btn = QPushButton("➕ Crear Factura")
         self.mostrar_btn = QPushButton("📋 Mostrar Facturas")
-        self.limpiar_btn = QPushButton("🗑️ Limpiar")
-        #self.agregar_tratamiento_btn = QPushButton("🩺 Agregar Tratamiento")
-        #self.agregar_tratamiento_btn.setObjectName("agregar_tratamiento")
+        self.limpiar_btn = QPushButton("🗑️ Limpiar Campos")
+        self.actualizar_btn = QPushButton("🔄 Actualizar Datos")
         
         buttons_layout.addWidget(self.crear_btn)
         buttons_layout.addWidget(self.mostrar_btn)
         buttons_layout.addWidget(self.limpiar_btn)
-        #buttons_layout.addWidget(self.agregar_tratamiento_btn)
+        buttons_layout.addWidget(self.actualizar_btn)
         
         main_layout.addLayout(buttons_layout)
     
     def create_results_area(self, main_layout):
+        """Crea el área de resultados"""
         resultado_label = QLabel("📊 Resultados:")
         resultado_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        resultado_label.setStyleSheet(f"color: {self.colors['primary']};")
         main_layout.addWidget(resultado_label)
 
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
+        self.resultado_text.setMinimumHeight(250)
+        self.resultado_text.setPlaceholderText("Los resultados aparecerán aquí...")
         main_layout.addWidget(self.resultado_text)
     
     def conectar_botones(self):
+        """Conecta los botones con sus funciones"""
         self.crear_btn.clicked.connect(self.on_crear_factura)
         self.mostrar_btn.clicked.connect(self.on_mostrar_facturas)
         self.limpiar_btn.clicked.connect(self.on_limpiar_campos)
-       # self.agregar_tratamiento_btn.clicked.connect(self.on_agregar_tratamiento)
     
     def cargar_pacientes(self, pacientes):
+        """Carga los pacientes en el ComboBox"""
         self.paciente_combo.clear()
+        self.paciente_combo.addItem("Seleccione un paciente...", None)
+        
         if pacientes:
             for paciente in pacientes:
-                self.paciente_combo.addItem(f"{paciente.nombre} {paciente.apellido}", paciente)
-        else:
-            self.paciente_combo.addItem("No hay pacientes disponibles", None)
-
+                texto = f"{paciente.nombre} {paciente.apellido}"
+                self.paciente_combo.addItem(texto, paciente)
+    
     def cargar_tratamientos(self, tratamientos):
+        """Carga los tratamientos en el ComboBox"""
         self.tratamiento_combo.clear()
+        self.tratamiento_combo.addItem("Seleccione un tratamiento...", None)
+        
         if tratamientos:
             for tratamiento in tratamientos:
-                self.tratamiento_combo.addItem(tratamiento.descripcion, tratamiento)
-        else:
-            self.tratamiento_combo.addItem("No hay tratamientos disponibles", None)
+                texto = f"{tratamiento.descripcion} - ${tratamiento.costo:.2f}"
+                self.tratamiento_combo.addItem(texto, tratamiento)
     
-    def obtener_datos_formulario(self) -> Dict[str, Any]:
+    def on_crear_factura(self):
+        """Manejador para el botón de crear factura"""
+        try:
+            # Obtener datos del formulario
+            id_factura = self.id_factura_edit.text().strip()
+            paciente_seleccionado = self.paciente_combo.currentData()
+            tratamiento_seleccionado = self.tratamiento_combo.currentData()
+            
+            # Crear diccionario con los datos
+            datos_factura = {
+                'id_factura': id_factura,
+                'paciente': paciente_seleccionado,
+                'tratamiento': tratamiento_seleccionado
+            }
+            
+            # Emitir señal al controlador
+            self.crear_factura_signal.emit(datos_factura)
+            
+        except Exception as e:
+            self.mostrar_mensaje("error", "❌ Error", f"Error al procesar datos: {str(e)}")
+    
+    def on_mostrar_facturas(self):
+        """Manejador para el botón de mostrar facturas"""
+        self.mostrar_facturas_signal.emit()
+    
+    def on_limpiar_campos(self):
+        """Manejador para el botón de limpiar campos"""
+        self.limpiar_campos_signal.emit()
+    
+    def limpiar_formulario(self):
+        """Limpia todos los campos del formulario"""
+        self.id_factura_edit.clear()
+        self.paciente_combo.setCurrentIndex(0)
+        self.tratamiento_combo.setCurrentIndex(0)
+        self.resultado_text.clear()
+    
+    def mostrar_mensaje(self, tipo, titulo, mensaje):
+        """Muestra un mensaje al usuario"""
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle(titulo)
+        msg_box.setText(mensaje)
+        
+        if tipo == "success":
+            msg_box.setIcon(QMessageBox.Icon.Information)
+        elif tipo == "error":
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+        elif tipo == "warning":
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+        else:  # info
+            msg_box.setIcon(QMessageBox.Icon.Information)
+        
+        msg_box.exec()
+    
+    def actualizar_resultado(self, texto, limpiar=False):
+        """Actualiza el área de resultados"""
+        if limpiar:
+            self.resultado_text.clear()
+        self.resultado_text.append(texto)
+    
+    def agregar_factura_resultado(self, texto_factura):
+        """Agrega una factura al área de resultados"""
+        self.resultado_text.append(texto_factura)
+        self.resultado_text.append("")  # Línea en blanco para separar
+    
+    def get_datos_formulario(self):
+        """Obtiene los datos del formulario actual"""
         return {
             'id_factura': self.id_factura_edit.text().strip(),
             'paciente': self.paciente_combo.currentData(),
             'tratamiento': self.tratamiento_combo.currentData()
         }
-    
-    def obtener_paciente_seleccionado(self):
-        return self.paciente_combo.currentData()
-    
-    def obtener_tratamiento_seleccionado(self):
-        return self.tratamiento_combo.currentData()
-    
-    def limpiar_formulario(self):
-        self.id_factura_edit.clear()
-        self.resultado_text.clear()
-        self.paciente_combo.setCurrentIndex(0)
-        self.tratamiento_combo.setCurrentIndex(0)
-    
-    def mostrar_mensaje(self, tipo: str, titulo: str, mensaje: str):
-        if tipo == "error":
-            QMessageBox.warning(self, titulo, mensaje)
-        elif tipo == "info":
-            QMessageBox.information(self, titulo, mensaje)
-        elif tipo == "success":
-            QMessageBox.information(self, titulo, mensaje)
-    
-    def agregar_factura_resultado(self, factura_str: str):
-        self.resultado_text.append(factura_str)
-        self.resultado_text.append("\n")
-    
-    def actualizar_resultado(self, texto: str, limpiar: bool = False):
-        if limpiar:
-            self.resultado_text.clear()
-        self.resultado_text.append(texto)
-    
-    def on_crear_factura(self):
-        datos = self.obtener_datos_formulario()
-        if not datos['paciente']:
-            self.mostrar_mensaje("error", "⚠️ Error", "Debe seleccionar un paciente.")
-            return
-        if not datos['id_factura']:
-            self.mostrar_mensaje("error", "⚠️ Error", "Debe ingresar un ID de factura.")
-            return
-        if not datos['tratamiento']:
-            self.mostrar_mensaje("error", "⚠️ Error", "Debe seleccionar un tratamiento.")
-            return
-        self.crear_factura_signal.emit(datos)
-    
-    def on_mostrar_facturas(self):
-        self.mostrar_facturas_signal.emit()
-    
-    def on_limpiar_campos(self):
-        self.limpiar_campos_signal.emit()
-    
-   # def on_agregar_tratamiento(self):
-       # self.mostrar_mensaje("info", "ℹ️ Información", 
-                           #"Funcionalidad para agregar tratamiento se implementará aquí.")
-        # self.agregar_tratamiento_signal.emit()
-

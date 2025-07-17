@@ -15,11 +15,11 @@ from Controladores.CitaControlador import ControladorCita
 
 
 class CitaWindow(QMainWindow):
-    def __init__(self):  
+    def __init__(self, controlador = None):  
         super().__init__()
         self.setWindowTitle("Gestión de Citas - Clínica Dental")
-        self.setGeometry(100, 100, 900, 700)
-        
+        self.setGeometry(100, 100, 900, 700)    
+
         # Color scheme 
         self.colors = {
             'primary': '#130760',      # Dark blue-purple 
@@ -223,6 +223,7 @@ class CitaWindow(QMainWindow):
                 height: 6px;
                 border-top: none;
                 border-left: none;
+                transform: rotate(45deg);
                 margin-top: -2px;
             }}
             
@@ -272,14 +273,33 @@ class CitaWindow(QMainWindow):
             }}
         """)
 
-        # PRIMERO: Crear la interfaz (sin conexiones)
+        # PRIMERO: Crear la interfaz
         self.init_ui()
-        
-        # SEGUNDO: Crear el controlador
-        self.controlador = ControladorCita(self)
-        
-        # TERCERO: Conectar los botones después de crear el controlador
+
+        # SEGUNDO: Configurar el controlador
+        if controlador:
+            self.controlador = controlador
+            self.controlador.vista = self
+        else:
+            self.controlador = ControladorCita()
+            self.controlador.vista = self
+
+        # TERCERO: Conectar botones
         self.conectar_botones()
+        
+        # CUARTO: Actualizar combos con datos
+        if self.controlador:
+            self.controlador.actualizar_vista()
+
+    def validar_fecha_seleccionada(self, fecha):
+        """Valida que la fecha seleccionada no sea en el pasado"""
+        fecha_actual = QDate.currentDate()
+        if fecha < fecha_actual:
+            QMessageBox.warning(self, "❌ Fecha Inválida", 
+                              "No se pueden seleccionar fechas pasadas.\n"
+                              "Por favor seleccione una fecha actual o futura.")
+            # Restaurar a la fecha actual si se selecciona una fecha pasada
+            self.fecha_edit.setDate(fecha_actual)
 
     def init_ui(self):
         """ Inicializa la interfaz de usuario de las Citas """
@@ -305,7 +325,10 @@ class CitaWindow(QMainWindow):
         """)
         main_layout.addWidget(title)
 
-        # Información de la cita
+        # ====================================
+        # FORMS PARA CREAR Y MODIFICAR CITAS
+        # ====================================
+
         info_group = QGroupBox("Información de la Cita")
         info_layout = QFormLayout()
 
@@ -341,7 +364,7 @@ class CitaWindow(QMainWindow):
         self.estado_combo = QComboBox()
         self.estado_combo.addItems(["Pendiente", "Confirmada", "Cancelada", "Asistida", "Ausente"])
 
-        info_layout.addRow("ID Cita:", self.id_edit)
+        # info_layout.addRow("ID Cita:", self.id_edit)
         info_layout.addRow("Paciente:", self.paciente_combo)
         info_layout.addRow("Doctor:", self.doctor_combo)
         info_layout.addRow("Tratamiento:", self.tratamiento_combo)
@@ -354,7 +377,10 @@ class CitaWindow(QMainWindow):
         info_group.setLayout(info_layout)
         main_layout.addWidget(info_group)
 
-        # Botones 
+        # ====================================
+        # BOTONES DE ACCION
+        # ====================================
+        
         # Primera fila de botones
         buttons_row1 = QHBoxLayout()
         self.crear_btn = QPushButton("➕ Crear Cita")
@@ -476,6 +502,22 @@ class CitaWindow(QMainWindow):
         scroll_area.setWidget(central_widget)
         self.setCentralWidget(scroll_area)
 
+    def cargar_datos_cita_actual(self):
+        """Carga los datos de la cita actual en los campos del formulario"""
+        cita = self.controlador.cita
+
+        if cita:
+            self.id_edit.setText(str(cita.id_cita))
+            self.paciente_combo.setCurrentText(f"{cita.paciente.nombre} {cita.paciente.apellido}")
+            self.doctor_combo.setCurrentText(f"{cita.doctor.nombre} {cita.doctor.apellido}")
+            self.fecha_edit.setDate(cita.fecha)
+            self.inicio_edit.setTime(cita.hora_inicio.time())
+            self.fin_edit.setTime(cita.hora_fin.time())
+            self.costo_edit.setText(f"{cita.costo_cita:.2f}")
+            self.estado_combo.setCurrentText(cita.estado)
+            self.tratamiento_combo.setCurrentText(cita.tratamiento.descripcion if cita.tratamiento else "")
+
+
     def conectar_botones(self):
         """Conecta los botones con los métodos del controlador"""
         self.crear_btn.clicked.connect(self.controlador.crear_cita)
@@ -486,37 +528,40 @@ class CitaWindow(QMainWindow):
 
     def actualizar_combos(self, doctores, pacientes, tratamientos):
         """Método para que el controlador actualice los combos"""
+        print(f"Actualizando combos - Pacientes: {len(pacientes)}, Doctores: {len(doctores)}, Tratamientos: {len(tratamientos)}")  # Debug
+        
+        # Limpiar combos
         self.paciente_combo.clear()
         self.doctor_combo.clear()
         self.tratamiento_combo.clear()
         
-        self.paciente_combo.addItems([f"{p.nombre} {p.apellido}" for p in pacientes])
+        # Agregar opción vacía al inicio
+        self.paciente_combo.addItem("-- Seleccionar Paciente --")
+        self.doctor_combo.addItem("-- Seleccionar Doctor --")
+        self.tratamiento_combo.addItem("-- Seleccionar Tratamiento --")
         
-        for doctor in doctores:
-            self.doctor_combo.addItem(str(doctor), doctor)
+        # Cargar pacientes
+        for i, paciente in enumerate(pacientes):
+            texto = f"{paciente.nombre} {paciente.apellido}"
+            if hasattr(paciente, 'telefono') and paciente.telefono:
+                texto += f" - Tel: {paciente.telefono}"
+            self.paciente_combo.addItem(texto)
+            print(f"Agregando paciente {i+1}: {texto}")  # Debug
         
-        self.tratamiento_combo.addItems([t.descripcion for t in tratamientos])
-
-    def validar_fecha_seleccionada(self, fecha_seleccionada):
-        """Valida que la fecha seleccionada no sea pasada"""
-        fecha_actual = QDate.currentDate()
+        # Cargar doctores
+        for i, doctor in enumerate(doctores):
+            texto = f"Dr. {doctor.nombre} {doctor.apellido}"
+            if hasattr(doctor, 'especialidad') and doctor.especialidad:
+                texto += f" - {doctor.especialidad}"
+            self.doctor_combo.addItem(texto)
+            print(f"Agregando doctor {i+1}: {texto}")  # Debug
         
-        if fecha_seleccionada < fecha_actual:
-            # Mostrar mensaje de advertencia
-            QMessageBox.warning(self, "❌ Fecha Inválida", 
-                              "No se pueden programar citas en fechas pasadas.\n"
-                              "Por favor seleccione una fecha actual o futura.")
-            
-            # Restablecer a la fecha actual
-            self.fecha_edit.setDate(fecha_actual)
-            return False
-        return True
-
-# def main():
-#     app = QApplication([])
-#     window = CitaWindow()
-#     window.show()
-#     app.exec()
-
-# if __name__ == "__main__":  
-#     main()
+        # Cargar tratamientos - CORREGIDO
+        for i, tratamiento in enumerate(tratamientos):
+            texto = f"{tratamiento.descripcion}"  # CORREGIDO: usar descripcion
+            if hasattr(tratamiento, 'costo') and tratamiento.costo:
+                texto += f" - ${tratamiento.costo:.2f}"
+            self.tratamiento_combo.addItem(texto)
+            print(f"Agregando tratamiento {i+1}: {texto}")  # Debug
+        
+        print(f"Combos actualizados - Pacientes: {self.paciente_combo.count()}, Doctores: {self.doctor_combo.count()}, Tratamientos: {self.tratamiento_combo.count()}")
