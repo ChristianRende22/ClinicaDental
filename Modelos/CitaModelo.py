@@ -1,4 +1,3 @@
-# Agregar el directorio padre al path
 import mysql.connector
 from mysql.connector import Error
 import sys
@@ -15,7 +14,7 @@ from typing import List
 import re
 from typing import TYPE_CHECKING
 
-# CORREGIDO: Importar las clases reales para tiempo de ejecución
+# Importar las clases reales para tiempo de ejecución
 try:
     from .PacienteModelo import Paciente
     from .DoctorModelo import Doctor
@@ -29,9 +28,8 @@ except ImportError:
     from DoctorModelo import Doctor
     from TratamientoModelo import Tratamiento
 
-# Para type hints adicionales si es necesario
 if TYPE_CHECKING:
-    pass  # Ya tenemos las importaciones reales arriba
+    pass  
 
 class Cita:
     """
@@ -43,7 +41,7 @@ class Cita:
 
     def __init__(self, paciente: Paciente, doctor: Doctor, fecha: date, hora_inicio: time, hora_fin: time, costo_cita: float = 25, id_cita: int = None):
         
-        # CORREGIDO: Validaciones básicas en el modelo - ahora funcionarán
+        # Validaciones básicas en el modelo 
         if not isinstance(paciente, Paciente):
             raise ValueError("El paciente debe ser una instancia de la clase Paciente.")
         if not isinstance(doctor, Doctor):
@@ -56,8 +54,7 @@ class Cita:
             if id_cita >= Cita._contador_id:
                 Cita._contador_id = id_cita + 1
 
-        # CORREGIDO: Registrar id como usado en la lista correcta
-        if self.id_cita not in Cita._citas_existentes:  # Cambiar Paciente por Cita
+        if self.id_cita not in Cita._citas_existentes:  
             Cita._citas_existentes.append(self.id_cita)
 
         # Validaciones de fecha y hora
@@ -111,7 +108,7 @@ class Cita:
         else:
             cls._contador_id = 1
 
-    def calcular_monto_total(self, tratamiento: Tratamiento) -> float:  # CORREGIDO: sin comillas
+    def calcular_monto_total(self, tratamiento: Tratamiento) -> float: 
         """ Calcula el monto total de la cita sumando el costo del tratamiento.
         :param tratamiento: Tratamiento asociado a la cita.
         :return: Monto total de la cita.
@@ -147,17 +144,45 @@ class Cita:
             "estado": self.estado
         }
     def __str__(self):
+        from datetime import timedelta, time as datetime_time
+        
+        # Asegurar que las horas sean objetos time
+        hora_inicio_str = ""
+        hora_fin_str = ""
+        
+        if isinstance(self.hora_inicio, timedelta):
+            total_seconds = int(self.hora_inicio.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            hora_inicio_str = f"{hours:02d}:{minutes:02d}"
+        elif isinstance(self.hora_inicio, datetime_time):
+            hora_inicio_str = self.hora_inicio.strftime('%H:%M')
+        else:
+            hora_inicio_str = str(self.hora_inicio)
+        
+        if isinstance(self.hora_fin, timedelta):
+            total_seconds = int(self.hora_fin.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            hora_fin_str = f"{hours:02d}:{minutes:02d}"
+        elif isinstance(self.hora_fin, datetime_time):
+            hora_fin_str = self.hora_fin.strftime('%H:%M')
+        else:
+            hora_fin_str = str(self.hora_fin)
+        
         return (
             f"ID Cita: {self.id_cita}\n"
             f"Paciente: {self.paciente.nombre} {self.paciente.apellido}\n"
             f"Doctor: {self.doctor.nombre} {self.doctor.apellido}\n"
-            f"Fecha: {self.fecha.strftime('%d/%m/%Y')}\n\t{self.hora_inicio.strftime('%H:%M')}\n\t{self.hora_fin.strftime('%H:%M')}\n"      
+            f"Fecha: {self.fecha.strftime('%d/%m/%Y')}\n"
+            f"Hora inicio: {hora_inicio_str}\n"
+            f"Hora fin: {hora_fin_str}\n"      
             f"Estado: {self.estado}\n"
             f"Costo: ${self.costo_cita:.2f}\n"
         )
 
     @staticmethod
-    def insert_Cita_bd(cita: 'Cita') -> bool:  # Aquí sí puedes usar comillas porque es el mismo tipo
+    def insert_Cita_bd(cita: 'Cita') -> bool: 
         """
         Inserta una nueva cita en la base de datos.
         :param cita: Instancia de la clase Cita a insertar.
@@ -176,7 +201,6 @@ class Cita:
 
             cursor = conexion.cursor()
 
-            # CORREGIDO: Agregar ID_Tratamiento a la query
             query = """
             INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Hora_Fin, Estado, Costo)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -190,7 +214,7 @@ class Cita:
             cursor.execute(query, (
                 cita.paciente.id_paciente,
                 cita.doctor.id_doctor,
-                id_tratamiento,  # Puede ser None si no hay tratamiento
+                id_tratamiento,  
                 cita.fecha,
                 cita.hora_inicio.strftime('%H:%M:%S'),
                 cita.hora_fin.strftime('%H:%M:%S'),
@@ -219,27 +243,198 @@ class Cita:
                 print("Conexión a la base de datos cerrada.")
     
     @staticmethod
-    def probar_insercion():
-        """Función de prueba para insertar una cita"""
-        from .PacienteModelo import Paciente
-        from .DoctorModelo import Doctor
-        from datetime import date, time
+    def obtener_citas_bd() -> List['Cita']:
+        """
+        Obtiene todas las citas de la base de datos.
+        :return: Lista de instancias de Cita.
+        """
+        conexion = None
+        cursor = None
+        citas = []
+
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+
+            cursor = conexion.cursor()
+
+            # Query con JOINs para obtener toda la información en una consulta
+            query = """
+            SELECT 
+                c.ID_Cita,
+                c.Fecha,
+                c.Hora_Inicio,
+                c.Hora_Fin,
+                c.Estado,
+                c.Costo,
+                p.ID_Paciente,
+                p.Nombre AS paciente_nombre,
+                p.Apellido AS paciente_apellido,
+                p.Fecha_Nacimiento,
+                p.DUI,
+                p.Telefono AS paciente_telefono,
+                p.Correo AS paciente_correo,
+                d.ID_Doctor,
+                d.Nombre AS doctor_nombre,
+                d.Apellido AS doctor_apellido,
+                d.Especialidad,
+                d.Telefono AS doctor_telefono,
+                d.Correo AS doctor_correo,
+                d.Contrasena,
+                t.ID_Tratamiento,
+                t.Descripcion AS tratamiento_descripcion,
+                t.Costo AS tratamiento_costo,
+                t.Fecha AS tratamiento_fecha,
+                t.Estado AS tratamiento_estado
+            FROM Cita c
+            INNER JOIN Paciente p ON c.ID_Paciente = p.ID_Paciente
+            INNER JOIN Doctor d ON c.ID_Doctor = d.ID_Doctor
+            LEFT JOIN Tratamiento t ON c.ID_Tratamiento = t.ID_Tratamiento
+            ORDER BY c.Fecha, c.Hora_Inicio
+            """
+            cursor.execute(query)
+
+            for row in cursor.fetchall():
+                (id_cita, fecha, hora_inicio, hora_fin, estado, costo,
+                 id_paciente, paciente_nombre, paciente_apellido, fecha_nacimiento, dui, paciente_telefono, paciente_correo,
+                 id_doctor, doctor_nombre, doctor_apellido, especialidad, doctor_telefono, doctor_correo, contrasena,
+                 id_tratamiento, tratamiento_descripcion, tratamiento_costo, tratamiento_fecha, tratamiento_estado) = row
+                
+                from datetime import time as datetime_time, timedelta
+                
+                if isinstance(hora_inicio, timedelta):
+                    total_seconds = int(hora_inicio.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    hora_inicio = datetime_time(hours, minutes)
+                
+                if isinstance(hora_fin, timedelta):
+                    total_seconds = int(hora_fin.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    hora_fin = datetime_time(hours, minutes)
+
+                # Creacion de la instancia de Paciente con los datos obtenidos de los joins
+                paciente = Paciente(
+                    nombre=paciente_nombre,
+                    apellido=paciente_apellido,
+                    fecha_nacimiento=fecha_nacimiento,
+                    telefono=int(paciente_telefono) if paciente_telefono else 0,
+                    correo=paciente_correo or "",
+                    dui=dui or "",
+                    id_paciente=id_paciente
+                )
+
+                # Creacion de la instancia de Doctor con los datos obtenidos de los joins
+                doctor = Doctor(
+                    nombre=doctor_nombre,
+                    apellido=doctor_apellido,
+                    num_junta_medica=id_doctor,
+                    especialidad=especialidad,
+                    telefono=doctor_telefono,
+                    correo=doctor_correo
+                )
+                
+                doctor.id_doctor = id_doctor
+                
+                # Crear la cita
+                cita = Cita(
+                    paciente=paciente,
+                    doctor=doctor,
+                    fecha=fecha,
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin,
+                    costo_cita=costo,
+                    id_cita=id_cita
+                )
+                
+                
+                cita.estado = estado
         
-        # Crear objetos de prueba
-        paciente_prueba = Paciente("Juan", "Pérez", "01-01-1990", "12345678-9", 12345678, "juan@test.com")
-        doctor_prueba = Doctor("Dr. María", "García", 1234, "Odontología General", 87654321, "maria@test.com")
+                if id_tratamiento and tratamiento_descripcion:
+                    tratamiento = Tratamiento(
+                        id_tratamiento=id_tratamiento,
+                        id_doctor=id_doctor,
+                        descripcion=tratamiento_descripcion,
+                        costo=tratamiento_costo,
+                        fecha=tratamiento_fecha,
+                        estado=tratamiento_estado,
+                        doctor=doctor
+                    )
+                    cita.tratamiento = tratamiento
+                
+                citas.append(cita)
+
+            return citas
         
-        # Crear cita de prueba
-        cita_prueba = Cita(
-            paciente=paciente_prueba,
-            doctor=doctor_prueba,
-            fecha=date(2025, 7, 15),
-            hora_inicio=time(10, 0),
-            hora_fin=time(11, 0),
-            costo_cita=50.0
-        )
+        except Error as e:
+            print(f"Error al obtener las citas: {e}")
+            return []
         
-        # Probar inserción
-        resultado = Cita.insert_Cita_bd(cita_prueba)
-        print(f"Resultado de la inserción: {resultado}")
-        return resultado
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()
+    
+    @staticmethod
+    def actualizar_estado_bd(id_cita: int, nuevo_estado: str) -> bool:
+        """
+        Actualiza el estado de una cita en la base de datos.
+        :param id_cita: ID de la cita a actualizar.
+        :param nuevo_estado: Nuevo estado de la cita.
+        :return: True si la actualización fue exitosa, False en caso contrario.
+        """
+        conexion = None
+        cursor = None
+
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+
+            cursor = conexion.cursor()
+
+            # Validar que el estado sea válido
+            estados_validos = ["Pendiente", "Confirmada", "Cancelada", "Asistida", "Ausente"]
+            if nuevo_estado not in estados_validos:
+                print(f"Estado inválido: {nuevo_estado}")
+                return False
+
+            # Query para actualizar el estado
+            query = """
+            UPDATE Cita 
+            SET Estado = %s 
+            WHERE ID_Cita = %s
+            """
+
+            cursor.execute(query, (nuevo_estado, id_cita))
+            conexion.commit()
+
+            # Verificar si se actualizó alguna fila
+            if cursor.rowcount > 0:
+                print(f"Estado de la cita {id_cita} actualizado a '{nuevo_estado}' exitosamente.")
+                return True
+            else:
+                print(f"No se encontró la cita con ID {id_cita}")
+                return False
+
+        except Error as e:
+            print(f"Error al actualizar el estado de la cita: {e}")
+            if conexion:
+                conexion.rollback()
+            return False
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()
+                print("Conexión a la base de datos cerrada.")
