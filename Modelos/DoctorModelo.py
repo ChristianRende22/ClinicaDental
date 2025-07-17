@@ -103,3 +103,51 @@ class Doctor:
                 cursor.close()
             if 'conexion' in locals():
                 conexion.close()
+
+        @staticmethod
+    def obtener_todos_doctores():
+        """Obtiene todos los doctores de la base de datos"""
+        conexion = None
+        cursor = None
+        doctores = []
+        
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            query = "SELECT ID_Doctor, Nombre, Apellido, Especialidad, Telefono, Correo FROM Doctor"
+            cursor.execute(query)
+            
+            resultados = cursor.fetchall()
+            
+            for row in resultados:
+                doctor = Doctor(
+                    nombre=row[1] if row[1] else "Sin nombre",
+                    apellido=row[2] if row[2] else "Sin apellido",
+                    num_junta_medica=row[0],  # Usar ID_Doctor como num_junta_medica
+                    especialidad=row[3] if row[3] else "General",
+                    telefono=row[4] if row[4] else 0,
+                    correo=row[5] if row[5] else ""
+                )
+            
+                doctor.id_doctor = row[0]  # Asignar ID de la BD
+                doctores.append(doctor)
+                print(f"Doctor agregado: {doctor.nombre} {doctor.apellido}")  # Debug
+            
+                
+            return doctores
+            
+        except Error as e:
+            print(f"Error al obtener doctores: {e}")
+            return []
+            
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()
