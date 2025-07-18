@@ -78,7 +78,7 @@ class FacturacionView(QMainWindow):
                 border-radius: 6px;
                 padding: 10px;
                 background-color: {self.colors['surface']};
-                color: {self.colors['text_light']};
+                color: #000000;
                 selection-background-color: {self.colors['accent']};
             }}
             
