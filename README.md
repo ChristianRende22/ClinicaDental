@@ -4,11 +4,13 @@
     El sistema implementa una arquitectura MVC (Modelo-Vista-Controlador) para garantizar un código organizado, mantenible y escalable.
 
 🏥 Descripción del problema
+
     Dental Smiling es una clínica dental privada que cuenta con:
     •	Personal: 1 directora (Dra. Jacquelin Zepeda) + 2 Doctores + 3 Asistentes
     •	Problema principal: Gestión manual mediante papel, archivos físicos y sistemas de almacenamiento tradicionales.
 
 🏗 Arquitectura del Sistema
+
     El sistema utiliza arquitectura MVC para cada módulo principal:
         📊 MODELO 
         ├── Gestión de datos y lógica de negocio
@@ -36,6 +38,7 @@
     •	⏰ Horario: Administración de disponibilidad médica
 
 🛠 Tecnologías Utilizadas
+
     •	Python 3.13.3: Lenguaje de programación principal
     •	PyQt6: Framework para interfaz gráfica moderna
     •	MySQL: Sistema de gestión de base de datos relacional
@@ -43,6 +46,7 @@
     •	DBeaver: Herramienta de administración de base de datos
 
 📋Instrucciones de uso
+
     1.	Inicio de sesión: 
         •	Usuario: admin
         •	Password: 123456
@@ -52,6 +56,7 @@
         Desde el menú principal, es posible acceder y evaluar el funcionamiento de todos los módulos y modelos del sistema.
 
 📋 Requisitos del Sistema
+
     Sistema Operativo: 
         •	Windows 10/11 (Soporte principal)
         •	macOS (Compatibilidad extendida)
@@ -64,6 +69,7 @@
         •	mysql-connector-python>=8.0.0
 
 🚀 Instalación y Configuración
+
     1. Preparación del Entorno
         Clonar repositorio:
         •	git clone [URL_DEL_REPOSITORIO]
@@ -92,6 +98,7 @@
         •	python ControladorClinica.py
 
 📊 Módulos del Sistema
+
     👤 Gestión de Pacientes
         Funcionalidades principales:
         •	Crear paciente: Registro completo con validaciones
