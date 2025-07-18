@@ -83,7 +83,6 @@ CREATE TABLE Factura (
     Estado_Pago VARCHAR(20),
     FOREIGN KEY (ID_Paciente) REFERENCES Paciente(ID_Paciente)
 );
-
 -- Tabla: Asistente
 CREATE TABLE Asistente (
 	ID_Asistente INT AUTO_INCREMENT PRIMARY KEY,
@@ -166,6 +165,7 @@ INSERT INTO Factura (
 (1, 'FAC-001', '2025-07-01', 'Limpieza dental', 20.00, 20.00, 'Pagada'),
 (2, 'FAC-002', '2025-07-01', 'Ortodoncia', 450.00, 450.00, 'Pendiente'),
 (3, 'FAC-003', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
+
 
 INSERT INTO Asistente (Nombre, Apellido, Telefono, Correo, Contrasena) VALUES
 ('Ivonne', 'Morales', '70445566', 'ivonne.morales@clinicadental.com', 'asist123'),
