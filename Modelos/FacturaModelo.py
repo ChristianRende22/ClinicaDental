@@ -1,25 +1,18 @@
-import mysql.connector
 import sys
 import os
+import mysql.connector
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from Modelos.PacienteModelo import Paciente 
 from mysql.connector import Error
 
-class Tratamiento:
-    """Clase para representar un tratamiento"""
-    def __init__(self, id_tratamiento: int, id_doctor: str, descripcion: str, 
-                 costo: float, fecha: datetime, estado: str = "Pendiente"):
-        self.id_tratamiento = id_tratamiento
-        self.id_doctor = id_doctor
-        self.descripcion = descripcion
-        self.costo = costo
-        self.fecha = fecha
-        self.estado = estado
-    
-    def __str__(self):
-        return f"{self.descripcion} - ${self.costo:.2f}"
+# Importar los modelos existentes que ya funcionan
+try:
+    from .PacienteModelo import Paciente
+    from .TratamientoModelo import Tratamiento
+except ImportError:
+    from PacienteModelo import Paciente
+    from TratamientoModelo import Tratamiento
 
 class Factura:
     def __init__(self, id_factura: str, 
@@ -52,131 +45,65 @@ class FacturacionModel:
     """Modelo que maneja la lógica de negocio y conexión con la BD"""
     
     @staticmethod
-    def _get_connection():
-        """Obtiene una conexión a la base de datos"""
-        try:
-            return mysql.connector.connect(
-                host='localhost',
-                port=3306,
-                database='ClinicaDental',
-                user='root',
-                password='1234',
-                buffered=True,
-                consume_results=True
-            )
-        except Error as e:
-            print(f"Error al conectar con la base de datos: {e}")
-            return None
-
-    @staticmethod
     def obtener_pacientes() -> List[Paciente]:
-        """Obtiene todos los pacientes de la base de datos"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return []
-        
-        pacientes = []
-        cursor = None
+        """Obtiene todos los pacientes usando el método que ya funciona en CitaModelo"""
         try:
-            cursor = conexion.cursor(dictionary=True)
-            query = "SELECT ID_Paciente, Nombre, Apellido, DUI FROM Paciente ORDER BY Nombre, Apellido"
-            cursor.execute(query)
-            
-            rows = cursor.fetchall()
-
-            for row in rows:
-                paciente = Paciente(
-                    id_paciente=row['ID_Paciente'],
-                    nombre=row['Nombre'],
-                    apellido=row['Apellido'],
-                    fecha_nacimiento=None,
-                    dui=row.get('DUI', 'N/A'),  # Manejar DUI opcional
-                    telefono='N/A',  
-                    correo='N/A' 
-                )
-                pacientes.append(paciente)
-        except Error as e:
+            pacientes = Paciente.obtener_todos_los_pacientes()
+            print(f"Pacientes obtenidos para facturación: {len(pacientes)}")
+            return pacientes
+        except Exception as e:
             print(f"Error al obtener pacientes: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-            if conexion.is_connected():
-                conexion.close()
-        
-        return pacientes
-
+            return []
+    
     @staticmethod
     def obtener_tratamientos() -> List[Tratamiento]:
-        """Obtiene todos los tratamientos de la base de datos"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return []
-        
-        tratamientos = []
-        cursor = None
+        """Obtiene todos los tratamientos usando el método que ya funciona en CitaModelo"""
         try:
-            cursor = conexion.cursor(dictionary=True)
-            query = "SELECT * FROM Tratamiento ORDER BY Descripcion"
-            cursor.execute(query)
-            
-            rows = cursor.fetchall()
-
-            for row in rows:
-                tratamiento = Tratamiento(
-                    id_tratamiento=row['ID_Tratamiento'],
-                    id_doctor=row['ID_Doctor'],
-                    descripcion=row['Descripcion'],
-                    costo=float(row['Costo']),
-                    fecha=row['Fecha'],
-                    estado=row['Estado']
-                )
-                tratamientos.append(tratamiento)
-        except Error as e:
+            tratamientos = Tratamiento.obtener_todos_tratamientos()
+            print(f"Tratamientos obtenidos para facturación: {len(tratamientos)}")
+            return tratamientos
+        except Exception as e:
             print(f"Error al obtener tratamientos: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-            if conexion.is_connected():
-                conexion.close()
-        
-        return tratamientos
+            return []
 
     @staticmethod
     def insertar_factura_bd(factura: Factura) -> bool:
-        """Inserta una nueva factura en la base de datos"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return False
-        
+        """Inserta una nueva factura en la base de datos usando el patrón de CitaModelo"""
+        conexion = None
         cursor = None
+        
         try:
+            # Usar la misma conexión que CitaModelo
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                port=3306,
+                password='1234'
+            )
+            
             cursor = conexion.cursor()
             
-            query = """
-            INSERT INTO Factura (
-                ID_Factura_Custom, 
-                ID_Paciente, 
-                Fecha_Emision, 
-                Descripcion_Servicio,
-                Monto_Servicio,
-                Monto_Total, 
-                Estado_Pago
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-        
-            # Insertar la factura con todos los campos necesarios
-            cursor.execute(query, (
-                factura.id_factura,  # ID_Factura_Custom
-                factura.paciente.id_paciente,
-                factura.fecha_emision,
-                factura.servicios[0],  # Descripción del primer servicio
-                factura.montos[0],     # Monto del primer servicio
-                factura.monto_total,
-                factura.estado_pago
-            ))
-                    
+            # Insertar cada servicio como una fila separada
+            for servicio, monto in zip(factura.servicios, factura.montos):
+                query = """
+                INSERT INTO Factura (ID_Factura_Custom, ID_Paciente, Fecha_Emision, 
+                                   Descripcion_Servicio, Monto_Servicio, Monto_Total, Estado_Pago)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """
+                valores = (
+                    factura.id_factura,
+                    factura.paciente.id_paciente,
+                    factura.fecha_emision,
+                    servicio,
+                    monto,
+                    factura.monto_total,
+                    factura.estado_pago
+                )
+                cursor.execute(query, valores)
+            
             conexion.commit()
+            print(f"Factura {factura.id_factura} insertada correctamente")
             return True
             
         except Error as e:
@@ -187,25 +114,27 @@ class FacturacionModel:
         finally:
             if cursor:
                 cursor.close()
-            if conexion.is_connected():
+            if conexion and conexion.is_connected():
                 conexion.close()
-    
-
-
-
-
 
     @staticmethod
     def obtener_todas_facturas_bd() -> List[Factura]:
-        """Obtiene todas las facturas de la base de datos"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return []
-        
-        facturas = []
+        """Obtiene todas las facturas de la base de datos usando el patrón de CitaModelo"""
+        conexion = None
         cursor = None
+        facturas = []
+        
         try:
-            cursor = conexion.cursor(dictionary=True)
+            # Usar la misma conexión que CitaModelo
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                port=3306,
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
             query = """
             SELECT 
                 f.ID_Factura_Custom, f.Fecha_Emision, f.Descripcion_Servicio, 
@@ -216,33 +145,36 @@ class FacturacionModel:
             ORDER BY f.Fecha_Emision DESC
             """
             cursor.execute(query)
+            resultados = cursor.fetchall()
             
             # Agrupar por ID_Factura_Custom para manejar múltiples servicios
             facturas_dict = {}
-            for row in cursor:
-                id_factura = row['ID_Factura_Custom']
-                
+            for row in resultados:
+                id_factura = row[0]
                 if id_factura not in facturas_dict:
+                    # Crear paciente
                     paciente = Paciente(
-                        id_paciente=row['ID_Paciente'],
-                        nombre=row['Nombre'],
-                        apellido=row['Apellido'],
-                        fecha_nacimiento=row['Fecha_Nacimiento'],
-                        dui=row['DUI'],
-                        telefono=row['Telefono'],
-                        correo=row['Correo']
+                        nombre=row[7],
+                        apellido=row[8], 
+                        dui=row[9],
+                        telefono=row[10],
+                        correo=row[11],
+                        fecha_nacimiento=row[12],
+                        id_paciente=row[6]
                     )
                     
                     facturas_dict[id_factura] = {
+                        'fecha_emision': row[1],
                         'paciente': paciente,
-                        'fecha_emision': row['Fecha_Emision'],
-                        'estado_pago': row['Estado_Pago'],
                         'servicios': [],
-                        'montos': []
+                        'montos': [],
+                        'monto_total': row[4],
+                        'estado_pago': row[5]
                     }
                 
-                facturas_dict[id_factura]['servicios'].append(row['Descripcion_Servicio'])
-                facturas_dict[id_factura]['montos'].append(float(row['Monto_Servicio']))
+                # Agregar servicio y monto
+                facturas_dict[id_factura]['servicios'].append(row[2])
+                facturas_dict[id_factura]['montos'].append(float(row[3]))
             
             # Crear objetos Factura
             for id_factura, datos in facturas_dict.items():
@@ -261,7 +193,7 @@ class FacturacionModel:
         finally:
             if cursor:
                 cursor.close()
-            if conexion.is_connected():
+            if conexion and conexion.is_connected():
                 conexion.close()
         
         return facturas
@@ -269,12 +201,19 @@ class FacturacionModel:
     @staticmethod
     def factura_existe(id_factura: str) -> bool:
         """Verifica si una factura con el ID dado ya existe"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return False
-        
+        conexion = None
         cursor = None
+        
         try:
+            # Usar la misma conexión que CitaModelo
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                port=3306,
+                password='1234'
+            )
+            
             cursor = conexion.cursor()
             query = "SELECT COUNT(*) FROM Factura WHERE ID_Factura_Custom = %s"
             cursor.execute(query, (id_factura,))
@@ -286,72 +225,5 @@ class FacturacionModel:
         finally:
             if cursor:
                 cursor.close()
-            if conexion.is_connected():
+            if conexion and conexion.is_connected():
                 conexion.close()
-
-    @staticmethod
-    def obtener_paciente_por_id(id_paciente: int) -> Optional[Paciente]:
-        """Obtiene un paciente específico por su ID"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return None
-        
-        cursor = None
-        try:
-            cursor = conexion.cursor(dictionary=True)
-            query = "SELECT * FROM Paciente WHERE ID_Paciente = %s"
-            cursor.execute(query, (id_paciente,))
-            row = cursor.fetchone()
-            
-            if row:
-                return Paciente(
-                    id_paciente=row['ID_Paciente'],
-                    nombre=row['Nombre'],
-                    apellido=row['Apellido'],
-                    fecha_nacimiento=row['Fecha_Nacimiento'],
-                    dui=row['DUI'],
-                    telefono=row['Telefono'],
-                    correo=row['Correo']
-                )
-        except Error as e:
-            print(f"Error al obtener paciente: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-            if conexion.is_connected():
-                conexion.close()
-        
-        return None
-
-    @staticmethod
-    def obtener_tratamiento_por_id(id_tratamiento: int) -> Optional[Tratamiento]:
-        """Obtiene un tratamiento específico por su ID"""
-        conexion = FacturacionModel._get_connection()
-        if not conexion:
-            return None
-        
-        cursor = None
-        try:
-            cursor = conexion.cursor(dictionary=True)
-            query = "SELECT * FROM Tratamiento WHERE ID_Tratamiento = %s"
-            cursor.execute(query, (id_tratamiento,))
-            row = cursor.fetchone()
-            
-            if row:
-                return Tratamiento(
-                    id_tratamiento=row['ID_Tratamiento'],
-                    id_doctor=row['ID_Doctor'],
-                    descripcion=row['Descripcion'],
-                    costo=float(row['Costo']),
-                    fecha=row['Fecha'],
-                    estado=row['Estado']
-                )
-        except Error as e:
-            print(f"Error al obtener tratamiento: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-            if conexion.is_connected():
-                conexion.close()
-        
-        return None
