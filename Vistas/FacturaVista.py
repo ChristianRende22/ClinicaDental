@@ -15,6 +15,7 @@ class FacturacionView(QMainWindow):
     crear_factura_signal = pyqtSignal(dict)
     mostrar_facturas_signal = pyqtSignal()
     limpiar_campos_signal = pyqtSignal()
+    actualizar_datos_signal = pyqtSignal()  # Nueva señal para actualizar datos
 
     def __init__(self):
         super().__init__()
@@ -29,13 +30,14 @@ class FacturacionView(QMainWindow):
             'surface': '#ffffff'       # White surface
         }
 
+
         self.setWindowTitle("Gestión de Facturas - Clínica Dental") 
         self.setGeometry(100, 100, 1000, 750)
         
         self.setup_styles()  
         self.init_ui()      
-        self.conectar_botones()  
-        
+        self.conectar_botones() 
+            
 
     def setup_styles(self):
         """Configura los estilos de la aplicación"""
@@ -224,95 +226,83 @@ class FacturacionView(QMainWindow):
         self.crear_btn.clicked.connect(self.on_crear_factura)
         self.mostrar_btn.clicked.connect(self.on_mostrar_facturas)
         self.limpiar_btn.clicked.connect(self.on_limpiar_campos)
+        self.actualizar_btn.clicked.connect(self.on_actualizar_datos)
+
+    def on_actualizar_datos(self):
+        """Manejador para el botón de actualizar datos"""
+        # Esta señal la definiremos ahora
+        self.actualizar_datos_signal.emit()
     
     def cargar_pacientes(self, pacientes):
-        """Carga los pacientes en el ComboBox"""
+        """Carga la lista de pacientes en el ComboBox"""
         self.paciente_combo.clear()
-        self.paciente_combo.addItem("Seleccione un paciente...", None)
+        self.paciente_combo.addItem("Seleccione un paciente", None)
         
-        if pacientes:
-            for paciente in pacientes:
-                texto = f"{paciente.nombre} {paciente.apellido}"
-                self.paciente_combo.addItem(texto, paciente)
-    
+        for paciente in pacientes:
+            texto = f"{paciente.nombre} {paciente.apellido} - {paciente.dui}"
+            self.paciente_combo.addItem(texto, paciente)
+
     def cargar_tratamientos(self, tratamientos):
-        """Carga los tratamientos en el ComboBox"""
+        """Carga la lista de tratamientos en el ComboBox"""
         self.tratamiento_combo.clear()
-        self.tratamiento_combo.addItem("Seleccione un tratamiento...", None)
+        self.tratamiento_combo.addItem("Seleccione un tratamiento", None)
         
-        if tratamientos:
-            for tratamiento in tratamientos:
-                texto = f"{tratamiento.descripcion} - ${tratamiento.costo:.2f}"
-                self.tratamiento_combo.addItem(texto, tratamiento)
-    
+        for tratamiento in tratamientos:
+            texto = f"{tratamiento.descripcion} - ${tratamiento.costo:.2f}"
+            self.tratamiento_combo.addItem(texto, tratamiento)
+
     def on_crear_factura(self):
         """Manejador para el botón de crear factura"""
-        try:
-            # Obtener datos del formulario
-            id_factura = self.id_factura_edit.text().strip()
-            paciente_seleccionado = self.paciente_combo.currentData()
-            tratamiento_seleccionado = self.tratamiento_combo.currentData()
-            
-            # Crear diccionario con los datos
-            datos_factura = {
-                'id_factura': id_factura,
-                'paciente': paciente_seleccionado,
-                'tratamiento': tratamiento_seleccionado
-            }
-            
-            # Emitir señal al controlador
-            self.crear_factura_signal.emit(datos_factura)
-            
-        except Exception as e:
-            self.mostrar_mensaje("error", "❌ Error", f"Error al procesar datos: {str(e)}")
-    
+        datos = self.get_datos_formulario()
+        if datos:
+            self.crear_factura_signal.emit(datos)
+
     def on_mostrar_facturas(self):
         """Manejador para el botón de mostrar facturas"""
         self.mostrar_facturas_signal.emit()
-    
+
     def on_limpiar_campos(self):
         """Manejador para el botón de limpiar campos"""
         self.limpiar_campos_signal.emit()
-    
+
+    def on_actualizar_datos(self):
+        """Manejador para el botón de actualizar datos"""
+        self.actualizar_datos_signal.emit()
+
     def limpiar_formulario(self):
         """Limpia todos los campos del formulario"""
         self.id_factura_edit.clear()
         self.paciente_combo.setCurrentIndex(0)
         self.tratamiento_combo.setCurrentIndex(0)
-        self.resultado_text.clear()
-    
+
     def mostrar_mensaje(self, tipo, titulo, mensaje):
         """Muestra un mensaje al usuario"""
-        msg_box = QMessageBox()
-        msg_box.setWindowTitle(titulo)
-        msg_box.setText(mensaje)
-        
         if tipo == "success":
-            msg_box.setIcon(QMessageBox.Icon.Information)
+            QMessageBox.information(self, titulo, mensaje)
         elif tipo == "error":
-            msg_box.setIcon(QMessageBox.Icon.Critical)
-        elif tipo == "warning":
-            msg_box.setIcon(QMessageBox.Icon.Warning)
-        else:  # info
-            msg_box.setIcon(QMessageBox.Icon.Information)
-        
-        msg_box.exec()
-    
+            QMessageBox.critical(self, titulo, mensaje)
+        elif tipo == "info":
+            QMessageBox.information(self, titulo, mensaje)
+
     def actualizar_resultado(self, texto, limpiar=False):
         """Actualiza el área de resultados"""
         if limpiar:
             self.resultado_text.clear()
         self.resultado_text.append(texto)
-    
+
     def agregar_factura_resultado(self, texto_factura):
         """Agrega una factura al área de resultados"""
         self.resultado_text.append(texto_factura)
-        self.resultado_text.append("")  # Línea en blanco para separar
-    
+        self.resultado_text.append("\n")
+
     def get_datos_formulario(self):
-        """Obtiene los datos del formulario actual"""
+        """Obtiene los datos del formulario"""
+        id_factura = self.id_factura_edit.text().strip()
+        paciente = self.paciente_combo.currentData()
+        tratamiento = self.tratamiento_combo.currentData()
+        
         return {
-            'id_factura': self.id_factura_edit.text().strip(),
-            'paciente': self.paciente_combo.currentData(),
-            'tratamiento': self.tratamiento_combo.currentData()
+            'id_factura': id_factura,
+            'paciente': paciente,
+            'tratamiento': tratamiento
         }
