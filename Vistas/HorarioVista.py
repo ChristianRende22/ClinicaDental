@@ -137,32 +137,16 @@ class AgregarHorarioDialog(QDialog):
         self.configurar_ui()
     
     def configurar_ui(self):
+        # Crear los layouts principales
         main_layout = QVBoxLayout()
-        
-        # Título del diálogo
-        titulo = QLabel("📅 Agregar Nuevo Horario")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        titulo.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        titulo.setStyleSheet(f"color: {self.colors['accent']}; margin: 8px;")
-        main_layout.addWidget(titulo)
-        
-        # Formulario
         form_layout = QFormLayout()
         
         # Campo ID Horario con sugerencia de formato H1
         self.id_edit = QLineEdit()
-        self.id_edit.setPlaceholderText("Ejemplo: H1, H2, H3, etc.")
+        self.id_edit.setPlaceholderText("Ejemplo: H001, H002, H003, etc.")
         
-        # Campo de fecha con calendario
-        self.fecha_edit = QDateEdit()
-        self.fecha_edit.setCalendarPopup(True)
-        self.fecha_edit.setDate(QDate.currentDate())
-        self.fecha_edit.setDisplayFormat("dd/MM/yyyy")
-        
-        # Crear un widget de calendario personalizado
-        calendar = QCalendarWidget()
-        calendar.setMinimumDate(QDate.currentDate())  # No permitir fechas pasadas
-        self.fecha_edit.setCalendarWidget(calendar)
+        # Quitar el campo de fecha ya que la tabla no lo maneja por días específicos
+        # self.fecha_edit = QDateEdit()
         
         # Campos de hora
         self.hora_inicio_edit = QTimeEdit()
@@ -171,7 +155,7 @@ class AgregarHorarioDialog(QDialog):
         
         self.hora_fin_edit = QTimeEdit()
         self.hora_fin_edit.setDisplayFormat("HH:mm")
-        self.hora_fin_edit.setTime(QTime(9,30))#ra por defecto 17:00
+        self.hora_fin_edit.setTime(QTime(17, 0))  # Hora por defecto 17:00
         
         # ComboBox para seleccionar doctor
         self.doctor_combo = QComboBox()
@@ -180,7 +164,6 @@ class AgregarHorarioDialog(QDialog):
         
         # Agregar campos al formulario
         form_layout.addRow("🆔 ID Horario:", self.id_edit)
-        #form_layout.addRow("📅 Fecha:", self.fecha_edit)
         form_layout.addRow("⏰ Hora Inicio:", self.hora_inicio_edit)
         form_layout.addRow("⏳ Hora Fin:", self.hora_fin_edit)
         form_layout.addRow("👨‍⚕️ Médico:", self.doctor_combo)
@@ -228,7 +211,6 @@ class AgregarHorarioDialog(QDialog):
     def get_data(self):
         return {
             'id_horario': self.id_edit.text().strip(),
-            'dia': self.fecha_edit.date().toString("dd/MM/yyyy"),
             'hora_inicio': self.hora_inicio_edit.time().toString("HH:mm"),
             'hora_fin': self.hora_fin_edit.time().toString("HH:mm"),
             'doctor': self.doctor_combo.currentData()
