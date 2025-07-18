@@ -73,7 +73,6 @@ class FacturacionModel:
         cursor = None
         
         try:
-            # Usar la misma conexión que CitaModelo
             conexion = mysql.connector.connect(
                 host='localhost',
                 database='ClinicaDental',
@@ -125,7 +124,6 @@ class FacturacionModel:
         facturas = []
         
         try:
-            # Usar la misma conexión que CitaModelo
             conexion = mysql.connector.connect(
                 host='localhost',
                 database='ClinicaDental',
@@ -205,7 +203,6 @@ class FacturacionModel:
         cursor = None
         
         try:
-            # Usar la misma conexión que CitaModelo
             conexion = mysql.connector.connect(
                 host='localhost',
                 database='ClinicaDental',
