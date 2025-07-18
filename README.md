@@ -134,7 +134,7 @@ HOST = 'localhost'
 USER = 'root'
 PASSWORD = 'tu_password_mysql'
 DATABASE = 'ClinicaDental'
-PORT = 3306
+PORT = 3306 o 3307
 ```
 
 ### 4. Ejecutar la Aplicación
@@ -193,3 +193,10 @@ python ControladorClinica.py
 * Visualización de horarios
 * Configuración de días y horas laborales
 * Reportes: Ocupación y disponibilidad
+
+
+## Autores 
+- **Christian Renderos** 
+- **Melisa Rivas** 
+- **Lorena Arriola** 
+- **Alisson Quijano** 
