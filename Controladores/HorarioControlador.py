@@ -15,15 +15,30 @@ class HorarioController:
         self.vista = vista
         self.modelo = HorarioModel() 
         
-        self.doctores = [
-            Doctor("Melisa", "Rivas", "12345678-9", "Cirujano Dentista", 12345678, "correo@gmail.com"),
-            Doctor("Carlos", "López", "98765432-1", "Ortodontista", 87654321, "coreo1@gmail.com")
-        ]
+        # Cargar doctores desde la base de datos
+        self.doctores = []
+        self.cargar_datos_desde_bd()
         self.inicializar_vista()
+        
+    def cargar_datos_desde_bd(self):
+        """Carga todos los datos necesarios desde la base de datos"""
+        try:
+            # Cargar doctores desde la base de datos
+            self.doctores = self.modelo.obtener_doctores()
+            print(f"Doctores cargados desde BD: {len(self.doctores)}")
+            
+        except Exception as e:
+            print(f"Error al cargar datos desde BD: {e}")
+            # Doctores de respaldo si hay error en la BD
+            self.doctores = [
+                Doctor("Melisa", "Rivas", "12345678-9", "Cirujano Dentista", 12345678, "correo@gmail.com"),
+                Doctor("Carlos", "López", "98765432-1", "Ortodontista", 87654321, "correo1@gmail.com")
+            ]
         
     def inicializar_vista(self):
         """Inicializa la vista con los datos del controlador."""
-        self.vista.actualizar_combos(self.doctores) 
+        self.vista.actualizar_combos(self.doctores)
+        self.actualizar_vista()
 
     def agregar_horario(self):
         """Agrega un nuevo horario después de validaciones."""
@@ -33,12 +48,11 @@ class HorarioController:
                 return
             
             # Validaciones de campos obligatorios
-            if not all(datos.values()):
+            if not all([datos['id_horario'], datos['hora_inicio'], datos['hora_fin'], datos['doctor']]):
                 QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios.")
                 return
 
             id_horario = datos['id_horario']
-            dia = datos['dia']
             hora_inicio = datos['hora_inicio']
             hora_fin = datos['hora_fin']
             doctor = datos['doctor'] 
@@ -56,30 +70,41 @@ class HorarioController:
                 QMessageBox.warning(self.vista, "❌ Error", "La hora de fin debe ser posterior a la hora de inicio.")
                 return
 
-            # Validar ID único
-            if any(h.id_horario == id_horario for h in self.modelo.obtener_horarios()):
+            # Validar ID único (consultar en la base de datos)
+            horarios_existentes = self.modelo.obtener_horarios()
+            if any(h.id_horario == id_horario for h in horarios_existentes):
                 QMessageBox.warning(self.vista, "❌ Error", "El ID de horario ya existe.")
                 return
-            # Crear el nuevo objeto Horario
-            nuevo_horario = Horario(id_horario, dia, hora_inicio, hora_fin, doctor)
 
-            # Validar existencia de horario 
-            for horario_existente in self.modelo.obtener_horarios():
+            # Crear el nuevo objeto Horario
+            nuevo_horario = Horario(id_horario, hora_inicio, hora_fin, doctor)
+
+            # Validar conflicto de horarios 
+            for horario_existente in horarios_existentes:
                 if nuevo_horario.horario_ocupado(horario_existente):
-                    QMessageBox.warning(self.vista, "❌ Error", "El doctor ya tiene un horario ocupado en ese día y rango de horas.")
+                    QMessageBox.warning(self.vista, "❌ Error", 
+                                      f"El doctor {doctor.nombre} {doctor.apellido} ya tiene un horario "
+                                      f"ocupado en ese rango de horas.")
                     return
             
-            # Si todas las validaciones pasan, agregar al modelo
-            self.modelo.agregar_horario(nuevo_horario)
-            # Actualizar vista
-            self.actualizar_vista()
-            QMessageBox.information(self.vista, "✅ Éxito", "Horario agregado correctamente.")       
+            # Si todas las validaciones pasan, agregar al modelo (que insertará en BD)
+            if self.modelo.agregar_horario(nuevo_horario):
+                # Actualizar vista
+                self.actualizar_vista()
+                QMessageBox.information(self.vista, "✅ Éxito", 
+                                      f"Horario agregado correctamente en la base de datos.\n"
+                                      f"ID: {nuevo_horario.id_horario}")
+            else:
+                QMessageBox.critical(self.vista, "❌ Error", 
+                                   "Error al guardar el horario en la base de datos.")
+                                   
         except Exception as e:
             QMessageBox.critical(self.vista, "❌ Error", f"Error al agregar horario: {str(e)}")
     
     def eliminar_horario(self):
         """Elimina un horario."""
         try:
+            # Obtener horarios actualizados de la base de datos
             horarios = self.modelo.obtener_horarios()
             if not horarios:
                 QMessageBox.information(self.vista, "ℹ️ Información", "No hay horarios registrados para eliminar.")
@@ -90,9 +115,11 @@ class HorarioController:
             if id_horario: 
                 if self.modelo.eliminar_horario(id_horario):
                     self.actualizar_vista()
-                    QMessageBox.information(self.vista, "✅ Éxito", "Horario eliminado correctamente.")
+                    QMessageBox.information(self.vista, "✅ Éxito", 
+                                          f"Horario {id_horario} eliminado correctamente de la base de datos.")
                 else:
-                    QMessageBox.warning(self.vista, "❌ Error", "No se encontró el horario para eliminar.")
+                    QMessageBox.warning(self.vista, "❌ Error", 
+                                      "No se pudo eliminar el horario de la base de datos.")
                     
         except Exception as e:
             QMessageBox.critical(self.vista, "❌ Error", f"Error al eliminar horario: {str(e)}")
@@ -101,11 +128,16 @@ class HorarioController:
         """Actualiza la vista con los datos del modelo."""
         horarios_por_dia = self.modelo.obtener_horarios_agrupados_por_dia()
         self.vista.actualizar_lista_horarios(horarios_por_dia)
+
+    def recargar_datos(self):
+        """Recarga todos los datos desde la base de datos"""
+        self.cargar_datos_desde_bd()
+        self.actualizar_vista()
  
 if __name__ == "__main__":
-    from Vistas.HorarioVista import HorarioView # Importar la vista
+    from Vistas.HorarioVista import HorarioView
     app = QApplication(sys.argv)
     window = HorarioView()
-    controller = HorarioController(window) # Pasar la instancia de la vista al controlador
+    controller = HorarioController(window)
     window.show()
     sys.exit(app.exec())
