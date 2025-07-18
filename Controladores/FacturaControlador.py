@@ -21,28 +21,41 @@ class FacturacionController:
         self.view.crear_factura_signal.connect(self.crear_factura)
         self.view.mostrar_facturas_signal.connect(self.mostrar_facturas)
         self.view.limpiar_campos_signal.connect(self.limpiar_campos)
+        self.view.actualizar_datos_signal.connect(self.cargar_datos_iniciales)
     
     def cargar_datos_iniciales(self):
         """Carga pacientes y tratamientos en los ComboBox"""
         try:
             # Cargar pacientes
+            print("Solicitando pacientes a la base de datos...")
             pacientes = self.model.obtener_pacientes()
+            print(f"Total de pacientes recuperados: {len(pacientes)}")
             self.view.cargar_pacientes(pacientes)
             
             # Cargar tratamientos
+            print("Solicitando tratamientos a la base de datos...")
             tratamientos = self.model.obtener_tratamientos()
+            print(f"Total de tratamientos recuperados: {len(tratamientos)}")
             self.view.cargar_tratamientos(tratamientos)
             
         except Exception as e:
+            print(f"Error al cargar datos iniciales: {e}")
+            import traceback
+            traceback.print_exc()
             self.view.mostrar_mensaje("error", "❌ Error", 
                                     f"Error al cargar datos: {str(e)}")
-
+            
     def crear_factura(self, datos: Dict[str, Any]):
         """Crea una nueva factura"""
         try:
             # Validar datos
             if not self._validar_datos_factura(datos):
                 return
+            
+            # Imprimir información de depuración
+            print(f"ID Factura: {datos['id_factura']}")
+            print(f"Paciente: {datos['paciente'].__class__.__name__} - {datos['paciente'].id_paciente} - {datos['paciente'].nombre} {datos['paciente'].apellido}")
+            print(f"Tratamiento: {datos['tratamiento'].__class__.__name__} - {datos['tratamiento'].id_tratamiento} - {datos['tratamiento'].descripcion}")
             
             # Verificar si la factura ya existe
             if self.model.factura_existe(datos['id_factura']):
@@ -74,8 +87,12 @@ class FacturacionController:
                                         "Error al guardar la factura en la base de datos.")
                 
         except Exception as e:
+            print(f"Error al crear factura: {e}")
+            import traceback
+            traceback.print_exc()
             self.view.mostrar_mensaje("error", "❌ Error", 
                                     f"Error inesperado: {str(e)}")
+            
     
     def _validar_datos_factura(self, datos: Dict[str, Any]) -> bool:
         """Valida los datos de la factura antes de crearla"""
