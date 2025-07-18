@@ -12,8 +12,6 @@ from PyQt6.QtCore import Qt, QDateTime, QDate
 from PyQt6.QtGui import QFont, QIntValidator, QDoubleValidator
 from Controladores.CitaControlador import ControladorCita
 
-
-
 class CitaWindow(QMainWindow):
     def __init__(self, controlador = None):  
         super().__init__()

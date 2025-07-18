@@ -1,23 +1,8 @@
-# Script consolidado que ejecuta todos los controladores
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-import Controladores.CitaControlador as ej1
-import Controladores.DoctorControlador as ej2
-import Controladores.FacturaControlador as ej3
-import Controladores.HorarioControlador as ej4
-import Controladores.LoginControlador as ej5
-import Controladores.MenuControlador as ej6
-import Controladores.PacienteControlador as ej7
-import Controladores.TratamientoControlador as ej8
 
 # Script consolidado que ejecuta todos los controladores
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from PyQt6.QtWidgets import QApplication
 
 import Controladores.CitaControlador as Cita
 import Controladores.DoctorControlador as Dcotor

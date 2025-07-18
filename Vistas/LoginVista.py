@@ -28,7 +28,7 @@ class LoginVista(QWidget):
         """Inicializa la interfaz de usuario"""
         self.setWindowTitle("🏥 Sistema de Gestión Clínica Dental - Login")
 
-        self.setFixedSize(1200, 800)
+        self.setFixedSize(500, 600)
         self.centrar_ventana()
         self.configurar_estilo()
         self.crear_widgets()

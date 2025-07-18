@@ -12,7 +12,7 @@ class MenuControlador:
         self.tipo_usuario = tipo_usuario
         
         # Referencias a controladores de módulos
-        self.controlador_pacientes = None
+        self.Paciente_window = None
         self.cita_window = None  # Inicializar cita_window como None
         
         # Inicializar sesión si se proporcionaron datos
@@ -54,34 +54,34 @@ class MenuControlador:
     def abrir_pacientes(self):
         if self.modelo.tiene_permiso('pacientes'):
             print("Abriendo módulo de Pacientes...")
+            from Controladores.PacienteControlador import PacienteControlador   
+            from Vistas.PacienteVista import PacienteWindow
             try:
-                from Controladores.PacienteControlador import PacienteControlador
-                if not hasattr(self, 'controlador_pacientes') or self.controlador_pacientes is None:
-                    self.controlador_pacientes = PacienteControlador()
-                
-                # Intenta mostrar la vista incluso si hay error en BD
-                self.controlador_pacientes.mostrar()
-                
-                # Manejar error sin cerrar la aplicación
-                if self.controlador_pacientes.vista is None:
-                    from PyQt6.QtWidgets import QMessageBox
-                    QMessageBox.warning(
-                        None,
-                        "Error de conexión",
-                        "No se pudo conectar a la base de datos.\n\n"
-                        "Funcionando en modo local sin base de datos."
+                if self.Paciente_window:
+                    self.Paciente_window.close()
+                    
+                controlador = PacienteControlador()
+                self.Paciente_window = PacienteWindow()
+                controlador.set_vista(self.Paciente_window)
+                try:
+                    controlador.inicializar_vista()
+                    
+                    self.Paciente_window.show()
+                    
+                except Exception as init_error:
+                    self.show_error_message(
+                        "Error al inicializar la vista de pacientes",
+                        f"Detalles del error: {str(init_error)}"
                     )
-                
-                self.controlador_pacientes.vista.raise_()
-                self.controlador_pacientes.vista.activateWindow()
+            except ImportError:
+                self.show_error_message(
+                    "Error de módulo",
+                    "No se pudo importar el módulo de pacientes. Asegúrate de que el archivo PacienteControlador.py existe y está correctamente configurado."
+                )
             except Exception as e:
-                print(f"Error al abrir pacientes: {e}")
-                # Muestra error sin cerrar la aplicación
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.critical(
-                    None,
-                    "Error crítico",
-                    f"No se pudo abrir el módulo de pacientes:\n{str(e)}"
+                self.show_error_message(
+                    "Error al abrir pacientes",
+                    f"Detalles del error: {str(e)}"
                 )
         else:
             self.mostrar_error_permiso("Pacientes")
@@ -136,10 +136,7 @@ class MenuControlador:
                     "Error al abrir citas",
                     f"Detalles del error: {str(e)}"
                 )
-            
-            
-            # self.controlador_citas = CitaControlador()
-            # self.controlador_citas.mostrar()
+           
         else:
             self.mostrar_error_permiso("Citas")
     

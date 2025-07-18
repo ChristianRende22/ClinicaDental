@@ -62,21 +62,33 @@ class ControladorDoctor:
     
     def crear_doctor(self, num_junta_medica: int, nombre: str, apellido: str, especialidad: str, telefono: str, correo: str):
         try:
+            # Validaciones básicas
             if not nombre or not apellido or not num_junta_medica or not especialidad or not telefono or not correo:
                 QMessageBox.warning(self.vista, "❌ Error", "Todos los campos son obligatorios")
                 return None
             
-            if not self.validar_num_junta_medica(num_junta_medica):
+            if not self.validar_num_junta_medica(str(num_junta_medica)):
                 QMessageBox.warning(self.vista, "❌ Error", "El número de junta médica debe tener entre 4 y 7 dígitos")
                 return None
             
             if not self.validar_telefono(telefono):
-                QMessageBox.warning(self.vista, "❌ Error", "El teléfono debe tener al menos 8 dígitos")
+                QMessageBox.warning(self.vista, "❌ Error", "El teléfono debe tener exactamente 8 dígitos")
                 return None
             
             if not self.validar_email(correo):
                 QMessageBox.warning(self.vista, "❌ Error", "El correo electrónico no es válido")
                 return None
+            
+            # Verificar duplicados antes de crear el objeto
+            try:
+                doctores_existentes = Doctor.obtener_doctores_desde_db()
+                for doctor_existente in doctores_existentes:
+                    if doctor_existente.num_junta_medica == int(num_junta_medica):
+                        QMessageBox.warning(self.vista, "❌ Error", "Ya existe un doctor con ese número de junta médica")
+                        return None
+            except Exception as e:
+                print(f"[WARNING] No se pudo verificar doctores existentes: {e}")
+                # Continuar sin verificación si hay problemas con la BD
             
             # Crear el objeto Doctor
             nuevo_doctor = Doctor(
@@ -88,16 +100,50 @@ class ControladorDoctor:
                 correo=correo.lower()
             )
 
-            # Insercion en la base de datos
-            if not Doctor.insert_doc_db(nuevo_doctor):
-                raise Exception("No se pudo insertar en la base de datos.")
+            # Inserción en la base de datos con manejo detallado de errores
+            print(f"[INFO] Intentando insertar doctor: {nuevo_doctor.nombre} {nuevo_doctor.apellido}")
+            
+            try:
+                resultado = Doctor.insert_doc_db(nuevo_doctor)
+                print(f"[DEBUG] Resultado de insert_doc_db: {resultado}")
+                
+                if not resultado:
+                    # Intentar obtener más información del error
+                    QMessageBox.critical(self.vista, "❌ Error de Base de Datos", 
+                                       "No se pudo insertar el doctor en la base de datos.\n\n" +
+                                       "Posibles causas:\n" +
+                                       "• La base de datos no está disponible\n" +
+                                       "• Problemas de permisos\n" +
+                                       "• Error en la conexión\n" +
+                                       "• Conflicto con datos existentes")
+                    return None
+                
+                # Si llegamos aquí, la inserción fue exitosa
+                self.doctores.append(nuevo_doctor)
+                QMessageBox.information(self.vista, "✅ Éxito", "Doctor creado exitosamente")
+                self.vista.resultado_text.append(f"✅ Doctor creado: Dr. {nuevo_doctor.nombre} {nuevo_doctor.apellido}")
+                self.limpiar_campos()
+                return nuevo_doctor
+                
+            except Exception as db_error:
+                print(f"[ERROR] Error específico al insertar en BD: {db_error}")
+                QMessageBox.critical(self.vista, "❌ Error de Base de Datos", 
+                                   f"Error al guardar en la base de datos:\n{str(db_error)}\n\n" +
+                                   "Verifique:\n" +
+                                   "• Que la base de datos esté funcionando\n" +
+                                   "• Los permisos de escritura\n" +
+                                   "• La estructura de la tabla")
+                return None
 
-            self.doctores.append(nuevo_doctor)
-            QMessageBox.information(self.vista, "✅ Éxito", "Doctor creado exitosamente")
-
+        except ValueError as ve:
+            print(f"[ERROR] Error de valor: {ve}")
+            QMessageBox.warning(self.vista, "❌ Error de Datos", f"Datos inválidos: {str(ve)}")
+            return None
+            
         except Exception as e:
-            QMessageBox.critical(self.vista, "❌ Error", f"Error al crear el doctor: {str(e)}")
-            print(f"[ERROR] al crear doctor: {e}")
+            print(f"[ERROR] Error general al crear doctor: {e}")
+            QMessageBox.critical(self.vista, "❌ Error", f"Error inesperado al crear el doctor: {str(e)}")
+            return None
 
 
     # def crear_doctor(self):
