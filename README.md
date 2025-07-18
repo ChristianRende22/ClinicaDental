@@ -70,9 +70,9 @@ El sistema utiliza **arquitectura MVC** para cada módulo principal:
 
 2. Al ejecutar la aplicación:
 
-   * Aparece la ventana de inicio de sesión
-   * Tras autenticarse, se accede al menú principal y a todos los módulos del sistema
-
+   * Se desplegará la interfaz de inicio de sesión, donde podrá validar la funcionalidad de autenticación de usuarios.
+   * Una vez cerrada la ventana de inicio de sesión, se abrirá automáticamente la interfaz del menú principal.
+   * Desde el menú principal, es posible acceder y evaluar el funcionamiento de todos los módulos y modelos del sistema.
 ---
 
 ## 📋 Requisitos del Sistema
