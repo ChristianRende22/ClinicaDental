@@ -73,12 +73,15 @@ CREATE TABLE Cita (
 
 -- Tabla: Factura
 CREATE TABLE Factura (
-	ID_Factura INT AUTO_INCREMENT PRIMARY KEY,
-	ID_Paciente INT NOT NULL,
-	Fecha_Emision DATE NOT NULL,
-	Monto_Total DECIMAL(10,2) NOT NULL,
-	Estado_Pago ENUM('Pendiente', 'Pagada', 'Vencida') DEFAULT 'Pendiente',
-	FOREIGN KEY (ID_Paciente) REFERENCES Paciente(ID_Paciente) ON DELETE CASCADE
+    ID_Factura INT AUTO_INCREMENT PRIMARY KEY,
+    ID_Factura_Custom VARCHAR(50),
+    ID_Paciente INT,
+    Fecha_Emision DATETIME,
+    Descripcion_Servicio TEXT,
+    Monto_Servicio DECIMAL(10,2),
+    Monto_Total DECIMAL(10,2),
+    Estado_Pago VARCHAR(20),
+    FOREIGN KEY (ID_Paciente) REFERENCES Paciente(ID_Paciente)
 );
 
 -- Tabla: Asistente
@@ -157,10 +160,12 @@ INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Ho
 (2, 2345, 2, '2025-07-01 14:30:00', '14:30:00', '15:00:00', 'Pendiente', 45.00),
 (3, 3456, 3, '2025-07-02 10:00:00', '10:00:00', '10:30:00', 'Confirmada', 60.00);
 
-INSERT INTO Factura (ID_Paciente, Fecha_Emision, Monto_Total, Estado_Pago) VALUES
-(1, '2025-07-01', 20.00, 'Pagada'),
-(2, '2025-07-01', 450.00, 'Pendiente'),
-(3, '2025-07-02', 250.00, 'Pendiente');
+INSERT INTO Factura (
+    ID_Paciente, ID_Factura_Custom, Fecha_Emision, 
+    Descripcion_Servicio, Monto_Servicio, Monto_Total, Estado_Pago) VALUES
+(1, 'FAC-001', '2025-07-01', 'Limpieza dental', 20.00, 20.00, 'Pagada'),
+(2, 'FAC-002', '2025-07-01', 'Ortodoncia', 450.00, 450.00, 'Pendiente'),
+(3, 'FAC-003', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
 
 INSERT INTO Asistente (Nombre, Apellido, Telefono, Correo, Contrasena) VALUES
 ('Ivonne', 'Morales', '70445566', 'ivonne.morales@clinicadental.com', 'asist123'),
