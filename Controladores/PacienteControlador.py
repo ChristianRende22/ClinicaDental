@@ -1,4 +1,3 @@
-# Agregar el directorio padre al path
 import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -23,33 +22,28 @@ import re
 
 class PacienteControlador:
     """Controlador para manejar la lógica de negocio de los pacientes"""
-    
+
     def __init__(self):
         self.pacientes_registrados: List[Paciente] = []
         self.paciente_actual: Paciente = None
         self.vista = None  # Referencia a la vista
-        # No inicializar el contador aquí - se hará cuando se carguen los datos
-        print("🔧 PacienteControlador inicializado")
-    
+        # Inicializar el contador de IDs de manera robusta
+        Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
+
     def set_vista(self, vista):
         """Establece la referencia a la vista"""
         self.vista = vista
-    
+
     def inicializar_vista(self):
         """Inicializa y muestra la vista"""
-        # Inicializar el sistema de IDs secuenciales la primera vez
-        if not hasattr(self, '_sistema_inicializado'):
-            self.inicializar_sistema_ids_secuenciales()
-            self._sistema_inicializado = True
-        
         if not self.vista:
             # Importación tardía para evitar dependencias circulares
             from Vistas.PacienteVista import PacienteWindow
             self.vista = PacienteWindow(self)  # Pasar el controlador a la vista
-        
+
         self.vista.show()
         return self.vista
-    
+
     def cerrar_vista(self):
         """Cierra la vista"""
         if self.vista:
@@ -60,22 +54,22 @@ class PacienteControlador:
     # MÉTODOS DE COMUNICACIÓN CON LA VISTA
     # PROPÓSITO: Manejar la comunicación bidireccional con la vista
     # ==========================================
-    
+
     def actualizar_vista(self):
         """Actualiza la vista con los datos actuales"""
         if self.vista:
             self.vista.actualizar_interfaz()
-    
+
     def mostrar_mensaje_en_vista(self, titulo: str, mensaje: str, tipo: str = "info"):
         """Muestra un mensaje en la vista"""
         if self.vista:
             self.vista.mostrar_mensaje(titulo, mensaje, tipo)
-    
+
     def actualizar_lista_pacientes_en_vista(self):
         """Actualiza la lista de pacientes en la vista"""
         if self.vista:
             self.vista.actualizar_lista_pacientes()
-    
+
     def limpiar_campos_vista(self):
         """Limpia los campos de la vista"""
         if self.vista:
@@ -85,138 +79,116 @@ class PacienteControlador:
     # MÉTODOS DE VALIDACIÓN Y REGLAS DE NEGOCIO
     # PROPÓSITO: Validar datos y aplicar reglas de negocio
     # ==========================================
-    
+
     def validar_email(self, email: str) -> bool:
         """Valida el formato del email usando el modelo"""
         return Paciente.validar_formato_email(email)
-    
-    def mostrar(self):
-        self.inicializar_vista()
 
     def validar_dui(self, dui: str) -> bool:
         """Valida el formato del DUI usando el modelo"""
         return Paciente.validar_formato_dui(dui)
-    
+
     def validar_telefono(self, telefono) -> bool:
         """Valida que el teléfono tenga el formato correcto (acepta str o int)"""
         # Si es None o 0, es válido (teléfono opcional)
         if not telefono:
             return True
-        
+
         # Convertir a string si es necesario
         telefono_str = str(telefono) if isinstance(telefono, int) else telefono
-        
+
         # Si es string, validar que no esté vacío
         if isinstance(telefono, str) and not telefono.strip():
             return True  # Teléfono opcional
-        
+
         # Remover espacios y caracteres especiales
         telefono_limpio = ''.join(filter(str.isdigit, telefono_str))
-        
+
         # Debe tener al menos 8 dígitos
         return len(telefono_limpio) >= 8
-    
+
     def validar_edad_minima(self, fecha_nacimiento: datetime) -> tuple[bool, str]:
         """Valida que la edad sea válida (regla de negocio)"""
         hoy = datetime.now()
         edad = hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
-        
+
         if edad <= 0:
             return False, "La edad debe ser mayor a 0"
         if edad > 120:
             return False, "La edad no puede ser mayor a 120 años"
-        
+
         return True, "Edad válida"
-    
+
     def validar_datos_completos(self, nombre: str, apellido: str) -> tuple[bool, str]:
         """Valida que los datos obligatorios estén completos (DUI ya no es obligatorio)"""
         # Validación simple sin usar strip()
         if not nombre or not apellido:
             return False, "Nombre y Apellido son campos obligatorios"
-        
+
         # Verificar que no sean solo espacios
         if len(nombre.replace(" ", "")) == 0 or len(apellido.replace(" ", "")) == 0:
             return False, "Nombre y Apellido no pueden estar vacíos"
-            
+
         return True, "Datos completos"
-    
+
     # ==========================================
     # MÉTODOS DE BÚSQUEDA Y VERIFICACIÓN (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Buscar y verificar existencia de pacientes
     # ==========================================
-    
+
+    def buscar_paciente_por_id(self, id_paciente: int) -> Paciente:
+        """Busca un paciente por su ID único"""
+        for paciente in self.pacientes_registrados:
+            if paciente.id_paciente == id_paciente:
+                return paciente
+        return None
+
+    def existe_paciente_con_dui(self, dui: str) -> bool:
+        """Verifica si ya existe un paciente con el DUI dado (solo si DUI no está vacío)"""
+        if not dui or len(dui.replace(" ", "")) == 0:
+            return False  # Si no hay DUI, no hay conflicto
+        return any(paciente.dui == dui and paciente.dui for paciente in self.pacientes_registrados)
+
+
+    def buscar_pacientes_por_nombre(self, nombre: str) -> List[Paciente]:
+        """Busca pacientes que contengan el nombre dado"""
+        nombre_lower = nombre.lower()
+        return [p for p in self.pacientes_registrados 
+                if nombre_lower in p.nombre.lower() or nombre_lower in p.apellido.lower()]
 
     def buscar_pacientes_por_nombre_apellido(self, nombre: str = "", apellido: str = "") -> List[Paciente]:
         """Busca pacientes por nombre y/o apellido (coincidencia parcial)"""
         pacientes_encontrados = []
-        
+
         nombre_lower = nombre.lower() if nombre else ""
         apellido_lower = apellido.lower() if apellido else ""
-        
+
         for paciente in self.pacientes_registrados:
             nombre_paciente = paciente.nombre.lower()
             apellido_paciente = paciente.apellido.lower()
-            
+
             # Verificar si coincide con la búsqueda
             coincide_nombre = not nombre_lower or nombre_lower in nombre_paciente
             coincide_apellido = not apellido_lower or apellido_lower in apellido_paciente
-            
+
             if coincide_nombre and coincide_apellido:
                 pacientes_encontrados.append(paciente)
-        
+
         return pacientes_encontrados
 
-    def existe_paciente_con_dui(self, dui: str) -> bool:
-        """
-        Verifica si ya existe un paciente registrado con el DUI especificado
-        
-        Args:
-            dui (str): DUI a verificar
-            
-        Returns:
-            bool: True si existe un paciente con ese DUI, False en caso contrario
-        """
-        if not dui or not dui.strip():
-            return False
-        
-        dui_limpio = dui.strip().replace(" ", "").replace("-", "")
-        
-        for paciente in self.pacientes_registrados:
-            if paciente.dui:
-                dui_paciente_limpio = paciente.dui.strip().replace(" ", "").replace("-", "")
-                if dui_limpio == dui_paciente_limpio:
-                    return True
-        
-        return False
+    def buscar_pacientes_con_saldo_pendiente(self) -> List[Paciente]:
+        """Obtiene todos los pacientes con saldo pendiente"""
+        return [p for p in self.pacientes_registrados if p.tiene_saldo_pendiente()]
 
-    def resetear_contador_ids_secuencial(self):
-        """
-        Resetea el contador de IDs para que sea secuencial basándose en los pacientes en memoria
-        """
-        if not self.pacientes_registrados:
-            # Si no hay pacientes, el próximo ID debería ser 1
-            Paciente._contador_id = 1
-            Paciente._pacientes_existentes = []
-            print("🔄 Contador de IDs reseteado a 1 (sin pacientes)")
-        else:
-            # Renumerar todos los pacientes secuencialmente
-            for i, paciente in enumerate(self.pacientes_registrados, 1):
-                paciente.id_paciente = i
-            
-            # Establecer el contador para el siguiente paciente
-            Paciente._contador_id = len(self.pacientes_registrados) + 1
-            
-            # Actualizar la lista de IDs existentes
-            Paciente._pacientes_existentes = [p.id_paciente for p in self.pacientes_registrados]
-            
-            print(f"🔄 IDs renumerados secuencialmente. Próximo ID: {Paciente._contador_id}")
-            print(f"📊 IDs asignados: {sorted(Paciente._pacientes_existentes)}")
+    def buscar_pacientes_menores_edad(self) -> List[Paciente]:
+        """Obtiene todos los pacientes menores de edad"""
+        return [p for p in self.pacientes_registrados if p.es_menor_de_edad()]
 
     # ==========================================
     # MÉTODOS DE GESTIÓN DE PACIENTES (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Crear, modificar y gestionar pacientes
     # ==========================================
-    
+
     def crear_paciente(self, nombre: str, apellido: str, fecha_nacimiento: datetime, 
                       telefono: int, correo: str, dui: str = "", saldo_pendiente: float = 0.0) -> tuple[bool, str]:
         """
@@ -228,30 +200,30 @@ class PacienteControlador:
             valido, mensaje = self.validar_datos_completos(nombre, apellido)
             if not valido:
                 return False, mensaje
-            
+
             # Validar DUI solo si se proporciona
             if dui and len(dui.replace(" ", "")) > 0:
                 if not self.validar_dui(dui):
                     return False, "El DUI debe tener el formato: 12345678-9"
-                
+
                 if self.existe_paciente_con_dui(dui):
                     return False, f"Ya existe un paciente registrado con el DUI: {dui}"
-            
+
             if correo and not self.validar_email(correo):
                 return False, "El email no tiene un formato válido"
-            
+
             if not self.validar_telefono(telefono):
                 return False, "El teléfono debe tener al menos 8 dígitos"
-            
+
             valido_edad, mensaje_edad = self.validar_edad_minima(fecha_nacimiento)
             if not valido_edad:
                 return False, mensaje_edad
-            
+
             # Crear el nuevo paciente usando el modelo (el ID se asigna automáticamente)
             nuevo_paciente = Paciente(
                 nombre, apellido, fecha_nacimiento, telefono, correo, dui, saldo_pendiente
             )
-            
+
             # Insertar en la base de datos
             if not Paciente.insertar_en_bd(nuevo_paciente):
                 return False, "Error al insertar paciente en la base de datos"
@@ -260,9 +232,10 @@ class PacienteControlador:
             self.pacientes_registrados.append(nuevo_paciente)
             self.paciente_actual = nuevo_paciente
 
-            # Renumerar secuencialmente
-            self.resetear_contador_ids_secuencial()
+            # Actualizar el contador
+            Paciente.inicializar_contador_desde_pacientes(self.pacientes_registrados)
 
+            return True, f"Paciente #{nuevo_paciente.id_paciente}: {nombre} {apellido} creado exitosamente"
             # Registrar la creación del paciente en el historial médico
             notas_creacion = f"""
 PACIENTE REGISTRADO EN EL SISTEMA:
@@ -291,19 +264,19 @@ Bienvenido/a al sistema de gestión médica.
                 return False, f"Error al crear paciente: {str(e)}"
         except Exception as e:
                 return False, f"Error inesperado: {str(e)}"
-            
+
     def seleccionar_paciente(self, paciente: Paciente) -> bool:
         """Selecciona un paciente como el actual"""
         if paciente in self.pacientes_registrados:
             self.paciente_actual = paciente
             return True
         return False
-    
+
     def modificar_paciente_actual(self, **kwargs) -> tuple[bool, str]:
         """Modifica los datos del paciente actual"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
-        
+
         try:
             for campo, valor in kwargs.items():
                 if hasattr(self.paciente_actual, campo):
@@ -315,48 +288,50 @@ Bienvenido/a al sistema de gestión médica.
                         return False, "El email no tiene un formato válido"
                     elif campo == 'telefono' and not self.validar_telefono(valor):
                         return False, "El teléfono debe tener al menos 8 dígitos"
-                    
+
                     setattr(self.paciente_actual, campo, valor)
-            
+
             return True, "Paciente modificado exitosamente"
         except Exception as e:
             return False, f"Error al modificar paciente: {str(e)}"
-    
+
     def eliminar_paciente(self, id_paciente: int) -> tuple[bool, str]:
         """Elimina un paciente del sistema usando su ID"""
         paciente = self.buscar_paciente_por_id(id_paciente)
         if not paciente:
             return False, "Paciente no encontrado"
-        
+
         # Regla de negocio: No eliminar pacientes con citas futuras o saldo pendiente
         if paciente.obtener_proximas_citas():
             return False, "No se puede eliminar un paciente con citas futuras"
-        
+
         if paciente.tiene_saldo_pendiente():
             return False, "No se puede eliminar un paciente con saldo pendiente"
-        
+
         self.pacientes_registrados.remove(paciente)
         if self.paciente_actual == paciente:
             self.paciente_actual = None
-        
+
         return True, f"Paciente #{paciente.id_paciente}: {paciente.nombre} {paciente.apellido} eliminado exitosamente"
-    
+
     # ==========================================
     # MÉTODOS DE GESTIÓN DE TRATAMIENTOS Y CITAS (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Agregar tratamientos y citas a pacientes con validaciones
     # ==========================================
-    
+
     def agregar_tratamiento_a_paciente(self, tratamiento: Tratamiento) -> tuple[bool, str]:
+        """Agrega un tratamiento al paciente actual con validaciones"""
         """Agrega un tratamiento al paciente actual con validaciones y lo registra en el historial médico"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
-        
+
         if not tratamiento:
             return False, "El tratamiento no puede estar vacío"
-        
+
         try:
             # Agregar tratamiento a la memoria del paciente
             self.paciente_actual.agregar_tratamiento(tratamiento)
+            return True, f"Tratamiento agregado exitosamente a {self.paciente_actual.nombre}"
             
             # Registrar el tratamiento en el historial médico de la base de datos
             notas_tratamiento = f"""
@@ -384,22 +359,24 @@ Tratamiento agregado exitosamente al paciente {self.paciente_actual.nombre} {sel
                 
         except Exception as e:
             return False, f"Error al agregar tratamiento: {str(e)}"
-    
+
     def agregar_cita_a_paciente(self, cita: Cita) -> tuple[bool, str]:
+        """Agrega una cita al paciente actual con validaciones"""
         """Agrega una cita al paciente actual con validaciones y la registra en el historial médico"""
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
-        
+
         if not cita:
             return False, "La cita no puede estar vacía"
-        
+
         # Validar que no haya conflicto de horarios
         if self._tiene_conflicto_horario(cita):
             return False, "El paciente ya tiene una cita en ese horario"
-        
+
         try:
             # Agregar cita a la memoria del paciente
             self.paciente_actual.agregar_cita(cita)
+            return True, f"Cita agregada exitosamente a {self.paciente_actual.nombre}"
             
             # Registrar la cita en el historial médico de la base de datos
             fecha_cita = getattr(cita, 'fecha', 'No especificada')
@@ -434,28 +411,129 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
         except Exception as e:
             return False, f"Error al agregar cita: {str(e)}"
 
+    def _tiene_conflicto_horario(self, nueva_cita) -> bool:
+        """Verifica si la nueva cita tiene conflicto con citas existentes"""
+        if not self.paciente_actual:
+            return False
+
+        for cita_existente in self.paciente_actual.citas:
+            # Verificar solapamiento de horarios
+            if (nueva_cita.hora_inicio < cita_existente.hora_fin and 
+                nueva_cita.hora_fin > cita_existente.hora_inicio):
+                return True
+        return False
+
+    def cancelar_cita(self, id_cita: str) -> tuple[bool, str]:
+        """Cancela una cita específica"""
+        """Cancela una cita específica y registra la cancelación en el historial médico"""
+        if not self.paciente_actual:
+            return False, "No hay paciente seleccionado"
+
+        cita = self.paciente_actual.obtener_cita_por_id(id_cita)
+        if not cita:
+            return False, "Cita no encontrada"
+
+        # Regla de negocio: No cancelar citas que ya comenzaron
+        if cita.hora_inicio <= datetime.now():
+            return False, "No se puede cancelar una cita que ya comenzó"
+
+        cita.estado = "Cancelada"
+        return True, "Cita cancelada exitosamente"
+        try:
+            # Actualizar el estado de la cita
+            estado_anterior = cita.estado
+            cita.estado = "Cancelada"
+            
+            # Registrar la cancelación en el historial médico
+            notas_cancelacion = f"""
+CITA CANCELADA:
+• ID de la Cita: {id_cita}
+• Fecha Original: {getattr(cita, 'fecha', 'No especificada')}
+• Hora Original: {getattr(cita, 'hora_inicio', 'No especificada')}
+• Estado Anterior: {estado_anterior}
+• Estado Actual: Cancelada
+• Motivo: Cancelación solicitada
+• Fecha de Cancelación: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Cita cancelada para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
+            """
+            
+            # Insertar en el historial médico de la base de datos
+            self.paciente_actual.agregar_nota_historial_medico(
+                notas_cancelacion.strip(), 
+                "Activo"
+            )
+            
+            return True, "Cita cancelada exitosamente y registrada en historial médico"
+            
+        except Exception as e:
+            return False, f"Error al cancelar cita: {str(e)}"
+
+    def finalizar_tratamiento(self, id_tratamiento: str) -> tuple[bool, str]:
+        """Finaliza un tratamiento específico"""
+        """Finaliza un tratamiento específico y registra la finalización en el historial médico"""
+        if not self.paciente_actual:
+            return False, "No hay paciente seleccionado"
+
+        tratamiento = self.paciente_actual.obtener_tratamiento_por_id(id_tratamiento)
+        if not tratamiento:
+            return False, "Tratamiento no encontrado"
+
+        tratamiento.estado = "Completado"
+        return True, "Tratamiento finalizado exitosamente"
+        try:
+            # Actualizar el estado del tratamiento
+            estado_anterior = tratamiento.estado
+            tratamiento.estado = "Completado"
+            
+            # Registrar la finalización en el historial médico
+            notas_finalizacion = f"""
+TRATAMIENTO FINALIZADO:
+• ID del Tratamiento: {id_tratamiento}
+• Tipo de Tratamiento: {getattr(tratamiento, 'tipo', 'No especificado')}
+• Descripción: {getattr(tratamiento, 'descripcion', 'Sin descripción')}
+• Estado Anterior: {estado_anterior}
+• Estado Actual: Completado
+• Costo Total: ${getattr(tratamiento, 'costo', 0):,.2f}
+• Doctor: {getattr(tratamiento, 'doctor', 'No especificado')}
+• Fecha de Finalización: {datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}
+
+Tratamiento completado exitosamente para el paciente {self.paciente_actual.nombre} {self.paciente_actual.apellido}.
+            """
+            
+            # Insertar en el historial médico de la base de datos
+            self.paciente_actual.agregar_nota_historial_medico(
+                notas_finalizacion.strip(), 
+                "Completado"
+            )
+            
+            return True, "Tratamiento finalizado exitosamente y registrado en historial médico"
+            
+        except Exception as e:
+            return False, f"Error al finalizar tratamiento: {str(e)}"
+
     # ==========================================
     # MÉTODOS DE CONSULTA Y REPORTES (LÓGICA DE NEGOCIO)
     # PROPÓSITO: Obtener información procesada para la vista
     # ==========================================
-    
+
     def get_paciente_actual(self) -> Paciente:
         """Retorna el paciente actual"""
         return self.paciente_actual
-    
+
     def get_todos_los_pacientes(self) -> List[Paciente]:
         """Retorna la lista de todos los pacientes registrados"""
         return self.pacientes_registrados.copy()  # Copia para evitar modificaciones externas
-    
+
     def get_resumen_pacientes(self) -> dict:
         """Obtiene un resumen estadístico de todos los pacientes"""
         total_pacientes = len(self.pacientes_registrados)
         pacientes_con_saldo = len(self.buscar_pacientes_con_saldo_pendiente())
         pacientes_menores = len(self.buscar_pacientes_menores_edad())
-        
+
         saldo_total_pendiente = sum(p.saldo_pendiente for p in self.pacientes_registrados)
         ingresos_totales = sum(p.get_balance_total() for p in self.pacientes_registrados)
-        
+
         return {
             'total_pacientes': total_pacientes,
             'pacientes_con_saldo_pendiente': pacientes_con_saldo,
@@ -464,33 +542,33 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
             'ingresos_totales': ingresos_totales,
             'promedio_saldo_por_paciente': saldo_total_pendiente / total_pacientes if total_pacientes > 0 else 0
         }
-    
+
     def get_pacientes_ordenados_por_nombre(self) -> List[Paciente]:
         """Obtiene la lista de pacientes ordenada por nombre"""
         return sorted(self.pacientes_registrados, key=lambda p: f"{p.apellido} {p.nombre}")
-    
+
     def get_pacientes_ordenados_por_saldo(self, descendente: bool = True) -> List[Paciente]:
         """Obtiene la lista de pacientes ordenada por saldo pendiente"""
         return sorted(self.pacientes_registrados, 
                      key=lambda p: p.saldo_pendiente, reverse=descendente)
-    
+
     # ==========================================
     # MÉTODOS DE FORMATEO Y UTILIDADES PARA LA VISTA
     # PROPÓSITO: Formatear datos para presentación en la vista
     # ==========================================
-    
+
     def formatear_telefono(self, telefono: int) -> str:
         """Formatea el número de teléfono para mejor presentación"""
         if telefono == 0:
             return "No especificado"
-        
+
         telefono_str = str(telefono)
         if len(telefono_str) == 8:
             return f"{telefono_str[:4]}-{telefono_str[4:]}"
         elif len(telefono_str) >= 8:
             return f"+503 {telefono_str[-8:-4]}-{telefono_str[-4:]}"
         return telefono_str
-    
+
     def get_estado_icon(self, estado: str) -> str:
         """Devuelve un icono basado en el estado"""
         estado_lower = estado.lower()
@@ -504,18 +582,18 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
             return "🔄"
         else:
             return "📋"
-    
+
     def formatear_moneda(self, cantidad: float) -> str:
         """Formatea una cantidad como moneda"""
         return f"${cantidad:,.2f}"
-    
+
     def generar_info_basica_paciente(self, paciente: Paciente) -> str:
         """Genera información básica formateada del paciente para mostrar en la vista"""
         edad = paciente.calcular_edad()
         tipo_paciente = "Menor de edad" if paciente.es_menor_de_edad() else "Mayor de edad"
         estado_saldo = "Con saldo pendiente" if paciente.tiene_saldo_pendiente() else "Al día"
         dui_info = f"📋 DUI: {paciente.dui}" if paciente.tiene_dui() else "📋 DUI: No registrado"
-        
+
         return f"""
 🆔 ID: #{paciente.id_paciente}
 👤 {paciente.nombre} {paciente.apellido}
@@ -528,13 +606,13 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
 🩺 Tratamientos: {len(paciente.historial_medico)}
 📅 Citas: {len(paciente.citas)}
 """
-    
+
     def generar_resumen_financiero(self, paciente: Paciente) -> str:
         """Genera un resumen financiero del paciente"""
         total_tratamientos = paciente.calcular_total_tratamientos()
         total_citas = paciente.calcular_total_citas()
         balance_total = paciente.get_balance_total()
-        
+
         return f"""
 💰 RESUMEN FINANCIERO:
    • Costo total tratamientos: {self.formatear_moneda(total_tratamientos)}
@@ -542,18 +620,18 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
    • Saldo pendiente: {self.formatear_moneda(paciente.saldo_pendiente)}
    • Balance total: {self.formatear_moneda(balance_total)}
 """
-    
+
     # ==========================================
     # MÉTODOS DE CÁLCULO Y UTILES (ELIMINADOS - MOVIDOS AL MODELO)
     # PROPÓSITO: Estos métodos ahora están en el modelo Paciente
     # ==========================================
-    
+
     def calcular_edad(self, fecha_nacimiento: datetime) -> int:
         """OBSOLETO: Usar paciente.calcular_edad() directamente del modelo"""
         # Mantenemos por compatibilidad pero delegamos al modelo
         temp_paciente = Paciente("temp", "temp", fecha_nacimiento, "00000000-0", 12345678, "")
         return temp_paciente.calcular_edad()
-    
+
     def cargar_todos_los_pacientes_desde_bd(self) -> tuple[bool, str]:
         """
         Carga todos los pacientes desde la base de datos y los almacena en memoria
@@ -571,14 +649,22 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
             # Actualizar la lista de pacientes registrados
             self.pacientes_registrados = pacientes_bd
             
-            # IMPORTANTE: Renumerar secuencialmente para mantener orden
-            self.resetear_contador_ids_secuencial()
+            # IMPORTANTE: Inicializar correctamente el contador de IDs basado en los IDs existentes en la BD
+            if pacientes_bd:
+                # Obtener el ID más alto de los pacientes cargados
+                max_id = max(p.id_paciente for p in pacientes_bd)
+                # Establecer el contador para el siguiente ID disponible
+                Paciente._contador_id = max_id + 1
+                # Registrar todos los IDs existentes
+                Paciente._pacientes_existentes = [p.id_paciente for p in pacientes_bd]
+                print(f"🔧 Contador de IDs inicializado. Próximo ID disponible: {Paciente._contador_id}")
+                print(f"📊 IDs existentes registrados: {sorted(Paciente._pacientes_existentes)}")
             
             # Actualizar la vista si está disponible
             if self.vista:
                 self.vista.actualizar_lista_pacientes()
             
-            mensaje = f"✅ Se cargaron {len(pacientes_bd)} pacientes desde la base de datos con IDs secuenciales"
+            mensaje = f"✅ Se cargaron {len(pacientes_bd)} pacientes desde la base de datos"
             print(mensaje)
             return True, mensaje
             
@@ -682,6 +768,37 @@ Cita programada exitosamente para el paciente {self.paciente_actual.nombre} {sel
         except Exception as e:
             return False, f"Error al registrar evento: {str(e)}"
 
+    def probar_conexion_bd(self) -> tuple[bool, str]:
+        """
+        Prueba la conexión a la base de datos
+        
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        try:
+            import mysql.connector
+            conexion = mysql.connector.connect(
+                host='localhost',
+                port=3307,
+                database='ClinicaDental',
+                user='root',
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            cursor.execute("SELECT 1")
+            resultado = cursor.fetchone()
+            
+            cursor.close()
+            conexion.close()
+            
+            if resultado:
+                return True, "✅ Conexión a la base de datos exitosa"
+            else:
+                return False, "❌ Error en la consulta de prueba"
+                
+        except Exception as e:
+            return False, f"❌ Error de conexión a la base de datos: {str(e)}"
 
     def crear_historial_medico_inicial(self) -> tuple[bool, str]:
         """
@@ -748,10 +865,6 @@ Sistema: Clínica Dental - Gestión de Pacientes
         except Exception as e:
             return False, f"Error al crear historial médico inicial: {str(e)}"
 
-    def mostrar(self):
-        """Muestra la vista del controlador de pacientes"""
-        return self.inicializar_vista()
-    
 # ==========================================
 # QUERYS EJECUNTANDOSE DESDE EL MODELO  
 # ==========================================
@@ -759,25 +872,6 @@ Sistema: Clínica Dental - Gestión de Pacientes
         """Busca pacientes directamente en la base de datos"""
         print(f"🧠 Buscando pacientes en BD: nombre='{nombre}', apellido='{apellido}'")
         return Paciente.buscar_pacientes_por_nombre_apellido(nombre, apellido)
-
-    def inicializar_sistema_ids_secuenciales(self):
-        """
-        Inicializa el sistema asegurando que todos los IDs sean secuenciales
-        Debe llamarse al inicio de la aplicación
-        """
-        print("🔧 Inicializando sistema de IDs secuenciales...")
-        
-        # Cargar pacientes existentes
-        exito, mensaje = self.cargar_todos_los_pacientes_desde_bd()
-        
-        if exito:
-            print(f"✅ {mensaje}")
-        else:
-            print(f"⚠️ {mensaje}")
-            # Si no hay pacientes o hay error, inicializar contador en 1
-            Paciente._contador_id = 1
-            Paciente._pacientes_existentes = []
-            print("🔄 Sistema inicializado sin pacientes existentes")
 
 
 # ==========================================
@@ -793,6 +887,3 @@ if __name__ == "__main__":
     ventana = PacienteWindow()
     ventana.show()
     app.exec()
-
-
-
