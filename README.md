@@ -175,3 +175,21 @@ python ControladorClinica.py
 
 * Registro y consulta de tratamientos
 * Control de costos
+* Actualización
+* Eliminación
+* Reportes
+
+
+### 🧾 Sistema de Facturación
+
+* Generación automática
+* Control de pagos
+* Consulta de facturas
+* Modificación
+
+### Control de horarios
+* Definir horarios: Disponibilidad por doctor
+* Gestión de estados
+* Visualización de horarios
+* Configuración de días y horas laborales
+* Reportes: Ocupación y disponibilidad
