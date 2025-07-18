@@ -82,6 +82,43 @@ class FacturacionView(QMainWindow):
                 selection-background-color: {self.colors['accent']};
             }}
             
+            QComboBox {{
+                color: #000000;
+                background-color: #ffffff;
+                border: 2px solid {self.colors['secondary']};
+                padding: 8px 12px;
+                font-size: 14px;
+                font-weight: normal;
+                min-height: 30px;
+                height: 45px;
+                min-width: 300px;
+                width: 400px;
+            }}
+            
+            QComboBox QAbstractItemView {{
+                color: #000000;
+                background-color: #ffffff;
+                border: 1px solid {self.colors['secondary']};
+                selection-background-color: {self.colors['accent']};
+                selection-color: #ffffff;
+                font-size: 14px;
+                min-width: 350px;
+            }}
+            
+            QComboBox QAbstractItemView::item {{
+                color: #000000;
+                background-color: #ffffff;
+                padding: 10px 8px;
+                border: none;
+                min-height: 25px;
+                font-size: 14px;
+            }}
+            
+            QComboBox QAbstractItemView::item:selected {{
+                color: #ffffff;
+                background-color: {self.colors['accent']};
+            }}
+            
             QComboBox::drop-down {{
                 border: none;
                 background-color: {self.colors['secondary']};
@@ -176,18 +213,38 @@ class FacturacionView(QMainWindow):
         self.numero_factura_edit = QLineEdit()
         self.numero_factura_edit.setPlaceholderText("Ej: 5, 10, 25...")
         self.numero_factura_edit.setMinimumHeight(35)
-        self.numero_factura_edit.setMaximumWidth(150)
+        self.numero_factura_edit.setMinimumWidth(150)
+        self.numero_factura_edit.setMaximumWidth(200)
+        self.numero_factura_edit.setStyleSheet("""
+            QLineEdit {
+                padding: 8px 12px;
+                border: 2px solid #ddd;
+                border-radius: 5px;
+                background-color: white;
+                color: #000000;
+                font-size: 14px;
+                font-weight: normal;
+            }
+            QLineEdit:focus {
+                border-color: #5e81ac;
+            }
+        """)
         
         # Campo ID Factura completo (automático - solo lectura)
         self.id_factura_edit = QLineEdit()
         self.id_factura_edit.setPlaceholderText("Se generará automáticamente...")
         self.id_factura_edit.setMinimumHeight(35)
+        self.id_factura_edit.setMinimumWidth(350)
         self.id_factura_edit.setReadOnly(True)
         self.id_factura_edit.setStyleSheet("""
             QLineEdit {
-                background-color: #f0f0f0;
-                color: #666;
+                background-color: #f8f9fa;
+                color: #495057;
                 font-style: italic;
+                padding: 8px 12px;
+                border: 2px solid #e9ecef;
+                border-radius: 5px;
+                font-size: 14px;
             }
         """)
         
@@ -201,14 +258,48 @@ class FacturacionView(QMainWindow):
         self.paciente_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.paciente_combo.setStyleSheet("""
             QComboBox {
-                padding: 8px;
+                padding: 8px 12px;
                 border: 2px solid #ddd;
                 border-radius: 5px;
                 background-color: white;
+                color: #000000;
                 font-size: 14px;
+                font-weight: normal;
+                height: 40px;
+                min-width: 300px;
             }
             QComboBox:focus {
                 border-color: #5e81ac;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                border-left: 1px solid #ddd;
+                background-color: #f0f0f0;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: white;
+                color: #000000;
+                selection-background-color: #e3f2fd;
+                selection-color: #000000;
+                border: 1px solid #ddd;
+                font-size: 14px;
+                min-width: 300px;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 8px 12px;
+                min-height: 25px;
+                color: #000000;
+                background-color: white;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #e3f2fd;
+                color: #000000;
             }
         """)
         
@@ -219,14 +310,48 @@ class FacturacionView(QMainWindow):
         self.tratamiento_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.tratamiento_combo.setStyleSheet("""
             QComboBox {
-                padding: 8px;
+                padding: 8px 12px;
                 border: 2px solid #ddd;
                 border-radius: 5px;
                 background-color: white;
+                color: #000000;
                 font-size: 14px;
+                font-weight: normal;
+                height: 40px;
+                min-width: 300px;
             }
             QComboBox:focus {
                 border-color: #5e81ac;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                border-left: 1px solid #ddd;
+                background-color: #f0f0f0;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: white;
+                color: #000000;
+                selection-background-color: #e3f2fd;
+                selection-color: #000000;
+                border: 1px solid #ddd;
+                font-size: 14px;
+                min-width: 300px;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 8px 12px;
+                min-height: 25px;
+                color: #000000;
+                background-color: white;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #e3f2fd;
+                color: #000000;
             }
         """)
         

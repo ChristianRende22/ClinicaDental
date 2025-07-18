@@ -1,5 +1,32 @@
 import mysql.connector
 from mysql.connector import Error
+def obtener_conexion():
+    """Establece y devuelve una conexión segura a la base de datos MySQL"""
+    try:
+        print("🔄 Intentando conectar a la base de datos...")
+        conexion = mysql.connector.connect(
+            host='localhost',
+            port=3307,
+            user='root',
+            password='1234',
+            database='ClinicaDental'
+        )
+        print("✅ Conexión exitosa a la base de datos")
+        return conexion
+    except mysql.connector.Error as e:
+        print(f"❌ Error de MySQL al conectar a la base de datos: {e}")
+        if e.errno == 2003:
+            print("⚠️  Error 2003: No se puede conectar al servidor MySQL. Verifica que el servidor esté ejecutándose.")
+        elif e.errno == 1049:
+            print("⚠️  Error 1049: Base de datos 'ClinicaDental' no existe.")
+        elif e.errno == 1045:
+            print("⚠️  Error 1045: Acceso denegado. Verifica usuario y contraseña.")
+        print("⚠️  Funcionando en modo sin base de datos")
+        return None
+    except Exception as e:
+        print(f"❌ Error inesperado al conectar a la base de datos: {e}")
+        print("⚠️  Funcionando en modo sin base de datos")
+        return None
 from datetime import datetime, time as datetime_time
 from typing import List
 
@@ -59,14 +86,10 @@ class Horario:
         cursor = None
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
-
+            conexion = obtener_conexion()
+            if conexion is None:
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return False
             cursor = conexion.cursor()
 
             # Verificar que el doctor existe en la base de datos
@@ -125,14 +148,10 @@ class Horario:
         horarios = []
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
-
+            conexion = obtener_conexion()
+            if conexion is None:
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return horarios
             cursor = conexion.cursor()
 
             # Query con JOIN para obtener información del doctor
@@ -223,13 +242,10 @@ class Horario:
         cursor = None
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion = obtener_conexion()   
+            if conexion is None:
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return False
 
             cursor = conexion.cursor()
 
@@ -268,13 +284,10 @@ class Horario:
         cursor = None
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion = obtener_conexion()
+            if conexion is None:
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return False
 
             cursor = conexion.cursor()
 

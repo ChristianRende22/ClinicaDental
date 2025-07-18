@@ -5,6 +5,26 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from mysql.connector import Error
+def conectar_bd():
+    """
+    Conecta a la base de datos MySQL y retorna la conexión.
+    :return: Objeto de conexión a la base de datos.
+    """
+    try:
+        conexion = mysql.connector.connect(
+            host='localhost',
+            database='ClinicaDental',
+            user='root',
+            port=3307,
+            password='1234'
+        )
+        if conexion.is_connected():
+            print("Conexión exitosa a la base de datos.")
+            return conexion
+    except Error as e:
+        print(f"Error al conectar a la base de datos: {e}")
+        return None
+    
 
 # Importar los modelos existentes que ya funcionan
 try:
@@ -52,12 +72,10 @@ class FacturacionModel:
         """
         try:
             # Usar la misma lógica de conexión que el resto del archivo
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                password=''
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
             cursor = conexion.cursor()
             
             # Buscar TODAS las facturas con formato FAC-numero- y encontrar el número máximo
@@ -241,13 +259,10 @@ class FacturacionModel:
                 print("❌ Error: ID Paciente está vacío")
                 return False
             
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
 
             cursor = conexion.cursor()
             print("✅ Conexión a la base de datos establecida")
@@ -307,13 +322,10 @@ class FacturacionModel:
         cursor = None
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
 
             cursor = conexion.cursor()
 
@@ -348,13 +360,10 @@ class FacturacionModel:
         cursor = None
         
         try:
-            # Conectar a la base de datos
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                password=''
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
             cursor = conexion.cursor()
             
             # Buscar facturas del paciente creadas hoy
@@ -394,13 +403,10 @@ class FacturacionModel:
         facturas = []
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
 
             cursor = conexion.cursor()
 

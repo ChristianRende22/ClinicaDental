@@ -83,20 +83,13 @@ class Tratamiento:
     @staticmethod
     def obtener_todos_tratamientos():
         """Obtiene todos los tratamientos de la base de datos"""
-        conexion = None
+        conn = None
         cursor = None
         tratamientos = []
         
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
-            
-            cursor = conexion.cursor()
+            conn = Tratamiento.conectar_bd()
+            cursor = conn.cursor()
             # CORREGIDO: Agregar más campos a la query
             query = "SELECT ID_Tratamiento, Descripcion, Costo, ID_Doctor, Fecha, Estado FROM Tratamiento"
             cursor.execute(query)
@@ -128,8 +121,8 @@ class Tratamiento:
         finally:
             if cursor:
                 cursor.close()
-            if conexion and conexion.is_connected():
-                conexion.close()
+            if conn and conn.is_connected():
+                conn.close()
 
     def __str__(self):
         return (f"Tratamiento ID: {self.id_tratamiento} \n " 

@@ -291,6 +291,32 @@ class Paciente:
 
 
     @staticmethod
+    def probar_conexion_bd(self) -> tuple[bool, str]:
+        """
+        Prueba la conexión a la base de datos
+        
+        Returns:
+            tuple[bool, str]: (éxito, mensaje)
+        """
+        try:
+            conexion = obtener_conexion()
+            if not conexion:
+                return False, "❌ No se pudo conectar a la base de datos"
+            
+            cursor = conexion.cursor()
+            cursor.execute("SELECT 1")
+            resultado = cursor.fetchone()
+            
+            cursor.close()
+            conexion.close()
+            
+            if resultado:
+                return True, "✅ Conexión a la base de datos exitosa"
+            else:
+                return False, "❌ Error en la consulta de prueba"
+                
+        except Exception as e:
+            return False, f"❌ Error de conexión a la base de datos: {str(e)}"
     def validar_telefono(telefono: int) -> bool:
         """Valida que el teléfono tenga al menos 8 dígitos"""
         return len(str(telefono)) >= 8

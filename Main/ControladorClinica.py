@@ -37,12 +37,12 @@ def main():
     controladores = [        
         (Login, " - Sistema de Login"),        
         (Menu, " - Menú Principal - 🎯 CENTRO DE NAVEGACIÓN"),
-        (Cita, " - Gestión de Citas"),        
-        (Paciente, " - Gestión de Pacientes"),
-        (Dcotor, " - Gestión de Doctores"), 
-        (Factura, " - Gestión de Facturas"),
-        (Horario, "  - Gestión de Horarios"),
-        (Tratamiento, " - Gestión de Tratamientos")
+        # (Cita, " - Gestión de Citas"),        
+        # (Paciente, " - Gestión de Pacientes"),
+        # (Dcotor, " - Gestión de Doctores"), 
+        # (Factura, " - Gestión de Facturas"),
+        # (Horario, "  - Gestión de Horarios"),
+        # (Tratamiento, " - Gestión de Tratamientos")
     ]
     
     for modulo, nombre in controladores:

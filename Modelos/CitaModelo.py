@@ -1,5 +1,25 @@
 import mysql.connector
 from mysql.connector import Error
+def conectar_bd():
+    """
+    Conecta a la base de datos MySQL y retorna la conexión.
+    :return: Objeto de conexión a la base de datos.
+    """
+    try:
+        conexion = mysql.connector.connect(
+            host='localhost',
+            database='ClinicaDental',
+            user='root',
+            port=3307,
+            password='1234'
+        )
+        if conexion.is_connected():
+            print("Conexión exitosa a la base de datos.")
+            return conexion
+    except Error as e:
+        print(f"Error al conectar a la base de datos: {e}")
+        return None
+    
 import sys
 import os
 
@@ -193,14 +213,10 @@ class Cita:
         cursor = None     
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
-
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
             cursor = conexion.cursor()
 
             query = """
@@ -255,13 +271,10 @@ class Cita:
         citas = []
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
 
             cursor = conexion.cursor()
 
@@ -396,13 +409,10 @@ class Cita:
         cursor = None
 
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion= conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
 
             cursor = conexion.cursor()
 

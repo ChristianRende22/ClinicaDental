@@ -768,38 +768,7 @@ Tratamiento completado exitosamente para el paciente {self.paciente_actual.nombr
         except Exception as e:
             return False, f"Error al registrar evento: {str(e)}"
 
-    def probar_conexion_bd(self) -> tuple[bool, str]:
-        """
-        Prueba la conexión a la base de datos
-        
-        Returns:
-            tuple[bool, str]: (éxito, mensaje)
-        """
-        try:
-            import mysql.connector
-            conexion = mysql.connector.connect(
-                host='localhost',
-                port=3307,
-                database='ClinicaDental',
-                user='root',
-                password='1234'
-            )
-            
-            cursor = conexion.cursor()
-            cursor.execute("SELECT 1")
-            resultado = cursor.fetchone()
-            
-            cursor.close()
-            conexion.close()
-            
-            if resultado:
-                return True, "✅ Conexión a la base de datos exitosa"
-            else:
-                return False, "❌ Error en la consulta de prueba"
-                
-        except Exception as e:
-            return False, f"❌ Error de conexión a la base de datos: {str(e)}"
-
+    
     def crear_historial_medico_inicial(self) -> tuple[bool, str]:
         """
         Crea un historial médico inicial para el paciente actual si no tiene uno
@@ -810,11 +779,7 @@ Tratamiento completado exitosamente para el paciente {self.paciente_actual.nombr
         if not self.paciente_actual:
             return False, "No hay paciente seleccionado"
         
-        # Primero probar la conexión a la BD
-        conexion_ok, mensaje_conexion = self.probar_conexion_bd()
-        if not conexion_ok:
-            return False, f"Error de conexión a la base de datos: {mensaje_conexion}"
-        
+       
         # Verificar si ya tiene historial médico
         try:
             if self.paciente_actual.tiene_historial_medico():

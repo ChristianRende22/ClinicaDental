@@ -1,7 +1,99 @@
 import mysql.connector
 from mysql.connector import Error
-
 class Doctor:
+    # Datos hardcodeados como respaldo cuando falle la conexión
+    DOCTORES_HARDCODE = [
+        {
+            'ID_Doctor': 1,
+            'Nombre': 'Juan Carlos',
+            'Apellido': 'Pérez',
+            'Especialidad': 'Ortodoncia',
+            'Telefono': '7123-4567',
+            'Correo': 'jperez@clinica.com'
+        },
+        {
+            'ID_Doctor': 2,
+            'Nombre': 'María Elena',
+            'Apellido': 'González',
+            'Especialidad': 'Endodoncia',
+            'Telefono': '7234-5678',
+            'Correo': 'mgonzalez@clinica.com'
+        },
+        {
+            'ID_Doctor': 3,
+            'Nombre': 'Roberto',
+            'Apellido': 'Martínez',
+            'Especialidad': 'Cirugía Oral',
+            'Telefono': '7345-6789',
+            'Correo': 'rmartinez@clinica.com'
+        },
+        {
+            'ID_Doctor': 4,
+            'Nombre': 'Ana Sofía',
+            'Apellido': 'López',
+            'Especialidad': 'Periodoncia',
+            'Telefono': '7456-7890',
+            'Correo': 'alopez@clinica.com'
+        },
+        {
+            'ID_Doctor': 5,
+            'Nombre': 'Carlos Eduardo',
+            'Apellido': 'Hernández',
+            'Especialidad': 'Odontología General',
+            'Telefono': '7567-8901',
+            'Correo': 'chernandez@clinica.com'
+        }
+    ]
+    
+    # Citas hardcodeadas como respaldo
+    CITAS_HARDCODE = [
+        {
+            'id_cita': 1,
+            'fecha': '15/07/2025',
+            'hora_inicio': '08:00',
+            'hora_fin': '09:00',
+            'estado': 'Programada',
+            'costo': '$45.00',
+            'paciente_nombre': 'José',
+            'paciente_apellido': 'Ramírez',
+            'paciente_dui': '12345678-9',
+            'paciente_telefono': '7111-2222',
+            'tratamiento_descripcion': 'Limpieza dental',
+            'tratamiento_costo': '$35.00',
+            'id_doctor': 1
+        },
+        {
+            'id_cita': 2,
+            'fecha': '16/07/2025',
+            'hora_inicio': '10:00',
+            'hora_fin': '11:30',
+            'estado': 'Completada',
+            'costo': '$125.00',
+            'paciente_nombre': 'María',
+            'paciente_apellido': 'Flores',
+            'paciente_dui': '98765432-1',
+            'paciente_telefono': '7333-4444',
+            'tratamiento_descripcion': 'Brackets metálicos',
+            'tratamiento_costo': '$120.00',
+            'id_doctor': 1
+        },
+        {
+            'id_cita': 3,
+            'fecha': '17/07/2025',
+            'hora_inicio': '14:00',
+            'hora_fin': '15:00',
+            'estado': 'Programada',
+            'costo': '$75.00',
+            'paciente_nombre': 'Pedro',
+            'paciente_apellido': 'Silva',
+            'paciente_dui': '11223344-5',
+            'paciente_telefono': '7555-6666',
+            'tratamiento_descripcion': 'Tratamiento de conducto',
+            'tratamiento_costo': '$70.00',
+            'id_doctor': 2
+        }
+    ]
+
     def __init__(self, nombre, apellido, num_junta_medica, especialidad, telefono, correo):
         self.num_junta_medica = num_junta_medica
         self.nombre = nombre
@@ -27,13 +119,24 @@ class Doctor:
     
     @staticmethod
     def conectar_db():
-        return mysql.connector.connect(
-            host="localhost",
-            port = 3307,
-            user = 'root',
-            password = '1234',
-            database = 'ClinicaDental'            
-        )
+        """
+        Conecta a la base de datos MySQL y retorna la conexión.
+        :return: Objeto de conexión a la base de datos.
+        """
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                port=3307,
+                password='1234'
+            )
+            if conexion.is_connected():
+                print("Conexión exitosa a la base de datos.")
+                return conexion
+        except Error as e:
+            print(f"Error al conectar a la base de datos: {e}")
+            return None
 
     @staticmethod
     def obtener_doctores_desde_db():
@@ -63,7 +166,20 @@ class Doctor:
             return doctores
         except Exception as e:
             print(f"Error en obtener_doctores_desde_db: {e}")
-            raise
+            print("Usando datos hardcodeados como respaldo...")
+            # Usar datos hardcodeados como respaldo
+            doctores = []
+            for doctor_data in Doctor.DOCTORES_HARDCODE:
+                doctor = Doctor(
+                    nombre=doctor_data['Nombre'],
+                    apellido=doctor_data['Apellido'],
+                    num_junta_medica=doctor_data['ID_Doctor'],
+                    especialidad=doctor_data['Especialidad'],
+                    telefono=doctor_data['Telefono'],
+                    correo=doctor_data['Correo']
+                )
+                doctores.append(doctor)
+            return doctores
 
     @staticmethod
     def insert_doc_db(doctor: 'Doctor') -> bool:
@@ -146,7 +262,22 @@ class Doctor:
             
         except Error as e:
             print(f"Error al obtener doctores: {e}")
-            return []
+            print("Usando datos hardcodeados como respaldo...")
+            # Usar datos hardcodeados como respaldo
+            doctores = []
+            for doctor_data in Doctor.DOCTORES_HARDCODE:
+                doctor = Doctor(
+                    nombre=doctor_data['Nombre'],
+                    apellido=doctor_data['Apellido'],
+                    num_junta_medica=doctor_data['ID_Doctor'],
+                    especialidad=doctor_data['Especialidad'],
+                    telefono=doctor_data['Telefono'],
+                    correo=doctor_data['Correo']
+                )
+                doctor.id_doctor = doctor_data['ID_Doctor']
+                doctores.append(doctor)
+                print(f"Doctor hardcodeado agregado: {doctor.nombre} {doctor.apellido}")
+            return doctores
             
         finally:
             if cursor:
@@ -252,10 +383,48 @@ class Doctor:
             
         except Error as e:
             print(f"Error al obtener citas del doctor: {e}")
-            return []
+            print("Usando datos hardcodeados como respaldo...")
+            # Usar datos hardcodeados como respaldo
+            citas_doctor = []
+            for cita in Doctor.CITAS_HARDCODE:
+                if cita['id_doctor'] == num_junta_medica:
+                    citas_doctor.append(cita)
+            return citas_doctor
             
         finally:
             if cursor:
                 cursor.close()
             if conexion and conexion.is_connected():
                 conexion.close()
+
+    @staticmethod
+    def obtener_doctores_hardcode():
+        """
+        Devuelve una lista de doctores usando únicamente datos hardcodeados.
+        Útil para testing o cuando se necesite garantizar datos disponibles.
+        """
+        doctores = []
+        for doctor_data in Doctor.DOCTORES_HARDCODE:
+            doctor = Doctor(
+                nombre=doctor_data['Nombre'],
+                apellido=doctor_data['Apellido'],
+                num_junta_medica=doctor_data['ID_Doctor'],
+                especialidad=doctor_data['Especialidad'],
+                telefono=doctor_data['Telefono'],
+                correo=doctor_data['Correo']
+            )
+            doctor.id_doctor = doctor_data['ID_Doctor']
+            doctores.append(doctor)
+        return doctores
+
+    @staticmethod
+    def obtener_citas_hardcode(num_junta_medica: int = None):
+        """
+        Devuelve citas usando únicamente datos hardcodeados.
+        :param num_junta_medica: Si se especifica, filtra las citas por doctor
+        :return: Lista de citas hardcodeadas
+        """
+        if num_junta_medica is None:
+            return Doctor.CITAS_HARDCODE.copy()
+        else:
+            return [cita for cita in Doctor.CITAS_HARDCODE if cita['id_doctor'] == num_junta_medica]
