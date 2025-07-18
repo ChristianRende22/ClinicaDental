@@ -313,11 +313,16 @@ class ControladorDoctor:
                 return
         QMessageBox.warning(self.vista, "❌ Error", "No se encontró el doctor con ese DUI.")
 
-if __name__ == "__main__":
+def main():
+    """Función principal para ejecutar el controlador de doctores"""
     from PyQt6.QtWidgets import QApplication
     from Vistas.DoctorVista import DoctorWindow
 
     app = QApplication([])
     window = DoctorWindow()
+    controlador = ControladorDoctor(window)
     window.show()
-    app.exec()
+    app.exec()  # Sin sys.exit() para permitir continuar
+
+if __name__ == "__main__":
+    main()

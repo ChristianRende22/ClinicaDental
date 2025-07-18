@@ -600,11 +600,21 @@ class ControladorCita:
 # PROPÓSITO: Inicializar la aplicación directamente desde el controlador
 # ==========================================
 
-if __name__ == "__main__":  
+def main():
+    """Función principal para ejecutar el controlador de citas"""
     from PyQt6.QtWidgets import QApplication
     from Vistas.CitaVista import CitaWindow
 
-    app = QApplication([])
+    # Usar la instancia existente de QApplication si existe
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    
+    controlador = ControladorCita()
     window = CitaWindow()
+    controlador.set_vista(window)
     window.show()
-    app.exec()
+    app.exec()  # Sin sys.exit() para permitir continuar
+
+if __name__ == "__main__":  
+    main()

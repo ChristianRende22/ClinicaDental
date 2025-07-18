@@ -224,11 +224,14 @@ class MenuControlador:
         """Obtiene los módulos disponibles para el usuario actual"""
         return self.modelo.obtener_modulos_disponibles()
 
-if __name__ == "__main__":
+def main():
+    """Función principal para ejecutar el controlador de menú"""
     from PyQt6.QtWidgets import QApplication
-    import sys
     
-    app = QApplication(sys.argv)
+    app = QApplication([])
     controlador = MenuControlador("admin", "admin")
     controlador.mostrar()
-    sys.exit(app.exec())
+    app.exec()  # Sin sys.exit() para permitir continuar
+
+if __name__ == "__main__":
+    main()

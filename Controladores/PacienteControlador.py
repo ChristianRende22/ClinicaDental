@@ -879,11 +879,21 @@ Sistema: Clínica Dental - Gestión de Pacientes
 # PROPÓSITO: Inicializar la aplicación directamente desde el controlador ##tentativo para iniciar la vista
 # ==========================================
 
-if __name__ == "__main__":
+def main():
+    """Función principal para ejecutar el controlador de pacientes"""
     from PyQt6.QtWidgets import QApplication
-    from Vistas.PacienteVista import PacienteWindow  # Ajustá si tu estructura de carpetas es diferente
+    from Vistas.PacienteVista import PacienteWindow
 
-    app = QApplication([])
+    # Usar la instancia existente de QApplication si existe
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    
+    controlador = PacienteControlador()
     ventana = PacienteWindow()
+    controlador.set_vista(ventana)
     ventana.show()
-    app.exec()
+    app.exec()  # Sin sys.exit() para permitir continuar
+
+if __name__ == "__main__":
+    main()

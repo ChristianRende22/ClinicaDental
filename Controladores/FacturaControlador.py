@@ -245,7 +245,8 @@ class FacturacionController:
             traceback.print_exc()
 
 # CORREGIDO: El bloque if __name__ debe estar al nivel del módulo (sin indentación dentro de la clase)
-if __name__ == "__main__":
+def main():
+    """Función principal para ejecutar la aplicación de facturación"""
     print("🚀 Iniciando aplicación de facturación...")
     
     app = QApplication(sys.argv)
@@ -263,7 +264,7 @@ if __name__ == "__main__":
         controller.show()
         
         print("▶️ Iniciando loop de eventos...")
-        sys.exit(app.exec())
+        app.exec()  # Sin sys.exit() para permitir continuar
         
     except mysql.connector.Error as db_error:
         print(f"❌ Error de base de datos: {db_error}")
@@ -288,3 +289,6 @@ if __name__ == "__main__":
         QMessageBox.critical(None, "Error Crítico", 
                            f"Error inesperado al iniciar la aplicación:\n\n{str(e)}")
         sys.exit(1)
+        
+if __name__ == "__main__":
+    main()

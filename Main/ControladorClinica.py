@@ -1,66 +1,65 @@
+# Script consolidado que ejecuta todos los controladores
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from PyQt6.QtWidgets import QApplication
-from Controladores.LoginControlador import LoginControlador
-from Controladores.MenuControlador import MenuControlador
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-class ControladorClinica:
-    def __init__(self):
-        self.login_controlador = None
-        self.menu_controlador = None
-        self.usuario_actual = None
-        self.tipo_usuario_actual = None
+import Controladores.CitaControlador as ej1
+import Controladores.DoctorControlador as ej2
+import Controladores.FacturaControlador as ej3
+import Controladores.HorarioControlador as ej4
+import Controladores.LoginControlador as ej5
+import Controladores.MenuControlador as ej6
+import Controladores.PacienteControlador as ej7
+import Controladores.TratamientoControlador as ej8
+
+# Script consolidado que ejecuta todos los controladores
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from PyQt6.QtWidgets import QApplication
+
+import Controladores.CitaControlador as Cita
+import Controladores.DoctorControlador as Dcotor
+import Controladores.FacturaControlador as Factura
+import Controladores.HorarioControlador as Horario
+import Controladores.LoginControlador as Login
+import Controladores.MenuControlador as Menu
+import Controladores.PacienteControlador as Paciente
+import Controladores.TratamientoControlador as Tratamiento
+def ejecutar_controlador_secuencial(modulo, nombre):
+    """Ejecuta un controlador y espera a que se cierre para continuar"""
+    print(f"====== {nombre} ======")
+    try:
+        # Ejecutar el controlador - cada uno maneja su propia QApplication
+        modulo.main()
+        print(f"✅ {nombre} completado")
         
-    def iniciar_aplicacion(self):
-        """Inicia la aplicación mostrando la ventana de login"""
-        self.login_controlador = LoginControlador()
-        
-        # Conectar la señal de login exitoso
-        self.login_controlador.vista.login_exitoso.connect(self.on_login_exitoso)
-        
-        # Mostrar ventana de login
-        self.login_controlador.mostrar()
+    except Exception as e:
+        print(f"❌ Error en {nombre}: {e}")
+
+
+def main():
+    """Función principal que ejecuta todos los controladores en secuencia"""
+    print("🚀 Iniciando ejecución secuencial de controladores...")
+    print("📋 Se ejecutará un controlador a la vez. Cierre la ventana para continuar al siguiente.\n")
     
-    def on_login_exitoso(self, tipo_usuario):
-        """Maneja el evento cuando el login es exitoso"""
-        self.tipo_usuario_actual = tipo_usuario
-        
-        # Cerrar ventana de login
-        self.login_controlador.vista.close()
-        
-        # Abrir menú principal
-        self.abrir_menu()
+    controladores = [        
+        (Login, " - Sistema de Login"),        
+        (Menu, " - Menú Principal"),
+        (Cita, " - Gestión de Citas"),        
+        (Paciente, " - Gestión de Pacientes"),
+        (Dcotor, " - Gestión de Doctores"), 
+        (Factura, " - Gestión de Facturas"),
+        (Horario, "  - Gestión de Horarios"),
+        (Tratamiento, " - Gestión de Tratamientos")
+    ]
     
-    def abrir_menu(self):
-        """Abre la ventana del menú principal"""
-        self.menu_controlador = MenuControlador(
-            usuario=self.usuario_actual,
-            tipo_usuario=self.tipo_usuario_actual
-        )
-        
-        # Conectar señal de cerrar sesión para volver al login
-        self.menu_controlador.vista.cerrar_sesion.connect(self.cerrar_sesion)
-        
-        # Mostrar menú
-        self.menu_controlador.mostrar()
+    for modulo, nombre in controladores:
+        ejecutar_controlador_secuencial(modulo, nombre)
+        print(f"🔄 Continuando al siguiente controlador...\n")
     
-    def cerrar_sesion(self):
-        """Cierra la sesión actual y vuelve al login"""
-        # Cerrar ventana de menú
-        if self.menu_controlador:
-            self.menu_controlador.cerrar()
-            self.menu_controlador = None
-        
-        # Limpiar datos de sesión
-        self.usuario_actual = None
-        self.tipo_usuario_actual = None
-        
-        # Volver a mostrar login
-        self.iniciar_aplicacion()
+    print("🎉 Todos los controladores han sido ejecutados!")
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    controlador = ControladorClinica()
-    controlador.iniciar_aplicacion()
-    sys.exit(app.exec())
+    main()

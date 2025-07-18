@@ -134,10 +134,16 @@ class HorarioController:
         self.cargar_datos_desde_bd()
         self.actualizar_vista()
  
-if __name__ == "__main__":
+def main():
+    """Función principal para ejecutar el controlador de horarios"""
     from Vistas.HorarioVista import HorarioView
-    app = QApplication(sys.argv)
+    from PyQt6.QtWidgets import QApplication
+    
+    app = QApplication([])
     window = HorarioView()
     controller = HorarioController(window)
     window.show()
-    sys.exit(app.exec())
+    app.exec()  # Sin sys.exit() para permitir continuar
+
+if __name__ == "__main__":
+    main()

@@ -534,12 +534,12 @@ class PacienteWindow(QMainWindow):
         self.buscar_btn.clicked.connect(self.buscar_pacientes_por_nombre)
         self.buscar_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {self.colors['accent']};
+                background-color: {self.colors['secondary']};
                 font-size: 12px;
                 padding: 8px 12px;
             }}
             QPushButton:hover {{
-                background-color: {self.colors['primary']};
+                background-color: {self.colors['accent']};
             }}
         """)
         
@@ -562,14 +562,14 @@ class PacienteWindow(QMainWindow):
         self.historial_medico_btn.clicked.connect(self.mostrar_historial_medico)
         self.historial_medico_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #e74c3c;
+                background-color: {self.colors['secondary']};
                 color: white;
                 font-size: 12px;
                 padding: 8px 12px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: #c0392b;
+                background-color: {self.colors['accent']};
             }}
         """)
         
@@ -622,7 +622,7 @@ class PacienteWindow(QMainWindow):
         self.crear_historial_btn.clicked.connect(self.crear_historial_medico_inicial)
         self.crear_historial_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #27ae60;
+               background-color: {self.colors['secondary']};
                 color: white;
                 border: none;
                 padding: 10px 15px;
@@ -632,10 +632,10 @@ class PacienteWindow(QMainWindow):
                 min-width: 160px;
             }}
             QPushButton:hover {{
-                background-color: #229954;
+                background-color: {self.colors['accent']};
             }}
             QPushButton:pressed {{
-                background-color: #1e8449;
+                background-color: {self.colors['accent']};
             }}
         """)
         

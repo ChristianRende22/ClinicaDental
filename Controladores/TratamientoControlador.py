@@ -86,10 +86,22 @@ class TratamientoControlador:
             estado=estado
         )
         return id_tratamiento
+
+def main():
+    """Función principal para ejecutar el controlador de tratamientos"""
+    from PyQt6.QtWidgets import QApplication
+    from Vistas.TratamientoVista import AgregarTratamientoDialog
+
+    # Usar la instancia existente de QApplication si existe
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
     
-# prueba
-from Modelos.PacienteModelo import Paciente
+    controlador = TratamientoControlador(doctor=None)
+    vista = AgregarTratamientoDialog(controlador=controlador)
+    vista.show()
+    app.exec()  # Sin sys.exit() para permitir continuar
+    
 
 if __name__ == "__main__":
-    controlador = TratamientoControlador(doctor=None)
-    controlador.mostrar_vista()
+    main()

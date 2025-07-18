@@ -53,12 +53,15 @@ class LoginControlador:
         print(f"Abriendo ventana principal para: {tipo_usuario}")
         pass
 
-if __name__ == "__main__":
+def main():
+    """Función principal para ejecutar el controlador de login"""
     from PyQt6.QtWidgets import QApplication
-    import sys
     
-    app = QApplication(sys.argv)
+    app = QApplication([])
     controlador = LoginControlador()
     controlador.mostrar()
-    sys.exit(app.exec())
+    app.exec()  # Sin sys.exit() para permitir continuar
+
+if __name__ == "__main__":
+    main()
         
