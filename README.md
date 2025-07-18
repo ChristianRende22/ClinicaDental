@@ -1,4 +1,5 @@
 🦷 Sistema de Gestión Integral para Clínica Dental
+
     Un sistema completo de gestión desarrollado en Python con PyQt6 y MySQL, específicamente diseñado para optimizar la administración integral de Dental Smiling.
     El sistema implementa una arquitectura MVC (Modelo-Vista-Controlador) para garantizar un código organizado, mantenible y escalable.
 
