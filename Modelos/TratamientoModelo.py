@@ -2,6 +2,8 @@ import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import mysql.connector
+from mysql.connector import Error
+from PyQt6.QtCore import QDate
 
 from Modelos.DoctorModelo import Doctor
 from datetime import datetime
@@ -90,6 +92,7 @@ class Tratamiento:
                 host='localhost',
                 database='ClinicaDental',
                 user='root',
+                port=3307,
                 password='1234'
             )
             

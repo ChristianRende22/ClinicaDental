@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector import Error
 
 class Doctor:
     def __init__(self, nombre, apellido, num_junta_medica, especialidad, telefono, correo):
@@ -28,7 +29,7 @@ class Doctor:
     def conectar_db():
         return mysql.connector.connect(
             host="localhost",
-            port = 3306,
+            port = 3307,
             user = 'root',
             password = '1234',
             database = 'ClinicaDental'            
@@ -104,7 +105,7 @@ class Doctor:
             if 'conexion' in locals():
                 conexion.close()
 
-        @staticmethod
+    @staticmethod
     def obtener_todos_doctores():
         """Obtiene todos los doctores de la base de datos"""
         conexion = None
@@ -116,6 +117,7 @@ class Doctor:
                 host='localhost',
                 database='ClinicaDental',
                 user='root',
+                port=3307,
                 password='1234'
             )
             

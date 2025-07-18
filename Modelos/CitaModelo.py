@@ -3,7 +3,8 @@ from mysql.connector import Error
 import sys
 import os
 
-import mysql.connector.opentelemetry 
+
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # ==========================================

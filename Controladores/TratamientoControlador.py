@@ -20,10 +20,10 @@ class TratamientoControlador:
             self.vista = AgregarTratamientoDialog(controlador=self)
 
         resultado = self.vista.exec()
-        if resultado == QDialog.accepted:
-            print("Tratamiento agregado correctamente")
-        else:
-            print("Cancelado o cerrado")
+        # if resultado == QDialog.accepted:
+        #     print("Tratamiento agregado correctamente")
+        # else:
+        #     print("Cancelado o cerrado")
 
     def crear_tratamiento(self, descripcion, costo, fecha, estado, id_doctor):
         # No creamos un objeto completo, solo los datos necesarios para guardar.

@@ -13,6 +13,7 @@ class MenuControlador:
         
         # Referencias a controladores de módulos
         self.controlador_pacientes = None
+        self.cita_window = None  # Inicializar cita_window como None
         
         # Inicializar sesión si se proporcionaron datos
         if usuario and tipo_usuario:
@@ -102,7 +103,41 @@ class MenuControlador:
         if self.modelo.tiene_permiso('citas'):
             print("Abriendo módulo de Citas...")
             # Aquí conectarás con el controlador de citas
-            # from Controladores.CitaControlador import CitaControlador
+            from Controladores.CitaControlador import ControladorCita   
+            from Vistas.CitaVista import CitaWindow
+            try:
+                if self.cita_window:
+                    self.cita_window.close()
+                    
+                controlador = ControladorCita()
+                
+                self.cita_window = CitaWindow()
+                controlador.set_vista(self.cita_window)
+                
+                try:
+                    controlador.inicializar_vista()
+                    
+                    self.cita_window.show()
+                    
+                except Exception as init_error:
+                    self.show_error_message(
+                        "Error al inicializar la vista de citas",
+                        f"Detalles del error: {str(init_error)}"
+                    )
+            
+            except ImportError:
+                self.show_error_message(
+                    "Eror de modulo",
+                    "No se pudo importar el módulo de citas. Asegúrate de que el archivo CitaControlador.py existe y está correctamente configurado."
+                )
+                
+            except Exception as e:
+                self.show_error_message(
+                    "Error al abrir citas",
+                    f"Detalles del error: {str(e)}"
+                )
+            
+            
             # self.controlador_citas = CitaControlador()
             # self.controlador_citas.mostrar()
         else:
