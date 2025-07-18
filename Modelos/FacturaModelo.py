@@ -45,6 +45,109 @@ class FacturacionModel:
     """Modelo que maneja la lógica de negocio y conexión con la BD"""
     
     @staticmethod
+    def generar_id_factura_automatico() -> str:
+        """
+        Genera automáticamente un ID de factura siguiendo el patrón: FAC-{numero}-{fecha}{hora}
+        Ejemplo: FAC-1-20250718143324
+        """
+        try:
+            # Usar la misma lógica de conexión que el resto del archivo
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                password=''
+            )
+            cursor = conexion.cursor()
+            
+            # Buscar TODAS las facturas con formato FAC-numero- y encontrar el número máximo
+            cursor.execute("""
+                SELECT ID_Factura_Custom 
+                FROM Factura 
+                WHERE ID_Factura_Custom REGEXP '^FAC-[0-9]+-[0-9]+$'
+                ORDER BY ID_Factura DESC
+            """)
+            
+            resultados = cursor.fetchall()
+            print(f"🔍 [DEBUG] Todas las facturas encontradas: {resultados}")
+            
+            siguiente_numero = 1  # Valor por defecto
+            
+            if resultados:
+                # Analizar todos los resultados para encontrar el número máximo
+                numeros_encontrados = []
+                for resultado in resultados:
+                    if resultado[0]:
+                        partes = resultado[0].split('-')
+                        if len(partes) >= 2:
+                            try:
+                                numero = int(partes[1])
+                                numeros_encontrados.append(numero)
+                                print(f"🔍 [DEBUG] Número extraído de {resultado[0]}: {numero}")
+                            except ValueError:
+                                continue
+                
+                if numeros_encontrados:
+                    ultimo_numero = max(numeros_encontrados)
+                    siguiente_numero = ultimo_numero + 1
+                    print(f"🔍 [DEBUG] Números encontrados: {numeros_encontrados}")
+                    print(f"🔍 [DEBUG] Último número: {ultimo_numero}, Siguiente: {siguiente_numero}")
+                else:
+                    print(f"🔍 [DEBUG] No se pudieron extraer números válidos")
+            else:
+                print(f"🔍 [DEBUG] No se encontraron facturas previas")
+            
+            # Generar timestamp actual (YYYYMMDDHHMMSS)
+            ahora = datetime.now()
+            timestamp = ahora.strftime("%Y%m%d%H%M%S")
+            
+            # 🚀 ALGORITMO INTELIGENTE: Buscar el primer número disponible
+            print(f"🔍 [SMART-SEARCH] Buscando primer ID disponible desde {siguiente_numero}...")
+            numero_actual = siguiente_numero
+            id_encontrado = False
+            intentos = 0
+            max_intentos = 1000  # Límite de seguridad para evitar bucle infinito
+            
+            while not id_encontrado and intentos < max_intentos:
+                # Generar ID candidato
+                id_candidato = f"FAC-{numero_actual}-{timestamp}"
+                
+                # Verificar si este ID ya existe en la base de datos
+                cursor.execute("SELECT COUNT(*) FROM Factura WHERE ID_Factura_Custom = %s", (id_candidato,))
+                existe = cursor.fetchone()[0] > 0
+                
+                if not existe:
+                    # ✅ Encontramos un ID libre!
+                    nuevo_id = id_candidato
+                    id_encontrado = True
+                    print(f"✅ [SMART-SEARCH] ID libre encontrado: {nuevo_id} (intento #{intentos + 1})")
+                else:
+                    # ❌ Este ID ya existe, probar el siguiente número
+                    print(f"⚠️ [SMART-SEARCH] ID {id_candidato} ya existe, probando siguiente...")
+                    numero_actual += 1
+                    intentos += 1
+            
+            if not id_encontrado:
+                # Si llegamos aquí, usamos un fallback con timestamp más específico
+                timestamp_especifico = ahora.strftime("%Y%m%d%H%M%S%f")[:17]  # Incluir microsegundos
+                nuevo_id = f"FAC-{numero_actual}-{timestamp_especifico}"
+                print(f"🆘 [FALLBACK] Usando ID con microsegundos: {nuevo_id}")
+            
+            cursor.close()
+            conexion.close()
+            
+            print(f"🆔 [AUTO-ID] ID final generado: {nuevo_id}")
+            return nuevo_id
+            
+        except Exception as e:
+            print(f"❌ Error generando ID automático: {e}")
+            # Fallback: usar timestamp simple
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            fallback_id = f"FAC-1-{timestamp}"
+            print(f"🆔 [FALLBACK] Usando ID de respaldo: {fallback_id}")
+            return fallback_id
+    
+    @staticmethod
     def obtener_pacientes() -> List[Paciente]:
         """Obtiene todos los pacientes usando el método que ya funciona en CitaModelo"""
         try:
@@ -120,6 +223,24 @@ class FacturacionModel:
         cursor = None
 
         try:
+            # Validar datos antes de insertar
+            print(f"🔍 Validando datos de factura:")
+            print(f"   - ID Factura: {factura.id_factura}")
+            print(f"   - ID Paciente: {factura.paciente.id_paciente}")
+            print(f"   - Nombre Paciente: {factura.paciente.nombre} {factura.paciente.apellido}")
+            print(f"   - Monto Total: {factura.monto_total}")
+            print(f"   - Fecha Emisión: {factura.fecha_emision}")
+            print(f"   - Estado Pago: {factura.estado_pago}")
+            
+            # Verificar que los datos no sean None
+            if not factura.id_factura:
+                print("❌ Error: ID Factura está vacío")
+                return False
+                
+            if not factura.paciente.id_paciente:
+                print("❌ Error: ID Paciente está vacío")
+                return False
+            
             conexion = mysql.connector.connect(
                 host='localhost',
                 database='ClinicaDental',
@@ -129,27 +250,41 @@ class FacturacionModel:
             )
 
             cursor = conexion.cursor()
+            print("✅ Conexión a la base de datos establecida")
 
-            # Consulta SQL corregida sin la columna 'Servicios' que no existe
+            # Consulta SQL corregida usando ID_Factura_Custom en lugar de ID_Factura
             query = """
-            INSERT INTO Factura (ID_Factura, ID_Paciente, Monto_Total, Fecha_Emision, Estado_Pago)
+            INSERT INTO Factura (ID_Factura_Custom, ID_Paciente, Monto_Total, Fecha_Emision, Estado_Pago)
             VALUES (%s, %s, %s, %s, %s)
             """
-
-            cursor.execute(query, (
+            
+            valores = (
                 factura.id_factura,
                 factura.paciente.id_paciente,
                 factura.monto_total,
                 factura.fecha_emision,
                 factura.estado_pago
-            ))
+            )
+            
+            print(f"📝 Ejecutando consulta SQL con valores: {valores}")
+            cursor.execute(query, valores)
 
             conexion.commit()
             print(f"✅ Factura {factura.id_factura} insertada correctamente en la base de datos")
             return True
 
         except Error as e:
-            print(f"❌ Error al insertar la factura: {e}")
+            print(f"❌ Error de MySQL al insertar la factura: {e}")
+            print(f"   - Código de error: {e.errno}")
+            print(f"   - Mensaje SQL: {e.msg}")
+            if conexion:
+                conexion.rollback()
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error general al insertar la factura: {e}")
+            import traceback
+            traceback.print_exc()
             if conexion:
                 conexion.rollback()
             return False
@@ -159,6 +294,7 @@ class FacturacionModel:
                 cursor.close()
             if conexion and conexion.is_connected():
                 conexion.close()
+                print("🔒 Conexión a la base de datos cerrada")
 
     @staticmethod
     def factura_existe(id_factura: str) -> bool:
@@ -181,8 +317,8 @@ class FacturacionModel:
 
             cursor = conexion.cursor()
 
-            # CORREGIDO: Usar el nombre correcto de la columna
-            query = "SELECT COUNT(*) FROM Factura WHERE ID_Factura = %s"
+            # CORREGIDO: Usar el nombre correcto de la columna ID_Factura_Custom
+            query = "SELECT COUNT(*) FROM Factura WHERE ID_Factura_Custom = %s"
             cursor.execute(query, (id_factura,))
             
             resultado = cursor.fetchone()
@@ -193,6 +329,52 @@ class FacturacionModel:
 
         except Error as e:
             print(f"❌ Error al verificar factura: {e}")
+            return False
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()
+
+    @staticmethod
+    def paciente_tiene_factura_hoy(id_paciente: int) -> bool:
+        """
+        Verifica si un paciente ya tiene una factura creada el día de hoy.
+        :param id_paciente: ID del paciente a verificar
+        :return: True si ya tiene factura hoy, False si no
+        """
+        conexion = None
+        cursor = None
+        
+        try:
+            # Conectar a la base de datos
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                password=''
+            )
+            cursor = conexion.cursor()
+            
+            # Buscar facturas del paciente creadas hoy
+            hoy = datetime.now().strftime('%Y-%m-%d')
+            query = """
+                SELECT COUNT(*) 
+                FROM Factura 
+                WHERE ID_Paciente = %s 
+                AND DATE(Fecha_Emision) = %s
+            """
+            cursor.execute(query, (id_paciente, hoy))
+            
+            resultado = cursor.fetchone()
+            tiene_factura_hoy = resultado[0] > 0
+            
+            print(f"🔍 [VERIFICACIÓN] Paciente ID {id_paciente} - Facturas hoy: {resultado[0]}")
+            return tiene_factura_hoy
+
+        except Error as e:
+            print(f"❌ Error al verificar facturas del día: {e}")
             return False
 
         finally:

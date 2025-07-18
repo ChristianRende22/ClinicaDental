@@ -343,22 +343,229 @@ class ControladorDoctor:
 
     # Por el momento, no encontrara ninguna cita para el doctor, una vez se haya hecho la conexion con la base de datos será más fácil
     def ver_citas(self):
+        """Ver las citas de un doctor específico por su número de junta médica"""
         self.vista.resultado_text.clear()
-        # Pide el Numero de junta medica del doctor a consultar
-        num_junta_medica, ok = QInputDialog.getText(self.vista, "Ver Citas", "Ingrese el N° Junta Medica del doctor:")
-        if not ok or not num_junta_medica.strip():
-            return
-        for doctor in self.doctores:
-            if doctor['num_junta_medica'] == num_junta_medica.strip():
-                if not doctor.get('citas'):
-                    self.vista.resultado_text.append("No hay citas registradas para este doctor.")
-                    return
-                self.vista.resultado_text.append(f"Citas del Dr. {doctor['nombre']} {doctor['apellido']}:")
-                for cita in doctor['citas']:
-                    self.vista.resultado_text.append(str(cita))
+        
+        try:
+            # Primero mostrar todos los doctores disponibles
+            doctores_bd = Doctor.obtener_doctores_desde_db()
+            
+            if not doctores_bd:
+                QMessageBox.warning(
+                    self.vista, 
+                    "❌ Error", 
+                    "No hay doctores registrados en la base de datos.\n"
+                    "Primero debe registrar al menos un doctor."
+                )
                 return
-        QMessageBox.warning(self.vista, "❌ Error", "No se encontró el doctor con ese DUI.")
+            
+            # Mostrar lista de doctores disponibles
+            self.vista.resultado_text.append("📋 DOCTORES DISPONIBLES:\n" + "="*50 + "\n")
+            for doctor in doctores_bd:
+                self.vista.resultado_text.append(
+                    f"• N° Junta Médica: {doctor.num_junta_medica}\n"
+                    f"  Nombre: Dr. {doctor.nombre} {doctor.apellido}\n"
+                    f"  Especialidad: {doctor.especialidad}\n"
+                    f"  {'-'*40}\n"
+                )
+            self.vista.resultado_text.append("\n")
+            
+            # Pedir el número de junta médica del doctor
+            num_junta_medica, ok = QInputDialog.getText(
+                self.vista, 
+                "Ver Citas", 
+                "Seleccione un N° Junta Médica de la lista anterior:"
+            )
+            
+            if not ok or not num_junta_medica.strip():
+                return
+            
+            num_junta_medica = num_junta_medica.strip()
+            
+            # Validar que sea un número
+            try:
+                num_junta_int = int(num_junta_medica)
+            except ValueError:
+                QMessageBox.warning(
+                    self.vista, 
+                    "❌ Error", 
+                    "El número de junta médica debe ser un número válido"
+                )
+                return
+            
+            # Verificar que el doctor existe
+            doctor_encontrado = None
+            
+            for doctor in doctores_bd:
+                if doctor.num_junta_medica == num_junta_int:
+                    doctor_encontrado = doctor
+                    break
+            
+            if not doctor_encontrado:
+                QMessageBox.warning(
+                    self.vista, 
+                    "❌ Error", 
+                    f"No se encontró ningún doctor con el N° Junta Médica: {num_junta_medica}\n\n"
+                    f"Doctores disponibles:\n" + 
+                    "\n".join([f"• {d.num_junta_medica} - Dr. {d.nombre} {d.apellido}" for d in doctores_bd])
+                )
+                return
+            
+            # Obtener las citas del doctor
+            print(f"🔍 Buscando citas para doctor ID: {num_junta_int}")
+            citas = Doctor.obtener_citas_por_doctor(num_junta_int)
+            
+            # Limpiar y mostrar resultados
+            self.vista.resultado_text.clear()
+            
+            # Mostrar resultados
+            if not citas:
+                self.vista.resultado_text.append(
+                    f"📅 CITAS DEL DR. {doctor_encontrado.nombre.upper()} {doctor_encontrado.apellido.upper()}\n"
+                    f"N° Junta Médica: {doctor_encontrado.num_junta_medica}\n"
+                    f"Especialidad: {doctor_encontrado.especialidad}\n"
+                    f"{'='*60}\n\n"
+                    f"❌ NO TIENE CITAS REGISTRADAS\n\n"
+                    f"El Dr. {doctor_encontrado.nombre} {doctor_encontrado.apellido} "
+                    f"no tiene citas programadas en este momento."
+                )
+                QMessageBox.information(
+                    self.vista, 
+                    "ℹ️ Sin Citas", 
+                    f"El Dr. {doctor_encontrado.nombre} {doctor_encontrado.apellido} no tiene citas registradas."
+                )
+            else:
+                # Mostrar las citas encontradas
+                self.vista.resultado_text.append(
+                    f"📅 CITAS DEL DR. {doctor_encontrado.nombre.upper()} {doctor_encontrado.apellido.upper()}\n"
+                    f"N° Junta Médica: {doctor_encontrado.num_junta_medica}\n"
+                    f"Especialidad: {doctor_encontrado.especialidad}\n"
+                    f"{'='*60}\n\n"
+                    f"✅ TOTAL DE CITAS ENCONTRADAS: {len(citas)}\n"
+                    f"{'='*60}\n"
+                )
+                
+                # Mostrar cada cita
+                for i, cita in enumerate(citas, 1):
+                    self.vista.resultado_text.append(
+                        f"🏥 CITA #{i}\n"
+                        f"{'─'*40}\n"
+                        f"• ID Cita: {cita['id_cita']}\n"
+                        f"• Fecha: {cita['fecha']}\n"
+                        f"• Horario: {cita['hora_inicio']} - {cita['hora_fin']}\n"
+                        f"• Estado: {cita['estado']}\n"
+                        f"• Paciente: {cita['paciente_nombre']} {cita['paciente_apellido']}\n"
+                        f"• DUI Paciente: {cita['paciente_dui']}\n"
+                        f"• Teléfono Paciente: {cita['paciente_telefono']}\n"
+                        f"• Tratamiento: {cita['tratamiento_descripcion']}\n"
+                        f"• Costo Consulta: {cita['costo']}\n"
+                        f"• Costo Tratamiento: {cita['tratamiento_costo']}\n"
+                        f"{'─'*40}\n\n"
+                    )
+                
+                QMessageBox.information(
+                    self.vista, 
+                    "✅ Citas Encontradas", 
+                    f"Se encontraron {len(citas)} cita(s) para el Dr. {doctor_encontrado.nombre} {doctor_encontrado.apellido}."
+                )
+                
+        except Exception as e:
+            print(f"❌ Error al obtener citas: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(
+                self.vista, 
+                "❌ Error", 
+                f"Error al obtener las citas del doctor:\n{str(e)}\n\n"
+                "Verifique:\n"
+                "• La conexión a la base de datos\n"
+                "• Que la base de datos esté funcionando\n"
+                "• Que existan doctores y citas registradas"
+            )
+            self.vista.resultado_text.append(f"❌ Error al obtener citas: {str(e)}")
 
+    def obtener_doctores(self):
+        try:
+            # Verificar conexión a la base de datos
+            if not self.conexion_db:
+                print("❌ No hay conexión a la base de datos")
+                return []
+            
+            # Consulta SQL
+            query = "SELECT * FROM doctores"
+            resultado = self.conexion_db.execute(query).fetchall()
+            
+            print(f"🔍 Doctores encontrados: {len(resultado)}")
+            for doctor in resultado:
+                print(f"  - {doctor}")
+                
+            return resultado
+            
+        except Exception as e:
+            print(f"❌ Error al obtener doctores: {e}")
+            return []
+
+    def mostrar_listado_doctores(self):
+        print("🔍 [DEBUG] Iniciando mostrar_listado_doctores...")
+        
+        try:
+            # Verificar si existe la conexión
+            if not hasattr(self, 'conexion') or self.conexion is None:
+                print("❌ [DEBUG] No hay conexión a la base de datos")
+                self.mostrar_mensaje("Error", "No hay conexión a la base de datos")
+                return
+            
+            print("✅ [DEBUG] Conexión existe")
+            
+            # Verificar si la tabla existe
+            try:
+                cursor = self.conexion.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='doctores'")
+                tabla_existe = cursor.fetchone()
+                if not tabla_existe:
+                    print("❌ [DEBUG] La tabla 'doctores' no existe")
+                    self.mostrar_mensaje("Error", "La tabla de doctores no existe")
+                    return
+                
+                print("✅ [DEBUG] La tabla 'doctores' existe")
+            except Exception as e:
+                print(f"❌ [DEBUG] Error verificando tabla: {e}")
+            
+            # Contar registros
+            try:
+                cursor = self.conexion.execute("SELECT COUNT(*) FROM doctores")
+                count = cursor.fetchone()[0]
+                print(f"📊 [DEBUG] Total de doctores en la tabla: {count}")
+                
+                if count == 0:
+                    print("⚠️ [DEBUG] La tabla está vacía")
+                    self.mostrar_mensaje("Información", "No hay doctores registrados")
+                    return
+                
+            except Exception as e:
+                print(f"❌ [DEBUG] Error contando registros: {e}")
+                self.mostrar_mensaje("Error", f"Error al consultar la base de datos: {e}")
+                return
+            
+            # Obtener los doctores
+            try:
+                cursor = self.conexion.execute("SELECT * FROM doctores")
+                doctores = cursor.fetchall()
+                print(f"📋 [DEBUG] Doctores obtenidos: {len(doctores)}")
+                
+                for i, doctor in enumerate(doctores):
+                    print(f"  {i+1}. {doctor}")
+                
+                # Aquí deberías mostrar los doctores en tu interfaz
+                # self.mostrar_doctores_en_interfaz(doctores)
+                
+            except Exception as e:
+                print(f"❌ [DEBUG] Error obteniendo doctores: {e}")
+                self.mostrar_mensaje("Error", f"Error al obtener doctores: {e}")
+                
+        except Exception as e:
+            print(f"❌ [DEBUG] Error general: {e}")
+            self.mostrar_mensaje("Error", f"Error inesperado: {e}")
+            
 def main():
     """Función principal para ejecutar el controlador de doctores"""
     from PyQt6.QtWidgets import QApplication

@@ -1,5 +1,9 @@
 
-# Script consolidado que ejecuta todos los controladores
+# -*- coding: utf-8 -*-
+"""
+Script consolidado que ejecuta todos los controladores
+El menú permite elegir qué módulo usar
+"""
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -12,6 +16,7 @@ import Controladores.LoginControlador as Login
 import Controladores.MenuControlador as Menu
 import Controladores.PacienteControlador as Paciente
 import Controladores.TratamientoControlador as Tratamiento
+
 def ejecutar_controlador_secuencial(modulo, nombre):
     """Ejecuta un controlador y espera a que se cierre para continuar"""
     print(f"====== {nombre} ======")
@@ -31,7 +36,7 @@ def main():
     
     controladores = [        
         (Login, " - Sistema de Login"),        
-        (Menu, " - Menú Principal"),
+        (Menu, " - Menú Principal - 🎯 CENTRO DE NAVEGACIÓN"),
         (Cita, " - Gestión de Citas"),        
         (Paciente, " - Gestión de Pacientes"),
         (Dcotor, " - Gestión de Doctores"), 
@@ -45,6 +50,7 @@ def main():
         print(f"🔄 Continuando al siguiente controlador...\n")
     
     print("🎉 Todos los controladores han sido ejecutados!")
+    print("💡 Recuerda: El Menú Principal te permite navegar entre todos los módulos")
 
 if __name__ == "__main__":
     main()

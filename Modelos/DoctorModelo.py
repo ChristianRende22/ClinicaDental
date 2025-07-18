@@ -153,3 +153,109 @@ class Doctor:
                 cursor.close()
             if conexion and conexion.is_connected():
                 conexion.close()
+
+    @staticmethod
+    def obtener_citas_por_doctor(num_junta_medica: int):
+        """
+        Obtiene todas las citas de un doctor específico según su número de junta médica.
+        :param num_junta_medica: Número de junta médica del doctor
+        :return: Lista de citas del doctor o lista vacía si no hay citas
+        """
+        conexion = None
+        cursor = None
+        citas = []
+        
+        try:
+            conexion = mysql.connector.connect(
+                host='localhost',
+                database='ClinicaDental',
+                user='root',
+                port=3307,
+                password='1234'
+            )
+            
+            cursor = conexion.cursor()
+            
+            # Query para obtener las citas del doctor específico
+            query = """
+            SELECT 
+                c.ID_Cita,
+                c.Fecha,
+                c.Hora_Inicio,
+                c.Hora_Fin,
+                c.Estado,
+                c.Costo,
+                p.Nombre AS paciente_nombre,
+                p.Apellido AS paciente_apellido,
+                p.DUI,
+                p.Telefono AS paciente_telefono,
+                t.Descripcion AS tratamiento_descripcion,
+                t.Costo AS tratamiento_costo
+            FROM Cita c
+            INNER JOIN Doctor d ON c.ID_Doctor = d.ID_Doctor
+            INNER JOIN Paciente p ON c.ID_Paciente = p.ID_Paciente
+            LEFT JOIN Tratamiento t ON c.ID_Tratamiento = t.ID_Tratamiento
+            WHERE d.ID_Doctor = %s
+            ORDER BY c.Fecha DESC, c.Hora_Inicio DESC
+            """
+            
+            cursor.execute(query, (num_junta_medica,))
+            resultados = cursor.fetchall()
+            
+            for row in resultados:
+                (id_cita, fecha, hora_inicio, hora_fin, estado, costo,
+                 paciente_nombre, paciente_apellido, dui, paciente_telefono,
+                 tratamiento_descripcion, tratamiento_costo) = row
+                
+                # Formatear las horas si vienen como timedelta
+                from datetime import time as datetime_time, timedelta
+                
+                if isinstance(hora_inicio, timedelta):
+                    total_seconds = int(hora_inicio.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    hora_inicio_str = f"{hours:02d}:{minutes:02d}"
+                elif isinstance(hora_inicio, datetime_time):
+                    hora_inicio_str = hora_inicio.strftime('%H:%M')
+                else:
+                    hora_inicio_str = str(hora_inicio)
+                
+                if isinstance(hora_fin, timedelta):
+                    total_seconds = int(hora_fin.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    hora_fin_str = f"{hours:02d}:{minutes:02d}"
+                elif isinstance(hora_fin, datetime_time):
+                    hora_fin_str = hora_fin.strftime('%H:%M')
+                else:
+                    hora_fin_str = str(hora_fin)
+                
+                # Crear diccionario con información de la cita
+                cita_info = {
+                    'id_cita': id_cita,
+                    'fecha': fecha.strftime('%d/%m/%Y') if fecha else "Sin fecha",
+                    'hora_inicio': hora_inicio_str,
+                    'hora_fin': hora_fin_str,
+                    'estado': estado or "Pendiente",
+                    'costo': f"${costo:.2f}" if costo else "$0.00",
+                    'paciente_nombre': paciente_nombre or "Sin nombre",
+                    'paciente_apellido': paciente_apellido or "Sin apellido",
+                    'paciente_dui': dui or "Sin DUI",
+                    'paciente_telefono': paciente_telefono or "Sin teléfono",
+                    'tratamiento_descripcion': tratamiento_descripcion or "Sin tratamiento",
+                    'tratamiento_costo': f"${tratamiento_costo:.2f}" if tratamiento_costo else "$0.00"
+                }
+                
+                citas.append(cita_info)
+            
+            return citas
+            
+        except Error as e:
+            print(f"Error al obtener citas del doctor: {e}")
+            return []
+            
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()

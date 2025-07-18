@@ -170,32 +170,30 @@ class MenuControlador:
         """Abre el módulo de gestión de tratamientos"""
         if self.modelo.tiene_permiso('tratamientos'):
             print("Abriendo módulo de Tratamientos...")                
-            from Controladores.TratamientoControlador import TratamientoControlador   
-            from Vistas.TratamientoVista import AgregarTratamientoDialog
             try:
+                from Controladores.TratamientoControlador import TratamientoControlador
+                from Vistas.TratamientoVista import AgregarTratamientoDialog
                 
                 if self.Tratamiento_window:
                     self.Tratamiento_window.close()
 
-                controlador = TratamientoControlador()
-                self.Tratamiento_window = AgregarTratamientoDialog()
-                controlador.set_vista(self.Tratamiento_window)
+                # Crear el controlador con un doctor por defecto
+                # Usamos None o un doctor vacío por ahora
+                controlador = TratamientoControlador(doctor=None)
                 
-                try:
-                    controlador.inicializar_vista()
+                # Crear la ventana con el controlador
+                self.Tratamiento_window = AgregarTratamientoDialog(controlador=controlador)
+                
+                # Asignar la vista al controlador
+                controlador.vista = self.Tratamiento_window
+                
+                # Mostrar la ventana
+                self.Tratamiento_window.show()
                     
-                    self.Tratamiento_window.show()
-                    
-                except Exception as init_error:
-                    self.show_error_message(
-                        "Error al inicializar la vista de tratamientos",
-                        f"Detalles del error: {str(init_error)}"
-                    )
-        
-            except ImportError:
+            except ImportError as ie:
                 self.show_error_message(
                     "Error de módulo",
-                    "No se pudo importar el módulo de tratamientos. Asegúrate de que el archivo TratamientoControlador.py existe y está correctamente configurado."
+                    f"No se pudo importar el módulo de tratamientos: {str(ie)}. Asegúrate de que el archivo TratamientoControlador.py existe y está correctamente configurado."
                 )
                 
             except Exception as e:
@@ -212,31 +210,25 @@ class MenuControlador:
         if self.modelo.tiene_permiso('horarios'):
             print("Abriendo módulo de Horarios...")
             try:
-                from Controladores.HorarioControlador import ControladorHorario   
-                from Vistas.HorarioVista import HorarioWindow
+                from Controladores.HorarioControlador import HorarioController   
+                from Vistas.HorarioVista import HorarioView
                 
                 if self.Horario_window:
                     self.Horario_window.close()
                     
-                controlador = ControladorHorario()
-                self.Horario_window = HorarioWindow()
-                controlador.set_vista(self.Horario_window)
+                # Crear vista primero
+                self.Horario_window = HorarioView()
                 
-                try:
-                    controlador.inicializar_vista()
+                # Crear controlador con la vista
+                controlador = HorarioController(self.Horario_window)
+                
+                # Mostrar la ventana
+                self.Horario_window.show()
                     
-                    self.Horario_window.show()
-                    
-                except Exception as init_error:
-                    self.show_error_message(
-                        "Error al inicializar la vista de horarios",
-                        f"Detalles del error: {str(init_error)}"
-                    )
-        
-            except ImportError:
+            except ImportError as ie:
                 self.show_error_message(
                     "Error de módulo",
-                    "No se pudo importar el módulo de horarios. Asegúrate de que el archivo HorarioControlador.py existe y está correctamente configurado."
+                    f"No se pudo importar el módulo de horarios: {str(ie)}. Asegúrate de que el archivo HorarioControlador.py existe y está correctamente configurado."
                 )
                 
             except Exception as e:
@@ -253,31 +245,25 @@ class MenuControlador:
         if self.modelo.tiene_permiso('facturas'):
             print("Abriendo módulo de Facturas...")
             try:
-                from Controladores.FacturaControlador import ControladorFactura   
-                from Vistas.FacturaVista import FacturaWindow
+                from Controladores.FacturaControlador import FacturacionController   
+                from Vistas.FacturaVista import FacturacionView
                 
                 if self.Factura_window:
                     self.Factura_window.close()
                     
-                controlador = ControladorFactura()
-                self.Factura_window = FacturaWindow()
-                controlador.set_vista(self.Factura_window)
+                # Crear vista primero
+                self.Factura_window = FacturacionView()
                 
-                try:
-                    controlador.inicializar_vista()
+                # Crear controlador con la vista y guardar referencia
+                self.factura_controller = FacturacionController(self.Factura_window)
+                
+                # Mostrar la ventana
+                self.Factura_window.show()
                     
-                    self.Factura_window.show()
-                    
-                except Exception as init_error:
-                    self.show_error_message(
-                        "Error al inicializar la vista de facturas",
-                        f"Detalles del error: {str(init_error)}"
-                    )
-        
-            except ImportError:
+            except ImportError as ie:
                 self.show_error_message(
                     "Error de módulo",
-                    "No se pudo importar el módulo de facturas. Asegúrate de que el archivo FacturaControlador.py existe y está correctamente configurado."
+                    f"No se pudo importar el módulo de facturas: {str(ie)}. Asegúrate de que el archivo FacturaControlador.py existe y está correctamente configurado."
                 )
                 
             except Exception as e:
@@ -329,14 +315,15 @@ class MenuControlador:
         """)
         msg.exec()
     
-    def show_error_message(self, title, message):
-        """Muestra un mensaje de error"""
+    def show_error_message(self, titulo, mensaje):
+        """Muestra un mensaje de error general"""
         from PyQt6.QtWidgets import QMessageBox
         
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Critical)
-        msg.setWindowTitle(title)
-        msg.setText(message)
+        msg.setWindowTitle(f"❌ {titulo}")
+        msg.setText(titulo)
+        msg.setInformativeText(mensaje)
         msg.setStyleSheet("""
             QMessageBox {
                 background-color: #ffffff;
@@ -357,6 +344,7 @@ class MenuControlador:
             }
         """)
         msg.exec()
+
     
     def obtener_estadisticas_sesion(self):
         """Obtiene las estadísticas de la sesión current"""
