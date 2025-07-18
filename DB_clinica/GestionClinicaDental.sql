@@ -162,9 +162,9 @@ INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Ho
 INSERT INTO Factura (
     ID_Paciente, ID_Factura_Custom, Fecha_Emision, 
     Descripcion_Servicio, Monto_Servicio, Monto_Total, Estado_Pago) VALUES
-(1, 'FAC-001', '2025-07-01', 'Limpieza dental', 20.00, 20.00, 'Pagada'),
-(2, 'FAC-002', '2025-07-01', 'Ortodoncia', 450.00, 450.00, 'Pendiente'),
-(3, 'FAC-003', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
+(1, 'FAC-1-20250718145401', '2025-07-01', 'Limpieza dental', 20.00, 20.00, 'Pagada'),
+(2, 'FAC-2-20250718145402', '2025-07-01', 'Ortodoncia', 450.00, 450.00, 'Pendiente'),
+(3, 'FAC-3-20250718145403', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
 
 
 INSERT INTO Asistente (Nombre, Apellido, Telefono, Correo, Contrasena) VALUES
