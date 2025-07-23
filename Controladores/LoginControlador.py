@@ -37,10 +37,8 @@ class LoginControlador:
         # - Registrar el login en logs
         # - Configurar permisos según el tipo de usuario
         
-        # NO cerrar la ventana aquí - lo hará el ControladorClinica
-        # self.vista.close()
-        
-        # La señal se propaga al ControladorClinica que maneja el flujo
+        # Abrir la ventana principal (menú)
+        self.abrir_ventana_principal(tipo_usuario)
     
     def mostrar(self):
         """Muestra la ventana de login"""
@@ -48,10 +46,21 @@ class LoginControlador:
     
     def abrir_ventana_principal(self, tipo_usuario):
         """Abre la ventana principal según el tipo de usuario"""
-        # Esta función se implementará cuando tengas la ventana principal
-        # Por ahora solo imprime el tipo de usuario
         print(f"Abriendo ventana principal para: {tipo_usuario}")
-        pass
+        
+        # Importar el MenuControlador
+        from Controladores.MenuControlador import MenuControlador
+        
+        # Crear y mostrar el menú principal
+        self.menu_controlador = MenuControlador("usuario", tipo_usuario)
+        self.menu_controlador.mostrar()
+        
+        # Mantener referencia a la aplicación en el menú si existe
+        if hasattr(self, 'app'):
+            self.menu_controlador.app = self.app
+        
+        # Cerrar la ventana de login
+        self.vista.close()
 
 def main():
     """Función principal para ejecutar el controlador de login"""
@@ -60,6 +69,10 @@ def main():
     app = QApplication([])
     controlador = LoginControlador()
     controlador.mostrar()
+    
+    # Mantener referencia a la aplicación para evitar que se cierre
+    controlador.app = app
+    
     app.exec()  # Sin sys.exit() para permitir continuar
 
 if __name__ == "__main__":

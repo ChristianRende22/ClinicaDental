@@ -127,15 +127,31 @@ pip install -r requirements.txt
 
 * Instalar MySQL Server y MySQL Workbench
 * Ejecutar script SQL ubicado en: `DB_clinica/GestionClinicaDental.sql`
-* Configurar credenciales en el archivo del modelo:
+* **🎯 Nueva Configuración Centralizada**: La configuración se encuentra en:
 
 ```python
-HOST = 'localhost'
-USER = 'root'
-PASSWORD = 'tu_password_mysql'
-DATABASE = 'ClinicaDental'
-PORT = 3306 o 3307
+# Config/database_config.py
+class DatabaseConfig:
+    HOST = 'localhost'
+    PORT = 3307
+    USER = 'root'
+    PASSWORD = '1234'
+    DATABASE = 'ClinicaDental'
 ```
+
+**✅ Ventajas de la nueva configuración:**
+- Un solo archivo para toda la configuración de BD
+- Manejo de errores mejorado
+- Eliminación de código duplicado
+- Fácil cambio entre ambientes (desarrollo/producción)
+
+**🧪 Probar configuración:**
+```bash
+cd Config
+python database_config.py
+```
+
+Ver documentación completa en: `Config/README_CONFIGURACION.md`
 
 ### 4. Ejecutar la Aplicación
 

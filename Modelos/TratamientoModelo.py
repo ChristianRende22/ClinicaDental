@@ -1,7 +1,10 @@
 import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import mysql.connector
+
+# Importar configuración centralizada
+from Config.database_config import obtener_conexion, conectar_bd, cerrar_conexion_segura
+import mysql.connector  # Mantener para manejo de errores específicos
 from mysql.connector import Error
 from PyQt6.QtCore import QDate
 
@@ -21,13 +24,8 @@ class Tratamiento:
         
     @staticmethod
     def conectar_bd():
-        return mysql.connector.connect(
-            host="localhost",
-            port=3307,
-            user="root",
-            password="1234",
-            database="ClinicaDental"
-        )
+        """Usa la configuración centralizada para conectar a la base de datos"""
+        return obtener_conexion()
         
     @staticmethod
     def buscar_doctor_por_codigo(codigo):

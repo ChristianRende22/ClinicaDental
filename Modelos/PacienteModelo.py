@@ -1,33 +1,11 @@
 # Agregar el directorio padre al path
-import mysql.connector
-from mysql.connector import Error
-def obtener_conexion():
-    """Establece y devuelve una conexión segura a la base de datos MySQL"""
-    try:
-        print("🔄 Intentando conectar a la base de datos...")
-        conexion = mysql.connector.connect(
-            host='localhost',
-            port=3307,
-            user='root',
-            password='1234',
-            database='ClinicaDental'
-        )
-        print("✅ Conexión exitosa a la base de datos")
-        return conexion
-    except mysql.connector.Error as e:
-        print(f"❌ Error de MySQL al conectar a la base de datos: {e}")
-        if e.errno == 2003:
-            print("⚠️  Error 2003: No se puede conectar al servidor MySQL. Verifica que el servidor esté ejecutándose.")
-        elif e.errno == 1049:
-            print("⚠️  Error 1049: Base de datos 'ClinicaDental' no existe.")
-        elif e.errno == 1045:
-            print("⚠️  Error 1045: Acceso denegado. Verifica usuario y contraseña.")
-        print("⚠️  Funcionando en modo sin base de datos")
-        return None
-    except Exception as e:
-        print(f"❌ Error inesperado al conectar a la base de datos: {e}")
-        print("⚠️  Funcionando en modo sin base de datos")
-        return None
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Importar configuración centralizada
+from Config.database_config import obtener_conexion, probar_conexion, cerrar_conexion_segura
+import mysql.connector  # Mantener para manejo de errores específicos
 import sys
 import os 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -291,32 +269,15 @@ class Paciente:
 
 
     @staticmethod
-    def probar_conexion_bd(self) -> tuple[bool, str]:
+    def probar_conexion_bd() -> tuple[bool, str]:
         """
-        Prueba la conexión a la base de datos
+        Prueba la conexión a la base de datos usando configuración centralizada
         
         Returns:
             tuple[bool, str]: (éxito, mensaje)
         """
-        try:
-            conexion = obtener_conexion()
-            if not conexion:
-                return False, "❌ No se pudo conectar a la base de datos"
-            
-            cursor = conexion.cursor()
-            cursor.execute("SELECT 1")
-            resultado = cursor.fetchone()
-            
-            cursor.close()
-            conexion.close()
-            
-            if resultado:
-                return True, "✅ Conexión a la base de datos exitosa"
-            else:
-                return False, "❌ Error en la consulta de prueba"
-                
-        except Exception as e:
-            return False, f"❌ Error de conexión a la base de datos: {str(e)}"
+        return probar_conexion()
+    
     def validar_telefono(telefono: int) -> bool:
         """Valida que el teléfono tenga al menos 8 dígitos"""
         return len(str(telefono)) >= 8

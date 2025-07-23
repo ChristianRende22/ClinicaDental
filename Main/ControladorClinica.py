@@ -36,7 +36,7 @@ def main():
     
     controladores = [        
         (Login, " - Sistema de Login"),        
-        (Menu, " - Menú Principal - 🎯 CENTRO DE NAVEGACIÓN"),
+        # (Menu, " - Menú Principal - 🎯 CENTRO DE NAVEGACIÓN"),
         # (Cita, " - Gestión de Citas"),        
         # (Paciente, " - Gestión de Pacientes"),
         # (Dcotor, " - Gestión de Doctores"), 

@@ -1,29 +1,13 @@
 import sys
 import os
-import mysql.connector
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Importar configuración centralizada
+from Config.database_config import obtener_conexion, conectar_bd, cerrar_conexion_segura
+import mysql.connector  # Mantener para manejo de errores específicos
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from mysql.connector import Error
-def conectar_bd():
-    """
-    Conecta a la base de datos MySQL y retorna la conexión.
-    :return: Objeto de conexión a la base de datos.
-    """
-    try:
-        conexion = mysql.connector.connect(
-            host='localhost',
-            database='ClinicaDental',
-            user='root',
-            port=3307,
-            password='1234'
-        )
-        if conexion.is_connected():
-            print("Conexión exitosa a la base de datos.")
-            return conexion
-    except Error as e:
-        print(f"Error al conectar a la base de datos: {e}")
-        return None
     
 
 # Importar los modelos existentes que ya funcionan

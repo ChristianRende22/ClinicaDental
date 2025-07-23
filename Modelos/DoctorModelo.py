@@ -1,5 +1,12 @@
-import mysql.connector
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Importar configuración centralizada
+from Config.database_config import obtener_conexion, conectar_bd, cerrar_conexion_segura
+import mysql.connector  # Mantener para manejo de errores específicos
 from mysql.connector import Error
+
 class Doctor:
     # Datos hardcodeados como respaldo cuando falle la conexión
     DOCTORES_HARDCODE = [
@@ -120,23 +127,10 @@ class Doctor:
     @staticmethod
     def conectar_db():
         """
-        Conecta a la base de datos MySQL y retorna la conexión.
+        Conecta a la base de datos MySQL usando configuración centralizada.
         :return: Objeto de conexión a la base de datos.
         """
-        try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
-            if conexion.is_connected():
-                print("Conexión exitosa a la base de datos.")
-                return conexion
-        except Error as e:
-            print(f"Error al conectar a la base de datos: {e}")
-            return None
+        return obtener_conexion()
 
     @staticmethod
     def obtener_doctores_desde_db():
@@ -229,13 +223,10 @@ class Doctor:
         doctores = []
         
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion = obtener_conexion()
+            if not conexion:
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return []
             
             cursor = conexion.cursor()
             query = "SELECT ID_Doctor, Nombre, Apellido, Especialidad, Telefono, Correo FROM Doctor"
@@ -297,13 +288,10 @@ class Doctor:
         citas = []
         
         try:
-            conexion = mysql.connector.connect(
-                host='localhost',
-                database='ClinicaDental',
-                user='root',
-                port=3307,
-                password='1234'
-            )
+            conexion = obtener_conexion()
+            if not conexion:
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return []
             
             cursor = conexion.cursor()
             

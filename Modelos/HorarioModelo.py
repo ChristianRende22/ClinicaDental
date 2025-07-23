@@ -1,32 +1,11 @@
-import mysql.connector
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Importar configuración centralizada
+from Config.database_config import obtener_conexion, cerrar_conexion_segura
+import mysql.connector  # Mantener para manejo de errores específicos
 from mysql.connector import Error
-def obtener_conexion():
-    """Establece y devuelve una conexión segura a la base de datos MySQL"""
-    try:
-        print("🔄 Intentando conectar a la base de datos...")
-        conexion = mysql.connector.connect(
-            host='localhost',
-            port=3307,
-            user='root',
-            password='1234',
-            database='ClinicaDental'
-        )
-        print("✅ Conexión exitosa a la base de datos")
-        return conexion
-    except mysql.connector.Error as e:
-        print(f"❌ Error de MySQL al conectar a la base de datos: {e}")
-        if e.errno == 2003:
-            print("⚠️  Error 2003: No se puede conectar al servidor MySQL. Verifica que el servidor esté ejecutándose.")
-        elif e.errno == 1049:
-            print("⚠️  Error 1049: Base de datos 'ClinicaDental' no existe.")
-        elif e.errno == 1045:
-            print("⚠️  Error 1045: Acceso denegado. Verifica usuario y contraseña.")
-        print("⚠️  Funcionando en modo sin base de datos")
-        return None
-    except Exception as e:
-        print(f"❌ Error inesperado al conectar a la base de datos: {e}")
-        print("⚠️  Funcionando en modo sin base de datos")
-        return None
 from datetime import datetime, time as datetime_time
 from typing import List
 
