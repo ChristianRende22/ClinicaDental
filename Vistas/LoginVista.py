@@ -28,7 +28,7 @@ class LoginVista(QWidget):
         """Inicializa la interfaz de usuario"""
         self.setWindowTitle("🏥 Sistema de Gestión Clínica Dental - Login")
 
-        self.setFixedSize(500, 600)
+        self.setFixedSize(600, 700)
         self.centrar_ventana()
         self.configurar_estilo()
         self.crear_widgets()
@@ -322,29 +322,50 @@ class LoginVista(QWidget):
     
     def mostrar_exito(self, tipo_usuario):
         """Muestra mensaje de éxito y emite señal"""
+        # Obtener el usuario ingresado
+        usuario_ingresado = self.input_usuario.text().strip()
+        
+        # Definir emojis y roles según el tipo de usuario
+        roles_info = {
+            'admin': {'emoji': '👨‍💼', 'titulo': 'Administrador'},
+            'doctor': {'emoji': '👨‍⚕️', 'titulo': 'Doctor'},
+            'recepcionista': {'emoji': '👩‍💼', 'titulo': 'Recepcionista'}
+        }
+        
+        info = roles_info.get(tipo_usuario, {'emoji': '👤', 'titulo': tipo_usuario.capitalize()})
+        
+        # Crear mensaje simple y centrado
+        titulo_msg = "🎉 ¡Bienvenido al Sistema!"
+        texto_principal = f"{info['emoji']} {info['titulo']}\n\n👤 Usuario: {usuario_ingresado}\n\n✨ ¡El sistema está listo para usar!"
+        
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Information)
-        msg.setWindowTitle("✅ Login Exitoso")
-        msg.setText(f"¡Bienvenido, {tipo_usuario.capitalize()}! 🎉")
-        msg.setStyleSheet(f"""
-            QMessageBox {{
-                background-color: {self.colors['surface']};
-                font-family: Segoe UI, Arial, sans-serif;
-                font-size: 14px;
-            }}
-            QMessageBox QPushButton {{
-                background-color: {self.colors['accent']};
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                min-width: 80px;
-                font-weight: bold;
-            }}
-            QMessageBox QPushButton:hover {{
-                background-color: {self.colors['primary']};
-            }}
+        msg.setWindowTitle(titulo_msg)
+        msg.setText(texto_principal)
+        
+        # Usar estilos básicos de Qt sin CSS - fondo blanco y texto negro
+        font = QFont("Segoe UI", 12)
+        msg.setFont(font)
+        
+        # Establecer colores básicos
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+                color: black;
+            }
+            QMessageBox QLabel {
+                color: black;
+                background-color: white;
+            }
+            QMessageBox QPushButton {
+                background-color: lightgray;
+                color: black;
+                border: 1px solid gray;
+                padding: 8px 16px;
+                border-radius: 4px;
+            }
         """)
+        
         msg.exec()
         
         # Emitir señal de login exitoso
