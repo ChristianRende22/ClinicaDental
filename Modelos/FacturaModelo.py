@@ -51,103 +51,59 @@ class FacturacionModel:
     @staticmethod
     def generar_id_factura_automatico() -> str:
         """
-        Genera automáticamente un ID de factura siguiendo el patrón: FAC-{numero}-{fecha}{hora}
-        Ejemplo: FAC-1-20250718143324
+        Genera automáticamente un ID de factura siguiendo el patrón: F001, F002, F003, etc.
+        Similar al sistema de horarios.
         """
         try:
-            # Usar la misma lógica de conexión que el resto del archivo
-            conexion= conectar_bd()
+            conexion = conectar_bd()
             if not conexion:
-                print("No se pudo establecer conexión con la base de datos.")
-                return False
+                print("❌ No se pudo establecer conexión a la base de datos.")
+                return "F001"  # ID por defecto si hay error de conexión
+            
             cursor = conexion.cursor()
             
-            # Buscar TODAS las facturas con formato FAC-numero- y encontrar el número máximo
-            cursor.execute("""
-                SELECT ID_Factura_Custom 
-                FROM Factura 
-                WHERE ID_Factura_Custom REGEXP '^FAC-[0-9]+-[0-9]+$'
-                ORDER BY ID_Factura DESC
-            """)
-            
+            # Obtener todas las facturas existentes
+            cursor.execute("SELECT ID_Factura FROM Factura")
             resultados = cursor.fetchall()
-            print(f"🔍 [DEBUG] Todas las facturas encontradas: {resultados}")
             
-            siguiente_numero = 1  # Valor por defecto
+            if not resultados:
+                cursor.close()
+                conexion.close()
+                return "F001"  # Primera factura
             
-            if resultados:
-                # Analizar todos los resultados para encontrar el número máximo
-                numeros_encontrados = []
-                for resultado in resultados:
-                    if resultado[0]:
-                        partes = resultado[0].split('-')
-                        if len(partes) >= 2:
-                            try:
-                                numero = int(partes[1])
-                                numeros_encontrados.append(numero)
-                                print(f"🔍 [DEBUG] Número extraído de {resultado[0]}: {numero}")
-                            except ValueError:
-                                continue
-                
-                if numeros_encontrados:
-                    ultimo_numero = max(numeros_encontrados)
-                    siguiente_numero = ultimo_numero + 1
-                    print(f"🔍 [DEBUG] Números encontrados: {numeros_encontrados}")
-                    print(f"🔍 [DEBUG] Último número: {ultimo_numero}, Siguiente: {siguiente_numero}")
-                else:
-                    print(f"🔍 [DEBUG] No se pudieron extraer números válidos")
-            else:
-                print(f"🔍 [DEBUG] No se encontraron facturas previas")
+            # Extraer los números de los IDs existentes y ordenarlos
+            numeros_existentes = set()
+            for row in resultados:
+                id_factura = str(row[0]).strip()
+                # Verificar que el ID tenga el formato correcto (F seguido de 3 dígitos)
+                if id_factura.startswith('F') and len(id_factura) == 4:
+                    try:
+                        numero = int(id_factura[1:])  # Extraer número después de 'F'
+                        numeros_existentes.add(numero)
+                    except ValueError:
+                        continue
             
-            # Generar timestamp actual (YYYYMMDDHHMMSS)
-            ahora = datetime.now()
-            timestamp = ahora.strftime("%Y%m%d%H%M%S")
+            if not numeros_existentes:
+                cursor.close()
+                conexion.close()
+                return "F001"  # Si no hay IDs válidos, empezar con F001
             
-            # 🚀 ALGORITMO INTELIGENTE: Buscar el primer número disponible
-            print(f"🔍 [SMART-SEARCH] Buscando primer ID disponible desde {siguiente_numero}...")
-            numero_actual = siguiente_numero
-            id_encontrado = False
-            intentos = 0
-            max_intentos = 1000  # Límite de seguridad para evitar bucle infinito
-            
-            while not id_encontrado and intentos < max_intentos:
-                # Generar ID candidato
-                id_candidato = f"FAC-{numero_actual}-{timestamp}"
-                
-                # Verificar si este ID ya existe en la base de datos
-                cursor.execute("SELECT COUNT(*) FROM Factura WHERE ID_Factura_Custom = %s", (id_candidato,))
-                existe = cursor.fetchone()[0] > 0
-                
-                if not existe:
-                    # ✅ Encontramos un ID libre!
-                    nuevo_id = id_candidato
-                    id_encontrado = True
-                    print(f"✅ [SMART-SEARCH] ID libre encontrado: {nuevo_id} (intento #{intentos + 1})")
-                else:
-                    # ❌ Este ID ya existe, probar el siguiente número
-                    print(f"⚠️ [SMART-SEARCH] ID {id_candidato} ya existe, probando siguiente...")
-                    numero_actual += 1
-                    intentos += 1
-            
-            if not id_encontrado:
-                # Si llegamos aquí, usamos un fallback con timestamp más específico
-                timestamp_especifico = ahora.strftime("%Y%m%d%H%M%S%f")[:17]  # Incluir microsegundos
-                nuevo_id = f"FAC-{numero_actual}-{timestamp_especifico}"
-                print(f"🆘 [FALLBACK] Usando ID con microsegundos: {nuevo_id}")
+            # Buscar el primer número disponible en la secuencia
+            siguiente_numero = 1
+            while siguiente_numero in numeros_existentes:
+                siguiente_numero += 1
             
             cursor.close()
             conexion.close()
             
-            print(f"🆔 [AUTO-ID] ID final generado: {nuevo_id}")
+            # Formatear con ceros a la izquierda (siempre 3 dígitos)
+            nuevo_id = f"F{siguiente_numero:03d}"
+            print(f"🆔 ID de factura generado: {nuevo_id}")
             return nuevo_id
             
         except Exception as e:
             print(f"❌ Error generando ID automático: {e}")
-            # Fallback: usar timestamp simple
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            fallback_id = f"FAC-1-{timestamp}"
-            print(f"🆔 [FALLBACK] Usando ID de respaldo: {fallback_id}")
-            return fallback_id
+            return "F001"  # ID por defecto en caso de error
     
     @staticmethod
     def obtener_pacientes() -> List[Paciente]:
@@ -251,17 +207,23 @@ class FacturacionModel:
             cursor = conexion.cursor()
             print("✅ Conexión a la base de datos establecida")
 
-            # Consulta SQL corregida usando ID_Factura_Custom en lugar de ID_Factura
+            # Consulta SQL usando ID_Factura directamente
             query = """
-            INSERT INTO Factura (ID_Factura_Custom, ID_Paciente, Monto_Total, Fecha_Emision, Estado_Pago)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO Factura (ID_Factura, ID_Paciente, Fecha_Emision, Descripcion_Servicio, Monto_Servicio, Monto_Total, Estado_Pago)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
+            
+            # Preparar la descripción de servicios
+            descripcion_servicios = ", ".join(factura.servicios)
+            monto_servicio = sum(factura.montos)
             
             valores = (
                 factura.id_factura,
                 factura.paciente.id_paciente,
-                factura.monto_total,
                 factura.fecha_emision,
+                descripcion_servicios,
+                monto_servicio,
+                factura.monto_total,
                 factura.estado_pago
             )
             
@@ -313,8 +275,8 @@ class FacturacionModel:
 
             cursor = conexion.cursor()
 
-            # CORREGIDO: Usar el nombre correcto de la columna ID_Factura_Custom
-            query = "SELECT COUNT(*) FROM Factura WHERE ID_Factura_Custom = %s"
+            # Usar el nombre correcto de la columna ID_Factura
+            query = "SELECT COUNT(*) FROM Factura WHERE ID_Factura = %s"
             cursor.execute(query, (id_factura,))
             
             resultado = cursor.fetchone()
@@ -394,10 +356,10 @@ class FacturacionModel:
 
             cursor = conexion.cursor()
 
-            # Consulta corregida sin columnas que no existen
+            # Consulta usando las columnas correctas de la tabla Factura
             query = """
             SELECT f.ID_Factura, f.ID_Paciente, f.Monto_Total, f.Fecha_Emision, f.Estado_Pago,
-                   p.Nombre, p.Apellido, p.DUI
+                   f.Descripcion_Servicio, p.Nombre, p.Apellido, p.DUI
             FROM Factura f
             INNER JOIN Paciente p ON f.ID_Paciente = p.ID_Paciente
             ORDER BY f.Fecha_Emision DESC
@@ -407,20 +369,23 @@ class FacturacionModel:
             resultados = cursor.fetchall()
 
             for row in resultados:
-                # Crear objeto Paciente
+                # Crear objeto Paciente con todos los campos requeridos
                 paciente = Paciente(
-                    nombre=row[5],
-                    apellido=row[6], 
-                    dui=row[7],
-                    telefono="",  # Agregar campos faltantes según tu modelo
+                    nombre=row[6],
+                    apellido=row[7], 
+                    fecha_nacimiento=datetime(1990, 1, 1),  # Fecha por defecto
+                    telefono=0,  # Teléfono por defecto
+                    correo="",  # Correo por defecto
+                    dui=row[8],
                     id_paciente=row[1]
                 )
 
-                # Crear objeto Factura sin servicios específicos
+                # Crear objeto Factura con la descripción de servicios
+                descripcion_servicio = row[5] if row[5] else "Consulta Dental"
                 factura = Factura(
                     id_factura=row[0],
                     paciente=paciente,
-                    servicios=["Consulta Dental"],  # Servicio genérico
+                    servicios=[descripcion_servicio],  # Usar descripción de la BD
                     montos=[row[2]],  # Usar el monto total
                     fecha_emision=row[3],
                     estado_pago=row[4]

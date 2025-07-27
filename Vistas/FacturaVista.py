@@ -209,27 +209,6 @@ class FacturacionView(QMainWindow):
         form_layout.setHorizontalSpacing(20)
         form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         
-        # Campo para número de factura (solo el número)
-        self.numero_factura_edit = QLineEdit()
-        self.numero_factura_edit.setPlaceholderText("Ej: 5, 10, 25...")
-        self.numero_factura_edit.setMinimumHeight(35)
-        self.numero_factura_edit.setMinimumWidth(150)
-        self.numero_factura_edit.setMaximumWidth(200)
-        self.numero_factura_edit.setStyleSheet("""
-            QLineEdit {
-                padding: 8px 12px;
-                border: 2px solid #ddd;
-                border-radius: 5px;
-                background-color: white;
-                color: #000000;
-                font-size: 14px;
-                font-weight: normal;
-            }
-            QLineEdit:focus {
-                border-color: #5e81ac;
-            }
-        """)
-        
         # Campo ID Factura completo (automático - solo lectura)
         self.id_factura_edit = QLineEdit()
         self.id_factura_edit.setPlaceholderText("Se generará automáticamente...")
@@ -238,18 +217,15 @@ class FacturacionView(QMainWindow):
         self.id_factura_edit.setReadOnly(True)
         self.id_factura_edit.setStyleSheet("""
             QLineEdit {
-                background-color: #f8f9fa;
-                color: #495057;
-                font-style: italic;
+                background-color: #ffffff;
+                color: #000000;
+                font-weight: bold;
                 padding: 8px 12px;
-                border: 2px solid #e9ecef;
+                border: 2px solid #756f9f;
                 border-radius: 5px;
                 font-size: 14px;
             }
         """)
-        
-        # Conectar evento para actualizar automáticamente
-        self.numero_factura_edit.textChanged.connect(self.actualizar_id_factura)
 
         # ComboBox para pacientes
         self.paciente_combo = QComboBox()
@@ -356,7 +332,6 @@ class FacturacionView(QMainWindow):
         """)
         
         # Agregar campos al formulario
-        form_layout.addRow("🔢 Número de Factura:", self.numero_factura_edit)
         form_layout.addRow("🆔 ID Completo (Auto):", self.id_factura_edit)
         form_layout.addRow("👤 Paciente:", self.paciente_combo)
         form_layout.addRow("🦷 Tratamiento:", self.tratamiento_combo)
@@ -449,12 +424,19 @@ class FacturacionView(QMainWindow):
         """Manejador para el botón de actualizar datos"""
         self.actualizar_datos_signal.emit()
 
+    def mostrar_id_automatico(self, id_factura: str):
+        """Muestra el ID generado automáticamente en el campo correspondiente"""
+        self.id_factura_edit.setText(id_factura)
+        print(f"🆔 ID automático mostrado en la vista: {id_factura}")
+
     def limpiar_formulario(self):
         """Limpia todos los campos del formulario"""
-        self.numero_factura_edit.clear()
         self.id_factura_edit.clear()
         self.paciente_combo.setCurrentIndex(0)
         self.tratamiento_combo.setCurrentIndex(0)
+        
+        # Regenerar el siguiente ID automáticamente después de limpiar
+        self.actualizar_datos_signal.emit()
 
     def mostrar_mensaje(self, tipo, titulo, mensaje):
         """Muestra un mensaje al usuario"""
@@ -476,34 +458,12 @@ class FacturacionView(QMainWindow):
         self.resultado_text.append(texto_factura)
         self.resultado_text.append("\n")
 
-    def actualizar_id_factura(self):
-        """Genera automáticamente el ID completo cuando cambia el número"""
-        numero = self.numero_factura_edit.text().strip()
-        
-        if numero.isdigit():
-            # Generar timestamp actual
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            
-            # Crear ID completo
-            id_completo = f"FAC-{numero}-{timestamp}"
-            
-            # Mostrar en el campo de solo lectura
-            self.id_factura_edit.setText(id_completo)
-            
-            print(f"🆔 [AUTO] Número: {numero} → ID: {id_completo}")
-        else:
-            # Si no es un número válido, limpiar el campo
-            self.id_factura_edit.setText("")
-            if numero:  # Solo mostrar mensaje si hay texto
-                print(f"⚠️ [AUTO] '{numero}' no es un número válido")
-
     def get_datos_formulario(self):
         """Obtiene los datos del formulario"""
         print("📋 [DEBUG] Obteniendo datos del formulario...")
         
-        id_factura = self.id_factura_edit.text().strip()
-        print(f"🆔 [DEBUG] ID Factura: '{id_factura}'")
+        # El ID se generará automáticamente en el controlador
+        print("🆔 [DEBUG] ID se generará automáticamente")
         
         paciente = self.paciente_combo.currentData()
         print(f"👤 [DEBUG] Paciente seleccionado: {paciente}")
@@ -512,7 +472,7 @@ class FacturacionView(QMainWindow):
         print(f"🦷 [DEBUG] Tratamiento seleccionado: {tratamiento}")
         
         datos = {
-            'id_factura': id_factura,
+            'id_factura': None,  # Se generará automáticamente
             'paciente': paciente,
             'tratamiento': tratamiento
         }

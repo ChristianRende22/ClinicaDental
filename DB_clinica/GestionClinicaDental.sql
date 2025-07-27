@@ -73,8 +73,7 @@ CREATE TABLE Cita (
 
 -- Tabla: Factura
 CREATE TABLE Factura (
-    ID_Factura INT AUTO_INCREMENT PRIMARY KEY,
-    ID_Factura_Custom VARCHAR(50),
+    ID_Factura VARCHAR(50) PRIMARY KEY,
     ID_Paciente INT,
     Fecha_Emision DATETIME,
     Descripcion_Servicio TEXT,
@@ -96,7 +95,7 @@ CREATE TABLE Asistente (
 -- Tablas de relación
 CREATE TABLE Tratamiento_Factura (
 	ID_Tratamiento INT NOT NULL,
-	ID_Factura INT NOT NULL,
+	ID_Factura VARCHAR(50) NOT NULL,
 	PRIMARY KEY (ID_Tratamiento, ID_Factura),
 	FOREIGN KEY (ID_Tratamiento) REFERENCES Tratamiento(ID_Tratamiento) ON DELETE CASCADE,
 	FOREIGN KEY (ID_Factura) REFERENCES Factura(ID_Factura) ON DELETE CASCADE
@@ -120,7 +119,7 @@ CREATE TABLE Asistente_Cita (
 
 CREATE TABLE Asistente_Factura (
 	ID_Asistente INT NOT NULL,
-	ID_Factura INT NOT NULL,
+	ID_Factura VARCHAR(50) NOT NULL,
 	PRIMARY KEY (ID_Asistente, ID_Factura),
 	FOREIGN KEY (ID_Asistente) REFERENCES Asistente(ID_Asistente) ON DELETE CASCADE,
 	FOREIGN KEY (ID_Factura) REFERENCES Factura(ID_Factura) ON DELETE CASCADE
@@ -160,12 +159,11 @@ INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Ho
 (3, 3456, 3, '2025-07-02 10:00:00', '10:00:00', '10:30:00', 'Confirmada', 60.00);
 
 INSERT INTO Factura (
-    ID_Paciente, ID_Factura_Custom, Fecha_Emision, 
+    ID_Paciente, ID_Factura, Fecha_Emision, 
     Descripcion_Servicio, Monto_Servicio, Monto_Total, Estado_Pago) VALUES
-(1, 'FAC-1-20250718145401', '2025-07-01', 'Limpieza dental', 20.00, 20.00, 'Pagada'),
-(2, 'FAC-2-20250718145402', '2025-07-01', 'Ortodoncia', 450.00, 450.00, 'Pendiente'),
-(3, 'FAC-3-20250718145403', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
-
+(1, 'F001', '2025-07-01', 'Limpieza dental', 20.00, 20.00, 'Pagada'),
+(2, 'F002', '2025-07-01', 'Ortodoncia', 450.00, 450.00, 'Pendiente'),
+(3, 'F003', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
 
 INSERT INTO Asistente (Nombre, Apellido, Telefono, Correo, Contrasena) VALUES
 ('Ivonne', 'Morales', '70445566', 'ivonne.morales@clinicadental.com', 'asist123'),
@@ -174,9 +172,9 @@ INSERT INTO Asistente (Nombre, Apellido, Telefono, Correo, Contrasena) VALUES
 
 
 INSERT INTO Tratamiento_Factura (ID_Tratamiento, ID_Factura) VALUES
-(1, 1),
-(2, 2),
-(3, 3);
+(1, 'F001'),
+(2, 'F002'),
+(3, 'F003');
 
 INSERT INTO Asistente_Paciente (ID_Asistente, ID_Paciente) VALUES
 (1, 1),
@@ -190,6 +188,6 @@ INSERT INTO Asistente_Cita (ID_Asistente, ID_Cita) VALUES
 (3, 3);
 
 INSERT INTO Asistente_Factura (ID_Asistente, ID_Factura) VALUES
-(1, 1),
-(2, 2),
-(3, 3);
+(1, 'F001'),
+(2, 'F002'),
+(3, 'F003');

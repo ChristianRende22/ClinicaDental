@@ -106,6 +106,15 @@ class FacturacionController:
                 self.view.mostrar_mensaje("error", "❌ Error", 
                                         f"Error al cargar tratamientos: {str(tratamiento_error)}")
             
+            # Generar y mostrar el próximo ID de factura automáticamente
+            try:
+                siguiente_id = self.model.generar_id_factura_automatico()
+                self.view.mostrar_id_automatico(siguiente_id)
+                print(f"✅ ID de factura generado y mostrado: {siguiente_id}")
+            except Exception as id_error:
+                print(f"❌ Error al generar ID automático: {id_error}")
+                self.view.mostrar_id_automatico("F001")  # ID por defecto
+            
             print("✅ Proceso de carga de datos completado")
             
         except Exception as e:
@@ -118,6 +127,13 @@ class FacturacionController:
     def crear_factura(self, datos: Dict[str, Any]):
         """Crea una nueva factura"""
         try:
+            # Generar ID automáticamente
+            id_factura_automatico = self.model.generar_id_factura_automatico()
+            print(f"🆔 ID generado automáticamente: {id_factura_automatico}")
+            
+            # Actualizar los datos con el ID generado
+            datos['id_factura'] = id_factura_automatico
+            
             # Validar datos
             if not self._validar_datos_factura(datos):
                 return
@@ -127,7 +143,7 @@ class FacturacionController:
             print(f"Paciente: {datos['paciente'].__class__.__name__} - {datos['paciente'].id_paciente} - {datos['paciente'].nombre} {datos['paciente'].apellido}")
             print(f"Tratamiento: {datos['tratamiento'].__class__.__name__} - {datos['tratamiento'].id_tratamiento} - {datos['tratamiento'].descripcion}")
             
-            # Verificar si la factura ya existe
+            # Verificar si la factura ya existe (aunque no debería porque el ID es auto-generado)
             if self.model.factura_existe(datos['id_factura']):
                 self.view.mostrar_mensaje("error", "❌ Error", 
                                         "Ya existe una factura con este ID.")
@@ -152,6 +168,15 @@ class FacturacionController:
                                         "Factura creada correctamente.")
                 self.view.limpiar_formulario()
                 self.view.agregar_factura_resultado(str(nueva_factura))
+                
+                # Generar y mostrar el próximo ID automáticamente
+                try:
+                    siguiente_id = self.model.generar_id_factura_automatico()
+                    self.view.mostrar_id_automatico(siguiente_id)
+                    print(f"✅ Próximo ID generado: {siguiente_id}")
+                except Exception as e:
+                    print(f"❌ Error al generar próximo ID: {e}")
+                    self.view.mostrar_id_automatico("F001")
             else:
                 self.view.mostrar_mensaje("error", "❌ Error", 
                                         "Error al guardar la factura en la base de datos.")
@@ -165,10 +190,7 @@ class FacturacionController:
             
     def _validar_datos_factura(self, datos: Dict[str, Any]) -> bool:
         """Valida los datos de la factura antes de crearla"""
-        if not datos['id_factura']:
-            self.view.mostrar_mensaje("error", "⚠️ Error", 
-                                    "Debe ingresar un ID de factura.")
-            return False
+        # Ya no validamos el ID porque se genera automáticamente
         
         if not datos['paciente']:
             self.view.mostrar_mensaje("error", "⚠️ Error", 
@@ -208,6 +230,16 @@ class FacturacionController:
     def limpiar_campos(self):
         """Limpia todos los campos del formulario"""
         self.view.limpiar_formulario()
+        
+        # Generar y mostrar el próximo ID automáticamente después de limpiar
+        try:
+            siguiente_id = self.model.generar_id_factura_automatico()
+            self.view.mostrar_id_automatico(siguiente_id)
+            print(f"✅ ID regenerado después de limpiar: {siguiente_id}")
+        except Exception as e:
+            print(f"❌ Error al regenerar ID: {e}")
+            self.view.mostrar_id_automatico("F001")
+            
         self.view.mostrar_mensaje("info", "ℹ️ Información", 
                                 "Formulario limpiado correctamente.")
     
