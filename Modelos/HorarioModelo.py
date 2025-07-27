@@ -350,3 +350,77 @@ class HorarioModel:
         # Por ahora agrupamos todos los horarios bajo "Hoy" ya que no tenemos fecha específica
         horarios_por_dia = {"Hoy": self.horarios}
         return horarios_por_dia
+    
+    def generar_siguiente_id(self) -> str:
+        """
+        Genera el siguiente ID de horario basado en los IDs existentes en la base de datos.
+        Formato: H001, H002, H003, etc.
+        Verifica secuencialmente y encuentra el primer número disponible.
+        """
+        try:
+            # Obtener todos los horarios desde la base de datos
+            horarios = Horario.obtener_horarios_bd()
+            
+            if not horarios:
+                return "H001"  # Primer ID si no hay horarios
+            
+            # Extraer los números de los IDs existentes y ordenarlos
+            numeros_existentes = set()
+            for horario in horarios:
+                id_horario = str(horario.id_horario).strip()  # Convertir a string primero
+                # Verificar que el ID tenga el formato correcto (H seguido de 3 dígitos)
+                if id_horario.startswith('H') and len(id_horario) == 4:
+                    try:
+                        numero = int(id_horario[1:])  # Extraer número después de 'H'
+                        numeros_existentes.add(numero)
+                    except ValueError:
+                        continue
+                # También manejar IDs que son solo números (casos legacy)
+                elif id_horario.isdigit():
+                    try:
+                        numero = int(id_horario)
+                        numeros_existentes.add(numero)
+                    except ValueError:
+                        continue
+            
+            if not numeros_existentes:
+                return "H001"  # Si no hay IDs válidos, empezar con H001
+            
+            # Buscar el primer número disponible en la secuencia
+            siguiente_numero = 1
+            while siguiente_numero in numeros_existentes:
+                siguiente_numero += 1
+            
+            # Formatear con ceros a la izquierda (siempre 3 dígitos)
+            return f"H{siguiente_numero:03d}"
+            
+        except Exception as e:
+            print(f"Error al generar siguiente ID: {e}")
+            import traceback
+            traceback.print_exc()
+            return "H001"  # ID por defecto en caso de error
+    
+    def obtener_ids_existentes(self) -> List[str]:
+        """
+        Obtiene una lista de todos los IDs de horarios existentes en la base de datos.
+        Útil para verificación y debugging.
+        """
+        try:
+            horarios = Horario.obtener_horarios_bd()
+            # Convertir todos los IDs a string para evitar problemas de tipo
+            return [str(horario.id_horario) for horario in horarios]
+        except Exception as e:
+            print(f"Error al obtener IDs existentes: {e}")
+            return []
+    
+    def verificar_id_disponible(self, id_horario: str) -> bool:
+        """
+        Verifica si un ID específico está disponible (no existe en la base de datos).
+        """
+        try:
+            ids_existentes = self.obtener_ids_existentes()
+            # Comparar como strings para evitar problemas de tipo
+            return str(id_horario) not in ids_existentes
+        except Exception as e:
+            print(f"Error al verificar disponibilidad del ID: {e}")
+            return False

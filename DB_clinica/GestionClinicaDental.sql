@@ -26,7 +26,7 @@ CREATE TABLE Doctor (
 
 -- Tabla: Horario
 CREATE TABLE Horario (
-	ID_Horario INT AUTO_INCREMENT PRIMARY KEY,
+	ID_Horario VARCHAR(10) PRIMARY KEY,
 	ID_Doctor VARCHAR(10) NOT NULL,
 	Hora_Inicio TIME NOT NULL,
 	Hora_Fin TIME NOT NULL,
@@ -142,10 +142,10 @@ INSERT INTO Historial_Medico (ID_Paciente, Fecha_Creacion, Notas_Generales) VALU
 (2, '2024-06-10', 'Evaluación inicial.'),
 (3, '2024-07-05', 'Control de ortodoncia.');
 
-INSERT INTO Horario (ID_Doctor, Hora_Inicio, Hora_Fin, Disponible) VALUES
-(1234,  '08:00:00', '12:00:00', TRUE),
-(2345, '13:00:00', '17:00:00', TRUE),
-(3456, '08:00:00', '12:00:00', FALSE);
+INSERT INTO Horario (ID_Horario,ID_Doctor, Hora_Inicio, Hora_Fin, Disponible) VALUES
+("H001",1234,  '08:00:00', '12:00:00', TRUE),
+("H002",2345, '13:00:00', '17:00:00', TRUE),
+("H003",3456, '08:00:00', '12:00:00', FALSE);
 
 
 INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha, Estado) VALUES

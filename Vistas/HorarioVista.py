@@ -17,9 +17,10 @@ from Modelos.DoctorModelo import Doctor
 
 
 class AgregarHorarioDialog(QDialog):
-    def __init__(self, doctores: List[Doctor], parent=None):
+    def __init__(self, doctores: List[Doctor], parent=None, id_sugerido: str = None):
         super().__init__(parent)
         self.doctores = doctores
+        self.id_sugerido = id_sugerido
         self.setWindowTitle("➕ Agregar Horario")
         self.setModal(True)
         self.resize(600, 500)
@@ -50,18 +51,25 @@ class AgregarHorarioDialog(QDialog):
                 font-weight: bold;
             }}
             
-            QLineEdit, QComboBox, QDateEdit {{
+            QLineEdit, QComboBox, QDateEdit, QTimeEdit {{
                 font-family: 'Segoe UI';
                 font-size: 14px;
                 border: 2px solid {self.colors['secondary']};
                 border-radius: 6px;
                 padding: 10px;
                 background-color: {self.colors['surface']};
-                color: {self.colors['text_light']};
+                color: #000000;
                 selection-background-color: {self.colors['accent']};
             }}
             
-            QLineEdit:focus, QComboBox:focus, QDateEdit:focus {{
+            QComboBox QAbstractItemView {{
+                background-color: {self.colors['surface']};
+                color: #000000;
+                selection-background-color: {self.colors['accent']};
+                selection-color: {self.colors['surface']};
+            }}
+            
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QTimeEdit:focus {{
                 border-color: {self.colors['accent']};
             }}
             
@@ -132,6 +140,35 @@ class AgregarHorarioDialog(QDialog):
             QCalendarWidget QAbstractItemView:disabled {{
                 color: {self.colors['secondary']};
             }}
+            
+            QTimeEdit {{
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                selection-background-color: {self.colors['accent']};
+            }}
+            
+            QTimeEdit::up-button, QTimeEdit::down-button {{
+                background-color: {self.colors['secondary']};
+                border: none;
+                border-radius: 3px;
+                width: 16px;
+                height: 16px;
+            }}
+            
+            QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {{
+                background-color: {self.colors['accent']};
+            }}
+            
+            QTimeEdit::up-arrow, QTimeEdit::down-arrow {{
+                color: {self.colors['surface']};
+                width: 8px;
+                height: 8px;
+            }}
         """)
 
         self.configurar_ui()
@@ -141,9 +178,27 @@ class AgregarHorarioDialog(QDialog):
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
         
-        # Campo ID Horario con sugerencia de formato H1
+        # Campo ID Horario - ahora automático y de solo lectura
         self.id_edit = QLineEdit()
-        self.id_edit.setPlaceholderText("Ejemplo: H001, H002, H003, etc.")
+        if self.id_sugerido:
+            self.id_edit.setText(self.id_sugerido)
+            self.id_edit.setReadOnly(True)
+            self.id_edit.setPlaceholderText(f"ID generado automáticamente: {self.id_sugerido}")
+            # Estilo especial para campo de solo lectura
+            self.id_edit.setStyleSheet(f"""
+                QLineEdit {{
+                    font-family: 'Segoe UI';
+                    font-size: 14px;
+                    border: 2px solid {self.colors['secondary']};
+                    border-radius: 6px;
+                    padding: 10px;
+                    background-color: #f5f5f5;
+                    color: {self.colors['primary']};
+                    font-weight: bold;
+                }}
+            """)
+        else:
+            self.id_edit.setPlaceholderText("Ejemplo: H001, H002, H003, etc.")
         
         # Quitar el campo de fecha ya que la tabla no lo maneja por días específicos
         # self.fecha_edit = QDateEdit()
@@ -152,18 +207,77 @@ class AgregarHorarioDialog(QDialog):
         self.hora_inicio_edit = QTimeEdit()
         self.hora_inicio_edit.setDisplayFormat("HH:mm")
         self.hora_inicio_edit.setTime(QTime(9, 0))  # Hora por defecto 09:00
+        self.hora_inicio_edit.setStyleSheet(f"""
+            QTimeEdit {{
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                selection-background-color: {self.colors['accent']};
+            }}
+        """)
         
         self.hora_fin_edit = QTimeEdit()
         self.hora_fin_edit.setDisplayFormat("HH:mm")
         self.hora_fin_edit.setTime(QTime(17, 0))  # Hora por defecto 17:00
+        self.hora_fin_edit.setStyleSheet(f"""
+            QTimeEdit {{
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: {self.colors['text_light']};
+                selection-background-color: {self.colors['accent']};
+            }}
+        """)
         
         # ComboBox para seleccionar doctor
         self.doctor_combo = QComboBox()
         for doctor in self.doctores:
             self.doctor_combo.addItem(f"Dr. {doctor.nombre} {doctor.apellido}", doctor)
         
+        # Aplicar estilo específico al ComboBox para asegurar que el texto sea visible
+        self.doctor_combo.setStyleSheet(f"""
+            QComboBox {{
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 6px;
+                padding: 10px;
+                background-color: {self.colors['surface']};
+                color: #000000;
+                selection-background-color: {self.colors['accent']};
+            }}
+            QComboBox::drop-down {{
+                background-color: {self.colors['secondary']};
+                border: none;
+                border-radius: 4px;
+                width: 30px;
+            }}
+            QComboBox::down-arrow {{
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid {self.colors['surface']};
+                margin: 5px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {self.colors['surface']};
+                color: #000000;
+                selection-background-color: {self.colors['accent']};
+                selection-color: {self.colors['surface']};
+                border: 1px solid {self.colors['secondary']};
+            }}
+        """)
+        
         # Agregar campos al formulario
-        form_layout.addRow("🆔 ID Horario:", self.id_edit)
+        id_label = "🆔 ID Horario (Automático):" if self.id_sugerido else "🆔 ID Horario:"
+        form_layout.addRow(id_label, self.id_edit)
         form_layout.addRow("⏰ Hora Inicio:", self.hora_inicio_edit)
         form_layout.addRow("⏳ Hora Fin:", self.hora_fin_edit)
         form_layout.addRow("👨‍⚕️ Médico:", self.doctor_combo)
@@ -379,9 +493,9 @@ class HorarioView(QMainWindow):
         """Método para que el controlador actualice los combos."""
         pass 
     
-    def mostrar_dialogo_agregar(self, doctores: List[Doctor]):
+    def mostrar_dialogo_agregar(self, doctores: List[Doctor], id_sugerido: str = None):
         """Muestra el diálogo para agregar horario y retorna los datos."""
-        dialog = AgregarHorarioDialog(doctores, self)
+        dialog = AgregarHorarioDialog(doctores, self, id_sugerido)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             return dialog.get_data()
         return None

@@ -43,7 +43,15 @@ class HorarioController:
     def agregar_horario(self):
         """Agrega un nuevo horario después de validaciones."""
         try:
-            datos = self.vista.mostrar_dialogo_agregar(self.doctores)
+            # Generar el siguiente ID automáticamente
+            siguiente_id = self.modelo.generar_siguiente_id()
+            print(f"ID generado automáticamente: {siguiente_id}")
+            
+            # Mostrar IDs existentes para debugging
+            ids_existentes = self.modelo.obtener_ids_existentes()
+            print(f"IDs existentes en BD: {ids_existentes}")
+            
+            datos = self.vista.mostrar_dialogo_agregar(self.doctores, siguiente_id)
             if not datos: 
                 return
             
@@ -70,16 +78,18 @@ class HorarioController:
                 QMessageBox.warning(self.vista, "❌ Error", "La hora de fin debe ser posterior a la hora de inicio.")
                 return
 
-            # Validar ID único (consultar en la base de datos)
-            horarios_existentes = self.modelo.obtener_horarios()
-            if any(h.id_horario == id_horario for h in horarios_existentes):
-                QMessageBox.warning(self.vista, "❌ Error", "El ID de horario ya existe.")
+            # Validar ID único usando el nuevo método del modelo
+            if not self.modelo.verificar_id_disponible(id_horario):
+                QMessageBox.warning(self.vista, "❌ Error", 
+                                  f"El ID de horario '{id_horario}' ya existe.\n"
+                                  f"IDs existentes: {', '.join(ids_existentes)}")
                 return
 
             # Crear el nuevo objeto Horario
             nuevo_horario = Horario(id_horario, hora_inicio, hora_fin, doctor)
 
             # Validar conflicto de horarios 
+            horarios_existentes = self.modelo.obtener_horarios()
             for horario_existente in horarios_existentes:
                 if nuevo_horario.horario_ocupado(horario_existente):
                     QMessageBox.warning(self.vista, "❌ Error", 
@@ -93,7 +103,8 @@ class HorarioController:
                 self.actualizar_vista()
                 QMessageBox.information(self.vista, "✅ Éxito", 
                                       f"Horario agregado correctamente en la base de datos.\n"
-                                      f"ID: {nuevo_horario.id_horario}")
+                                      f"ID: {nuevo_horario.id_horario}\n"
+                                      f"Siguiente ID disponible será: {self.modelo.generar_siguiente_id()}")
             else:
                 QMessageBox.critical(self.vista, "❌ Error", 
                                    "Error al guardar el horario en la base de datos.")
