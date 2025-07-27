@@ -51,7 +51,6 @@ CREATE TABLE Tratamiento (
 	Descripcion TEXT NOT NULL,
 	Costo DECIMAL(10,2) NOT NULL,
 	Fecha DATETIME NOT NULL,
-	Estado ENUM('Pendiente', 'En Progreso', 'Finalizado') DEFAULT 'Pendiente',
 	FOREIGN KEY (ID_Doctor) REFERENCES Doctor(ID_Doctor) ON DELETE CASCADE
 );
 
@@ -147,10 +146,10 @@ INSERT INTO Horario (ID_Horario,ID_Doctor, Hora_Inicio, Hora_Fin, Disponible) VA
 ("H003",3456, '08:00:00', '12:00:00', FALSE);
 
 
-INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha, Estado) VALUES
-(1234, 'Limpieza dental general', 20.00, '2025-07-01 09:30:00', 'Finalizado'),
-(2345, 'Colocación de brackets', 450.00, '2025-07-01 15:00:00', 'En Progreso'),
-(3456, 'Tratamiento de conducto', 250.00, '2025-07-02 10:30:00', 'Pendiente');
+INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha ) VALUES
+(1234, 'Limpieza dental general', 20.00, '2025-07-01 09:30:00'),
+(2345, 'Colocación de brackets', 450.00, '2025-07-01 15:00:00'),
+(3456, 'Tratamiento de conducto', 250.00, '2025-07-02 10:30:00', );
 
 
 INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Hora_Fin, Estado, Costo) VALUES

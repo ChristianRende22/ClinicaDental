@@ -13,13 +13,12 @@ from datetime import datetime
 from PyQt6.QtCore import QDate
 
 class Tratamiento:
-    def __init__(self, id_tratamiento, id_doctor, descripcion, costo, fecha, estado, doctor):
+    def __init__(self, id_tratamiento, id_doctor, descripcion, costo, fecha, doctor):
         self.id_tratamiento = id_tratamiento
         self.id_doctor = id_doctor
         self.descripcion = descripcion
         self.costo = costo
         self.fecha = fecha
-        self.estado = estado
         self.doctor = doctor or self._obtener_doctor(id_doctor)
         
     @staticmethod
@@ -54,7 +53,7 @@ class Tratamiento:
         return "Doctor desconocido"
     
     @staticmethod
-    def insertar_tratamiento(id_doctor, descripcion, costo, fecha, estado):
+    def insertar_tratamiento(id_doctor, descripcion, costo, fecha):
         # Asegura que la fecha esté en formato correcto para MySQL
         if isinstance(fecha, QDate):
             fecha = fecha.toString("yyyy-MM-dd")
@@ -65,10 +64,10 @@ class Tratamiento:
             conn = Tratamiento.conectar_bd()
             cursor = conn.cursor()
             query = """
-            INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha, Estado)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha)
+            VALUES (%s, %s, %s, %s)
             """
-            cursor.execute(query, (id_doctor, descripcion, costo, fecha, estado))
+            cursor.execute(query, (id_doctor, descripcion, costo, fecha))
             conn.commit()
             return cursor.lastrowid
         except mysql.connector.Error as e:
@@ -88,22 +87,21 @@ class Tratamiento:
         try:
             conn = Tratamiento.conectar_bd()
             cursor = conn.cursor()
-            # CORREGIDO: Agregar más campos a la query
-            query = "SELECT ID_Tratamiento, Descripcion, Costo, ID_Doctor, Fecha, Estado FROM Tratamiento"
+            # Consulta sin campo Estado
+            query = "SELECT ID_Tratamiento, Descripcion, Costo, ID_Doctor, Fecha FROM Tratamiento"
             cursor.execute(query)
             
             resultados = cursor.fetchall()
             print(f"Resultados de tratamientos desde BD: {resultados}")  # Debug
             
             for row in resultados:
-                # CORREGIDO: Usar constructor compatible y índices correctos
+                # Constructor sin estado
                 tratamiento = Tratamiento(
                     id_tratamiento=row[0],           # ID_Tratamiento
                     id_doctor=row[3] if row[3] else None,  # ID_Doctor
                     descripcion=row[1] if row[1] else "Sin descripción",  # Descripcion
                     costo=float(row[2]) if row[2] else 0.0,  # Costo
                     fecha=row[4] if row[4] else None,  # Fecha
-                    estado=row[5] if row[5] else "Activo",  # Estado
                     doctor=None  # Se llenará automáticamente por el constructor
                 )
                 
@@ -127,5 +125,4 @@ class Tratamiento:
                 f"Descripción: '{self.descripcion}' \n "
                 f"Costo: ${self.costo:,.2f} \n " 
                 f"Fecha de realización: {self.fecha} \n " 
-                f"Estado: '{self.estado}' \n "
                 f"Doctor: {self.doctor} \n " )

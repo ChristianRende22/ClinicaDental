@@ -25,14 +25,13 @@ class TratamientoControlador:
         # else:
         #     print("Cancelado o cerrado")
 
-    def crear_tratamiento(self, descripcion, costo, fecha, estado, id_doctor):
+    def crear_tratamiento(self, descripcion, costo, fecha, id_doctor):
         # No creamos un objeto completo, solo los datos necesarios para guardar.
         # La creación real es en insertar_tratamiento
         return {
             'descripcion': descripcion,
             'costo': costo,
             'fecha': fecha,
-            'estado': estado,
             'id_doctor': id_doctor
         }
         
@@ -52,7 +51,7 @@ class TratamientoControlador:
                 self.vista.abrir_registro_doctor()
             return None
         
-    def validar_datos(self, descripcion, costo, fecha, estado, carnet_doctor):
+    def validar_datos(self, descripcion, costo, fecha, carnet_doctor):
         errores = []
 
         if not descripcion or descripcion.strip() == "":
@@ -64,10 +63,6 @@ class TratamientoControlador:
         if not fecha or not fecha.isValid():
             errores.append("Debe seleccionar una fecha válida.")
 
-        estados_validos = ['Pendiente', 'En Progreso', 'Finalizado']
-        if estado not in estados_validos:
-            errores.append(f"Estado inválido. Debe ser uno de: {', '.join(estados_validos)}")
-
         if not carnet_doctor:
             errores.append("Debe ingresar el carnet del doctor.")
 
@@ -77,13 +72,12 @@ class TratamientoControlador:
 
         return True
     
-    def guardar_tratamiento(self, descripcion, costo, fecha, estado, carnet_doctor):
+    def guardar_tratamiento(self, descripcion, costo, fecha, carnet_doctor):
         id_tratamiento = Tratamiento.insertar_tratamiento(
             id_doctor= carnet_doctor,
             descripcion=descripcion,
             costo=costo,
-            fecha=fecha,
-            estado=estado
+            fecha=fecha
         )
         return id_tratamiento
 

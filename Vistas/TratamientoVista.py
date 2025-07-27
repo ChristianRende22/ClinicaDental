@@ -97,11 +97,6 @@ class AgregarTratamientoDialog(QDialog):
         self.fecha_edit.setDate(QDate.currentDate())
         form.addRow("Fecha:", self.fecha_edit)
 
-        # Estado (enum)
-        self.estado_combo = QComboBox()
-        self.estado_combo.addItems(['Pendiente', 'En Progreso', 'Finalizado'])
-        form.addRow("Estado:", self.estado_combo)
-
         # Doctor: carnet + botón verificar + label nombre
         self.doctor_carnet_edit = QLineEdit()
         self.doctor_carnet_edit.setPlaceholderText("Ingrese carnet de doctor")
@@ -167,14 +162,13 @@ class AgregarTratamientoDialog(QDialog):
             costo = 0
 
         fecha = self.fecha_edit.date()
-        estado = self.estado_combo.currentText()
         carnet_doctor = self.doctor_carnet_edit.text().strip()
 
         if not self.verificar_doctor():
             self.mostrar_mensaje("Error", "Doctor no válido o no registrado.")
             return
 
-        if not self.controlador.validar_datos(descripcion, costo, fecha, estado, carnet_doctor):
+        if not self.controlador.validar_datos(descripcion, costo, fecha, carnet_doctor):
             return
 
         fecha_str = fecha.toString("yyyy-MM-dd") + " 00:00:00"
@@ -183,7 +177,6 @@ class AgregarTratamientoDialog(QDialog):
             descripcion=descripcion,
             costo=costo,
             fecha=fecha_str,
-            estado=estado,
             carnet_doctor=carnet_doctor
         )
 
