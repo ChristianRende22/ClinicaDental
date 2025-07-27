@@ -41,7 +41,7 @@ def main():
         # (Paciente, " - Gestión de Pacientes"),
         # (Dcotor, " - Gestión de Doctores"), 
         # (Factura, " - Gestión de Facturas"),
-        (Horario, "  - Gestión de Horarios"),
+        # (Horario, "  - Gestión de Horarios"),
         # (Tratamiento, " - Gestión de Tratamientos")
     ]
     
