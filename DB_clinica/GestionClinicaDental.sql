@@ -21,7 +21,7 @@ CREATE TABLE Doctor (
 	Especialidad VARCHAR(50) ,
 	Telefono CHAR(8)  ,
 	Correo VARCHAR(25) ,
-	Contrasena VARCHAR(255) 
+	Contrasena VARCHAR(255) DEFAULT 'Doctor123'
 );
 
 -- Tabla: Horario
