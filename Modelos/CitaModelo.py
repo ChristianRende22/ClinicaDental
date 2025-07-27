@@ -439,3 +439,77 @@ class Cita:
             if conexion and conexion.is_connected():
                 conexion.close()
                 print("Conexión a la base de datos cerrada.")
+            
+    @staticmethod
+    def actualizar_cita_bd(cita: 'Cita') -> bool:
+        """
+        Actualiza una cita completa en la base de datos.
+        :param cita: Instancia de la clase Cita con los datos actualizados.
+        :return: True si la actualización fue exitosa, False en caso contrario.
+        """
+        conexion = None
+        cursor = None
+
+        try:
+            conexion = conectar_bd()
+            if not conexion:
+                print("No se pudo establecer conexión con la base de datos.")
+                return False
+
+            cursor = conexion.cursor()
+
+            # Obtener ID de tratamiento si existe
+            id_tratamiento = None
+            if hasattr(cita, 'tratamiento') and cita.tratamiento:
+                id_tratamiento = cita.tratamiento.id_tratamiento
+
+            # Query para actualizar todos los campos de la cita
+            query = """
+            UPDATE Cita 
+            SET ID_Paciente = %s, 
+                ID_Doctor = %s, 
+                ID_Tratamiento = %s, 
+                Fecha = %s, 
+                Hora_Inicio = %s, 
+                Hora_Fin = %s, 
+                Estado = %s, 
+                Costo = %s 
+            WHERE ID_Cita = %s
+            """
+
+            cursor.execute(query, (
+                cita.paciente.id_paciente,
+                cita.doctor.id_doctor,
+                id_tratamiento,
+                cita.fecha,
+                cita.hora_inicio.strftime('%H:%M:%S'),
+                cita.hora_fin.strftime('%H:%M:%S'),
+                cita.estado,
+                cita.costo_cita,
+                cita.id_cita
+            ))
+
+            conexion.commit()
+
+            # Verificar si se actualizó alguna fila
+            if cursor.rowcount > 0:
+                print(f"Cita {cita.id_cita} actualizada exitosamente en la base de datos.")
+                return True
+            else:
+                print(f"No se encontró la cita con ID {cita.id_cita}")
+                return False
+
+        except Error as e:
+            print(f"Error al actualizar la cita: {e}")
+            if conexion:
+                conexion.rollback()
+            return False
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conexion and conexion.is_connected():
+                conexion.close()
+                print("Conexión a la base de datos cerrada.")
+
+

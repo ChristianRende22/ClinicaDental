@@ -347,23 +347,27 @@ class ControladorCita:
                 cita.hora_fin = hora_fin
                 cita.costo_cita = costo_float
                 cita.estado = estado
-                
-                # TODO: Aquí deberías actualizar la BD también
-                # Cita.actualizar_cita_bd(cita)
-                
-                QMessageBox.information(self.vista, "✅ Éxito", "Cita modificada correctamente.")
-                self.vista.resultado_text.append(
-                    f"✏️ CITA MODIFICADA:\n"
-                    f"ID: {cita.id_cita}\n"
-                    f"Paciente: {cita.paciente.nombre} {cita.paciente.apellido}\n"
-                    f"Doctor: {cita.doctor.nombre} {cita.doctor.apellido}\n"
-                    f"Fecha: {cita.fecha.strftime('%d/%m/%Y')}\n"
-                    f"Hora inicio: {cita.hora_inicio.strftime('%H:%M')}\n"
-                    f"Hora fin: {cita.hora_fin.strftime('%H:%M')}\n"
-                    f"Costo: ${cita.costo_cita:.2f}\n"
-                    f"Estado: {cita.estado}\n"
-                )
-                
+
+                if Cita.actualizar_cita_bd(cita):
+                    QMessageBox.information(self.vista, "✅ Éxito", "Cita modificada correctamente en la base de datos.")
+                    self.vista.resultado_text.append(
+                        f"✏️ CITA MODIFICADA:\n"
+                        f"ID: {cita.id_cita}\n"
+                        f"Paciente: {cita.paciente.nombre} {cita.paciente.apellido}\n"
+                        f"Doctor: {cita.doctor.nombre} {cita.doctor.apellido}\n"
+                        f"Fecha: {cita.fecha.strftime('%d/%m/%Y')}\n"
+                        f"Hora inicio: {cita.hora_inicio.strftime('%H:%M')}\n"
+                        f"Hora fin: {cita.hora_fin.strftime('%H:%M')}\n"
+                        f"Costo: ${cita.costo_cita:.2f}\n"
+                        f"Estado: {cita.estado}\n"
+                    )
+                    
+                    # Recargar las citas desde la BD para mostrar los cambios
+                    self.cargar_citas_desde_bd()
+                else:
+                    QMessageBox.critical(self.vista, "❌ Error", "Error al modificar la cita en la base de datos.")
+                    return
+
                 # Rehabilitar el campo ID y salir del modo edición
                 self.vista.id_edit.setReadOnly(False)
                 self.editando_cita = None
@@ -374,7 +378,6 @@ class ControladorCita:
                 QMessageBox.critical(self.vista, "❌ Error", f"Error al modificar la cita: {str(e)}")
                 return
 
-        # NUEVO: Cargar y mostrar citas desde la BD
         self.cargar_citas_desde_bd()
         
         if len(self.citas_agendadas) == 0:
@@ -429,10 +432,8 @@ class ControladorCita:
             else:
                 self.vista.fecha_edit.setDate(QDate.currentDate())
 
-        # CORREGIDO: Manejo más simple de las horas
         try:
             if hasattr(cita_encontrada, 'hora_inicio') and cita_encontrada.hora_inicio:
-                # Crear QDateTime con la fecha actual y la hora de la cita
                 qdt_inicio = QDateTime(QDate.currentDate(), cita_encontrada.hora_inicio)
                 self.vista.inicio_edit.setDateTime(qdt_inicio)
             else:
@@ -443,7 +444,6 @@ class ControladorCita:
     
         try:
             if hasattr(cita_encontrada, 'hora_fin') and cita_encontrada.hora_fin:
-                # Crear QDateTime con la fecha actual y la hora de la cita
                 qdt_fin = QDateTime(QDate.currentDate(), cita_encontrada.hora_fin)
                 self.vista.fin_edit.setDateTime(qdt_fin)
             else:
@@ -466,7 +466,6 @@ class ControladorCita:
         """Confirma si se asistió a la cita"""
         self.vista.resultado_text.clear()
         
-        # NUEVO: Cargar y mostrar citas desde la BD
         self.cargar_citas_desde_bd()
         
         if len(self.citas_agendadas) == 0:
@@ -488,7 +487,6 @@ class ControladorCita:
                 break
         
         if cita_encontrada:
-            # NUEVO: Actualizar el estado en la base de datos
             if Cita.actualizar_estado_bd(cita_encontrada.id_cita, "Confirmada"):
                 # Solo actualizar en memoria si la BD se actualizó correctamente
                 cita_encontrada.estado = "Confirmada"
@@ -507,7 +505,6 @@ class ControladorCita:
         """Calcula el monto a pagar según el tipo de consulta y tratamiento y abre la vista de factura"""
         self.vista.resultado_text.clear()
         
-        # NUEVO: Cargar y mostrar citas desde la BD
         self.cargar_citas_desde_bd()
         
         if len(self.citas_agendadas) == 0:
@@ -671,7 +668,7 @@ def main():
     window = CitaWindow()
     controlador.set_vista(window)
     window.show()
-    app.exec()  # Sin sys.exit() para permitir continuar
+    app.exec()  
 
 if __name__ == "__main__":  
     main()
