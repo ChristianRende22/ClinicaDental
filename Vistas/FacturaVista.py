@@ -452,6 +452,11 @@ class FacturacionView(QMainWindow):
     #     if limpiar:
     #         self.resultado_text.clear()
     #     self.resultado_text.append(texto)
+    def actualizar_resultado(self, texto, limpiar=False):
+        """Actualiza el área de resultados"""
+        if limpiar:
+            self.resultado_text.clear()
+        self.resultado_text.append(texto)
 
     def agregar_factura_resultado(self, texto_factura):
         """Agrega una factura al área de resultados"""
