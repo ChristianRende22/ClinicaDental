@@ -1,22 +1,41 @@
 # 🦷 Sistema de Gestión Integral para Clínica Dental
 
-Sistema completo de gestión desarrollado en **Python** con **PyQt6** y **MySQL**, diseñado para optimizar la administración integral de **Dental Smiling**.
-Implementa arquitectura **MVC (Modelo-Vista-Controlador)** para un código organizado, mantenible y escalable.
+Sistema completo de gestión desarrollado en **Python** con **PyQt6** y **MySQL**, diseñado para optimizar la administración integral de la clínica **Dental Smiling**. Este software digitaliza todos los procesos clave: gestión de pacientes, doctores, citas, tratamientos, horarios y facturación, eliminando el uso de papel y mejorando la eficiencia operativa.
+
+Implementa una arquitectura **MVC (Modelo-Vista-Controlador)** para asegurar modularidad, mantenimiento sencillo y escalabilidad del sistema.
+
+---
+
+## 🧾 Tabla de Contenidos
+
+- [🏥 Descripción del problema](#🏥-descripción-del-problema)
+- [🎗 Arquitectura del sistema](#🎗-arquitectura-del-sistema)
+- [📊 Módulos del sistema](#📊-módulos-del-sistema)
+- [🛠 Tecnologías utilizadas](#🛠-tecnologías-utilizadas)
+- [📋 Requisitos del sistema](#📋-requisitos-del-sistema)
+- [🚀 Instalación y configuración](#🚀-instalación-y-configuración)
+- [📋 Instrucciones de uso](#📋-instrucciones-de-uso)
+- [🙌 Autores](#🙌-autores)
 
 ---
 
 ## 🏥 Descripción del problema
 
-**Dental Smiling** es una clínica dental privada que cuenta con:
+**Dental Smiling**, ubicada en El Salvador, es una clínica dental privada con:
 
-* **Personal**: 1 directora (Dra. Jacquelin Zepeda) + 2 doctores + 3 asistentes
-* **Problema principal**: Gestión manual mediante papel, archivos físicos y almacenamiento tradicional
+- 1 directora (Dra. Jacquelin Zepeda)
+- 2 doctores
+- 3 asistentes
+
+**Problema principal**: la gestión se realizaba de forma manual mediante archivos físicos, lo cual dificultaba el control, seguimiento y eficiencia administrativa.
+
+**Objetivo del sistema**: modernizar el manejo de la clínica dental mediante un sistema digital centralizado que controle todos los procesos clave.
 
 ---
 
-## 🎗 Arquitectura del Sistema
+## 🎗 Arquitectura del sistema
 
-El sistema utiliza **arquitectura MVC** para cada módulo principal:
+El proyecto está organizado bajo el patrón **MVC (Modelo - Vista - Controlador)** para separar las responsabilidades y facilitar el mantenimiento del sistema.
 
 ```
 📈 MODELO
@@ -38,16 +57,43 @@ El sistema utiliza **arquitectura MVC** para cada módulo principal:
 └── Validaciones de entrada
 ```
 
-### Módulos Implementados
 
-* 🔐 Login: Autenticación y control de acceso
-* 📋 Menú: Navegación principal
-* 👤 Paciente: Gestión de pacientes
-* 👨‍⚕️ Doctor: Administración del personal médico
-* 🗕 Cita: Programación de citas
-* 💊 Tratamiento: Gestión de tratamientos
-* 🧾 Factura: Control financiero y facturación
-* ⏰ Horario: Administración de horarios médicos
+## 📊 Módulos del sistema
+
+Cada módulo es independiente y sigue la estructura MVC.
+
+### 🔐 Login
+- Verificación de credenciales.
+- Acceso controlado por roles.
+
+### 👤 Pacientes
+- CRUD de pacientes.
+- Historial médico.
+- Búsqueda por campos personalizados.
+
+### 👨‍⚕️ Doctores
+- Registro y eliminación.
+- Gestión de horarios y especialidades.
+
+### 🗓 Citas
+- Programar, cancelar y modificar citas.
+- Estados: Pendiente, Confirmada, Cancelada, Asistida, Ausente.
+- Consulta de agenda y cálculo automático de costos.
+
+### 💊 Tratamientos
+- Registro de tratamientos.
+- Actualización de precios.
+- Consulta y eliminación.
+
+### 🧾 Facturación
+- Generación de facturas basada en tratamientos.
+- Control de pagos.
+- Reportes detallados.
+
+### ⏰ Horarios
+- Configuración de disponibilidad médica.
+- Visualización de horarios por doctor.
+- Cálculo de ocupación y reporte de disponibilidad.
 
 ---
 
@@ -63,34 +109,30 @@ El sistema utiliza **arquitectura MVC** para cada módulo principal:
 
 ## 📋 Instrucciones de uso
 
-1. **Inicio de sesión**:
+1. **Inicio de la aplicación**:
 
-   * **Usuario**: admin
-   * **Password**: 123456
+  * Ejecuta el archivo `ControladorClinica.py` para iniciar el sistema.
 
-2. Al ejecutar la aplicación:
+2. **Inicio de sesión**:
 
-   * Se desplegará la interfaz de inicio de sesión, donde podrá validar la funcionalidad de autenticación de usuarios.
-   * Una vez cerrada la ventana de inicio de sesión, se abrirá automáticamente la interfaz del menú principal.
-   * Desde el menú principal, es posible acceder y evaluar el funcionamiento de todos los módulos y modelos del sistema.
----
+  * Ingresa el nombre de usuario de asistente.
+  * La contraseña corresponde al nombre de usuario seguido de `123`.  
+    Ejemplo: Si el usuario es `asistente1`, la contraseña será `asistente1123`.
 
-## 📋 Requisitos del Sistema
+3. Tras iniciar sesión:
 
-* **Sistema Operativo**:
+  * Se abrirá el menú principal desde donde puedes acceder y gestionar todos los módulos y funcionalidades del sistema.
 
-  * Windows 10/11 (principal)
-  * macOS (compatibilidad extendida)
-* **Python**: 3.13.3 o superior
-* **Base de Datos**:
+## 📋 Requisitos del sistema
 
-  * MySQL 5.7 o superior
-  * MySQL Workbench (recomendado)
-* **Dependencias Python**:
-
-  * PyQt6>=6.0.0
-  * mysql-connector-python>=8.0.0
-
+- **Sistema operativo**:
+  - Windows 10/11 (principal)
+  - macOS (compatibilidad extendida)
+- **Python**: versión 3.13.3 o superior
+- **MySQL**: versión 5.7 o superior
+- **Dependencias**:
+  ```bash
+  pip install -r requirements.txt
 ---
 
 ## 🚀 Instalación y Configuración
@@ -123,17 +165,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+
 ### 3. Configuración de Base de Datos
 
 * Instalar MySQL Server y MySQL Workbench
-* Ejecutar script SQL ubicado en: `DB_clinica/GestionClinicaDental.sql`
-* **🎯 Nueva Configuración Centralizada**: La configuración se encuentra en:
+* Ejecutar script SQL ubicado en: `DB/GestionClinicaDental.sql`
+* **🎯 Nueva Configuración Centralizada**: La configuración se encuentra en la carpeta `Config`:
 
 ```python
 # Config/database_config.py
 class DatabaseConfig:
     HOST = 'localhost'
-    PORT = 3307
+    PORT = 3307 o 3306
     USER = 'root'
     PASSWORD = '1234'
     DATABASE = 'ClinicaDental'

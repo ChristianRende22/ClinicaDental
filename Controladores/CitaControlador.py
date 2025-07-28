@@ -601,14 +601,6 @@ class ControladorCita:
                         if not tratamiento_encontrado:
                             print("⚠️ No se pudo seleccionar el tratamiento automáticamente")
 
-                    # Generar ID único de factura
-                    fecha_actual = datetime.now().strftime('%Y%m%d%H%M%S')
-                    id_factura = f"FAC-{cita_encontrada.id_cita}-{fecha_actual}"
-                    
-                    # Pre-llenar campos si existen en la vista
-                    if hasattr(self.factura_window, 'id_factura_edit'):
-                        self.factura_window.id_factura_edit.setText(id_factura)
-                        print(f"📝 ID de factura generado: {id_factura}")
 
                     # Mostrar la ventana de facturación
                     print("👁️ Mostrando ventana de facturación...")

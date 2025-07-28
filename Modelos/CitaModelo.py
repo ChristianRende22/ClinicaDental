@@ -291,8 +291,7 @@ class Cita:
                 t.ID_Tratamiento,
                 t.Descripcion AS tratamiento_descripcion,
                 t.Costo AS tratamiento_costo,
-                t.Fecha AS tratamiento_fecha,
-                t.Estado AS tratamiento_estado
+                t.Fecha AS tratamiento_fecha
             FROM Cita c
             INNER JOIN Paciente p ON c.ID_Paciente = p.ID_Paciente
             INNER JOIN Doctor d ON c.ID_Doctor = d.ID_Doctor
@@ -305,7 +304,7 @@ class Cita:
                 (id_cita, fecha, hora_inicio, hora_fin, estado, costo,
                  id_paciente, paciente_nombre, paciente_apellido, fecha_nacimiento, dui, paciente_telefono, paciente_correo,
                  id_doctor, doctor_nombre, doctor_apellido, especialidad, doctor_telefono, doctor_correo, contrasena,
-                 id_tratamiento, tratamiento_descripcion, tratamiento_costo, tratamiento_fecha, tratamiento_estado) = row
+                 id_tratamiento, tratamiento_descripcion, tratamiento_costo, tratamiento_fecha) = row
                 
                 from datetime import time as datetime_time, timedelta
                 
@@ -365,7 +364,6 @@ class Cita:
                         descripcion=tratamiento_descripcion,
                         costo=tratamiento_costo,
                         fecha=tratamiento_fecha,
-                        estado=tratamiento_estado,
                         doctor=doctor
                     )
                     cita.tratamiento = tratamiento
