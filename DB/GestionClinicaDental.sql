@@ -149,7 +149,7 @@ INSERT INTO Horario (ID_Horario,ID_Doctor, Hora_Inicio, Hora_Fin, Disponible) VA
 INSERT INTO Tratamiento (ID_Doctor, Descripcion, Costo, Fecha ) VALUES
 (1234, 'Limpieza dental general', 20.00, '2025-07-01 09:30:00'),
 (2345, 'Colocación de brackets', 450.00, '2025-07-01 15:00:00'),
-(3456, 'Tratamiento de conducto', 250.00, '2025-07-02 10:30:00', );
+(3456, 'Tratamiento de conducto', 250.00, '2025-07-02 10:30:00' );
 
 
 INSERT INTO Cita (ID_Paciente, ID_Doctor, ID_Tratamiento, Fecha, Hora_Inicio, Hora_Fin, Estado, Costo) VALUES
@@ -165,9 +165,11 @@ INSERT INTO Factura (
 (3, 'F003', '2025-07-02', 'Extracción', 250.00, 250.00, 'Pendiente');
 
 INSERT INTO Asistente (Nombre, Apellido, Telefono, Correo, Contrasena) VALUES
-('Ivonne', 'Morales', '70445566', 'ivonne.morales@clinicadental.com', 'asist123'),
-('Pedro', 'Luna', '70556677', 'pedro.luna@clinicadental.com', 'asist234'),
-('Tatiana', 'Ramos', '70667788', 'tatiana.ramos@clinicadental.com', 'asist345');
+('Chris', 'Renderos', '70445566', 'christian.renderos@clinicadental.com', 'Chris123'),
+('Meli', 'Rivas', '70556677', 'melisa.rivas@clinicadental.com', 'Meli123'),
+('Ale', 'Arriola', '70667788', 'ale.arriola@clinicadental.com', 'Ale123'),
+('Ali', 'Quijano', '70778899', 'ali.quijano@clinicadental.com', 'Ali123'),
+('Alvin', 'Portillo', '71778899', 'alvin.portillo@clinicadental.com', 'Alvin123');
 
 
 INSERT INTO Tratamiento_Factura (ID_Tratamiento, ID_Factura) VALUES

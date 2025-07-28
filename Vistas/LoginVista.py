@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                             QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
+from Modelos.loginModelo import LoginModelo
 
 class LoginVista(QWidget):
     # Señal que se emite cuando el login es exitoso
@@ -23,6 +24,37 @@ class LoginVista(QWidget):
             'text_dark': '#34495e'
         }
         self.inicializar_ui()
+    
+    def crear_info_usuarios(self):
+        """Crea el label con información de usuarios disponibles desde la base de datos"""
+        try:
+            modelo = LoginModelo()
+            usuarios = modelo.listar_usuarios_disponibles()
+            
+            if usuarios:
+                texto_usuarios = "👥 Usuarios disponibles en la base de datos:\n"
+                for i, usuario in enumerate(usuarios[:5], 1):  # Mostrar máximo 5 usuarios
+                    icono = "👤"
+                    if usuario['Nombre'].lower() in ['admin', 'administrador']:
+                        icono = "👨‍💼"
+                    elif usuario['Nombre'].lower() in ['doctor']:
+                        icono = "👨‍⚕️"
+                    elif usuario['Nombre'].lower() in ['recepcionista']:
+                        icono = "👩‍💼"
+                    
+                    texto_usuarios += f"• {icono} {usuario['Nombre']} ({usuario['Nombre']} {usuario['Apellido']})\n"
+                
+                if len(usuarios) > 5:
+                    texto_usuarios += f"... y {len(usuarios) - 5} usuarios más"
+                    
+                texto_usuarios += "\n💡 Usa el 'Nombre' para hacer login"
+            else:
+                texto_usuarios = "❌ No se pudieron cargar los usuarios de la base de datos\n🔧 Verifica la conexión a la base de datos"
+                
+        except Exception as e:
+            texto_usuarios = f"⚠️ Error al cargar usuarios: {str(e)}\n📋 Contacta al administrador del sistema"
+        
+        return QLabel(texto_usuarios)
     
     def inicializar_ui(self):
         """Inicializa la interfaz de usuario"""
@@ -215,13 +247,43 @@ class LoginVista(QWidget):
         self.input_usuario = QLineEdit()
         self.input_usuario.setPlaceholderText("Ingrese su nombre de usuario")
         
-        # Campo de contraseña
+        # Campo de contraseña con botón de mostrar/ocultar
         label_password = QLabel("🔒 Contraseña:")
         label_password.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         label_password.setStyleSheet(f"color: {self.colors['text_light']};")
+        
+        # Container para el input de contraseña y el botón de mostrar/ocultar
+        password_container = QHBoxLayout()
+        password_container.setSpacing(0)
+        
         self.input_password = QLineEdit()
         self.input_password.setPlaceholderText("Ingrese su contraseña")
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
+        
+        # Botón para mostrar/ocultar contraseña
+        self.btn_toggle_password = QPushButton("👁️")
+        self.btn_toggle_password.setFixedSize(50, 50)
+        self.btn_toggle_password.setToolTip("Mostrar/Ocultar contraseña")
+        self.btn_toggle_password.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.colors['secondary']};
+                border: 2px solid {self.colors['secondary']};
+                border-radius: 10px;
+                font-size: 16px;
+                margin-left: 5px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['accent']};
+                border-color: {self.colors['accent']};
+            }}
+            QPushButton:pressed {{
+                background-color: {self.colors['primary']};
+                border-color: {self.colors['primary']};
+            }}
+        """)
+        
+        password_container.addWidget(self.input_password)
+        password_container.addWidget(self.btn_toggle_password)
         
         # Botón de login
         self.btn_login = QPushButton("🚀 Iniciar Sesión")
@@ -231,11 +293,11 @@ class LoginVista(QWidget):
         layout_frame.addWidget(label_usuario)
         layout_frame.addWidget(self.input_usuario)
         layout_frame.addWidget(label_password)
-        layout_frame.addWidget(self.input_password)
+        layout_frame.addLayout(password_container)  # Usar el layout del container
         layout_frame.addWidget(self.btn_login)
         
         # Información de usuarios de prueba
-        info_label = QLabel("📋 Usuarios de prueba:\n• 👨‍💼 admin / 123456 (Administrador)\n• 👨‍⚕️ doctor / doctor123 (Doctor)\n• 👩‍💼 recepcionista / recep123 (Recepcionista)")
+        info_label = self.crear_info_usuarios()
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info_label.setFont(QFont("Segoe UI", 11))
         info_label.setStyleSheet(f"""

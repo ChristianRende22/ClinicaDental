@@ -22,17 +22,25 @@ class MenuModelo:
             },
             'doctor': {
                 'pacientes': True,
-                'doctores': False,
+                'doctores': True,
                 'citas': True,
                 'tratamientos': True,
                 'horarios': True,
-                'facturas': False
+                'facturas': True
             },
             'recepcionista': {
                 'pacientes': True,
-                'doctores': False,
+                'doctores': True,
                 'citas': True,
-                'tratamientos': False,
+                'tratamientos': True,
+                'horarios': True,
+                'facturas': True
+            },
+            'asistente': {
+                'pacientes': True,
+                'doctores': True,
+                'citas': True,
+                'tratamientos': True,
                 'horarios': True,
                 'facturas': True
             }
@@ -139,6 +147,12 @@ class MenuModelo:
                 'notificaciones': False,
                 'acceso_reportes': False,
                 'puede_modificar_usuarios': False
+            },
+            'asistente': {
+                'tema': 'completo',
+                'notificaciones': True,
+                'acceso_reportes': True,
+                'puede_modificar_usuarios': True
             }
         }
         
