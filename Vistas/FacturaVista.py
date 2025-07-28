@@ -15,7 +15,7 @@ class FacturacionView(QMainWindow):
     crear_factura_signal = pyqtSignal(dict)
     mostrar_facturas_signal = pyqtSignal()
     limpiar_campos_signal = pyqtSignal()
-    actualizar_datos_signal = pyqtSignal()  # Nueva señal para actualizar datos
+    # actualizar_datos_signal = pyqtSignal()  
 
     def __init__(self):
         super().__init__()
@@ -347,12 +347,12 @@ class FacturacionView(QMainWindow):
         self.crear_btn = QPushButton("➕ Crear Factura")
         self.mostrar_btn = QPushButton("📋 Mostrar Facturas")
         self.limpiar_btn = QPushButton("🗑️ Limpiar Campos")
-        self.actualizar_btn = QPushButton("🔄 Actualizar Datos")
+        # self.actualizar_btn = QPushButton("🔄 Actualizar Datos")
         
         buttons_layout.addWidget(self.crear_btn)
         buttons_layout.addWidget(self.mostrar_btn)
         buttons_layout.addWidget(self.limpiar_btn)
-        buttons_layout.addWidget(self.actualizar_btn)
+        # buttons_layout.addWidget(self.actualizar_btn)
         
         main_layout.addLayout(buttons_layout)
     
@@ -374,12 +374,12 @@ class FacturacionView(QMainWindow):
         self.crear_btn.clicked.connect(self.on_crear_factura)
         self.mostrar_btn.clicked.connect(self.on_mostrar_facturas)
         self.limpiar_btn.clicked.connect(self.on_limpiar_campos)
-        self.actualizar_btn.clicked.connect(self.on_actualizar_datos)
+        # self.actualizar_btn.clicked.connect(self.on_actualizar_datos)
 
-    def on_actualizar_datos(self):
-        """Manejador para el botón de actualizar datos"""
-        # Esta señal la definiremos ahora
-        self.actualizar_datos_signal.emit()
+    # def on_actualizar_datos(self):
+    #     """Manejador para el botón de actualizar datos"""
+    #     # Esta señal la definiremos ahora
+    #     self.actualizar_datos_signal.emit()
     
     def cargar_pacientes(self, pacientes):
         """Carga la lista de pacientes en el ComboBox"""
@@ -420,9 +420,9 @@ class FacturacionView(QMainWindow):
         """Manejador para el botón de limpiar campos"""
         self.limpiar_campos_signal.emit()
 
-    def on_actualizar_datos(self):
-        """Manejador para el botón de actualizar datos"""
-        self.actualizar_datos_signal.emit()
+    # def on_actualizar_datos(self):
+    #     """Manejador para el botón de actualizar datos"""
+    #     self.actualizar_datos_signal.emit()
 
     def mostrar_id_automatico(self, id_factura: str):
         """Muestra el ID generado automáticamente en el campo correspondiente"""
@@ -436,7 +436,7 @@ class FacturacionView(QMainWindow):
         self.tratamiento_combo.setCurrentIndex(0)
         
         # Regenerar el siguiente ID automáticamente después de limpiar
-        self.actualizar_datos_signal.emit()
+        # self.actualizar_datos_signal.emit()
 
     def mostrar_mensaje(self, tipo, titulo, mensaje):
         """Muestra un mensaje al usuario"""
@@ -447,11 +447,11 @@ class FacturacionView(QMainWindow):
         elif tipo == "info":
             QMessageBox.information(self, titulo, mensaje)
 
-    def actualizar_resultado(self, texto, limpiar=False):
-        """Actualiza el área de resultados"""
-        if limpiar:
-            self.resultado_text.clear()
-        self.resultado_text.append(texto)
+    # def actualizar_resultado(self, texto, limpiar=False):
+    #     """Actualiza el área de resultados"""
+    #     if limpiar:
+    #         self.resultado_text.clear()
+    #     self.resultado_text.append(texto)
 
     def agregar_factura_resultado(self, texto_factura):
         """Agrega una factura al área de resultados"""

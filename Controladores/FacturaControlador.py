@@ -44,7 +44,7 @@ class FacturacionController:
         self.view.crear_factura_signal.connect(self.crear_factura)
         self.view.mostrar_facturas_signal.connect(self.mostrar_facturas)
         self.view.limpiar_campos_signal.connect(self.limpiar_campos)
-        self.view.actualizar_datos_signal.connect(self.cargar_datos_iniciales)
+        # self.view.actualizar_datos_signal.connect(self.cargar_datos_iniciales)
     
     def cargar_datos_iniciales(self):
         """Carga pacientes y tratamientos en los ComboBox"""
