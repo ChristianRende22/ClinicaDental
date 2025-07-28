@@ -156,39 +156,6 @@ class ControladorDoctor:
             QMessageBox.critical(self.vista, "❌ Error", f"Error inesperado al crear el doctor: {str(e)}")
             return None
 
-
-    # def crear_doctor(self):
-    #     """Crea un doctor con los datos de los campos de la vista"""
-    #     # Obtener datos de los campos de la vista
-    #     nombre = self.vista.nombre_edit.text().strip()
-    #     apellido = self.vista.apellido_edit.text().strip()
-    #     num_junta_medica = self.vista.num_junta_medica_edit.text().strip()
-    #     especialidad = self.vista.especialidad_edit.text().strip()
-    #     telefono = self.vista.telefono_edit.text().strip()
-    #     correo = self.vista.correo_edit.text().strip()
-        
-        
-    #     # Crear el objeto Doctor si todos los campos son válidos
-    #     doctor = Doctor(
-    #         nombre=nombre.title(),
-    #         apellido=apellido.title(),
-    #         num_junta_medica=int(num_junta_medica),
-    #         especialidad=especialidad.title(),
-    #         telefono=telefono,
-    #         correo=correo.lower()
-    #     )
-        
-    #     # Agregar doctor en la base de datos
-    #     try:
-    #         Doctor.insert_doc_db(doctor)
-    #         QMessageBox.information(self.vista, "✅ Éxito", "Doctor creado exitosamente")
-    #         self.vista.resultado_text.append(f"✅ Doctor creado: Dr. {doctor.nombre} {doctor.apellido}")
-    #         self.limpiar_campos()
-    #     except Exception as e:
-    #         QMessageBox.critical(self.vista, "❌ Error", f"Error al agregar el doctor a la base de datos: {str(e)}")
-            
-    #     return doctor
-    
     def agregar_horario(self):
         """Abre el diálogo de HorarioVista para agregar un horario con ID automático"""
         try:
@@ -215,7 +182,7 @@ class ControladorDoctor:
             # Crear y mostrar el diálogo con el ID pre-generado
             dialog = AgregarHorarioDialog(doctores_bd, self.vista)
             
-            # CLAVE: Establecer el ID generado automáticamente en el diálogo
+            # CEstablecer el ID generado automáticamente en el diálogo
             dialog.id_edit.setText(siguiente_id)
             dialog.id_edit.setReadOnly(True)  # Hacer que sea solo lectura
             
@@ -314,9 +281,9 @@ class ControladorDoctor:
     def mostrar_info_doctor(self):
         """ Muestra un diálogo con la información de todos los doctores registrados """
         try:
-            print("Intentando obtener doctores...")  # Debug
+            print("Intentando obtener doctores...")  
             doctores = Doctor.obtener_doctores_desde_db()
-            print(f"Doctores obtenidos: {len(doctores)}")  # Debug
+            print(f"Doctores obtenidos: {len(doctores)}")  
             
             self.vista.resultado_text.clear()
             if not doctores:
@@ -325,14 +292,14 @@ class ControladorDoctor:
                 self.vista.resultado_text.append("📋 Listado de Doctores:")
                 self.vista.resultado_text.append("=" * 50)
                 for doctor in doctores:
-                    print(f"Mostrando doctor: {doctor}")  # Debug
+                    print(f"Mostrando doctor: {doctor}")  #
                     self.vista.resultado_text.append(f"👨‍⚕️ Dr. {doctor}")
                     self.vista.resultado_text.append(f"   📞 Teléfono: {doctor.telefono}")
                     self.vista.resultado_text.append(f"   📧 Correo: {doctor.correo}")
                     self.vista.resultado_text.append(f"   🆔 N° Junta Médica: {doctor.num_junta_medica}")
                     self.vista.resultado_text.append("-" * 30)
         except Exception as e:
-            print(f"Error en mostrar_info_doctor: {e}")  # Debug
+            print(f"Error en mostrar_info_doctor: {e}")  
             self.vista.resultado_text.clear()
             self.vista.resultado_text.append(f"❌ Error al obtener doctores: {str(e)}")
             
@@ -654,7 +621,6 @@ class ControladorDoctor:
                 f"Error inesperado: {str(e)}"
             )
     
-    # Por el momento, no encontrara ninguna cita para el doctor, una vez se haya hecho la conexion con la base de datos será más fácil
     def ver_citas(self):
         """Ver las citas de un doctor específico usando su número de junta médica"""
         self.vista.resultado_text.clear()
@@ -695,7 +661,6 @@ class ControladorDoctor:
             
             identificador = identificador.strip()
             
-            # CLAVE: Buscar el doctor comparando como STRING
             doctor_encontrado = None
             
             for doctor in doctores_bd:
@@ -896,7 +861,7 @@ def main():
     window = DoctorWindow()
     controlador = ControladorDoctor(window)
     window.show()
-    app.exec()  # Sin sys.exit() para permitir continuar
+    app.exec()  
 
 if __name__ == "__main__":
     main()
