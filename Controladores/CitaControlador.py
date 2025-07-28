@@ -191,7 +191,7 @@ class ControladorCita:
             # Insertar en la base de datos
             if Cita.insert_Cita_bd(nueva_cita):
                 # Si la inserción fue exitosa, agregar a la lista local
-                self.citas_agendadas.append(nueva_cita)  # CORREGIDO: usar citas_agendadas
+                self.citas_agendadas.append(nueva_cita)  
                 
                 QMessageBox.information(self.vista, "✅ Éxito", 
                                     f"Cita creada correctamente.\nID: {nueva_cita.id_cita}")
@@ -224,7 +224,7 @@ class ControladorCita:
         """Lista todas las citas cargadas desde la base de datos"""
         self.vista.resultado_text.clear()
         
-        # NUEVO: Recargar citas desde la BD antes de mostrarlas
+        # Recargar citas desde la BD antes de mostrarlas
         self.cargar_citas_desde_bd()
         
         if len(self.citas_agendadas) == 0: 
@@ -242,7 +242,7 @@ class ControladorCita:
         """Cancela una cita por ID"""
         self.vista.resultado_text.clear()
 
-        # NUEVO: Cargar y mostrar citas desde la BD
+        # Cargar y mostrar citas desde la BD
         self.cargar_citas_desde_bd()
         
         if len(self.citas_agendadas) == 0:
@@ -265,7 +265,7 @@ class ControladorCita:
                 break
         
         if cita_encontrada:
-            # NUEVO: Actualizar el estado en la base de datos
+            # Actualizar el estado en la base de datos
             if Cita.actualizar_estado_bd(cita_encontrada.id_cita, "Cancelada"):
                 # Solo actualizar en memoria si la BD se actualizó correctamente
                 cita_encontrada.estado = "Cancelada"
