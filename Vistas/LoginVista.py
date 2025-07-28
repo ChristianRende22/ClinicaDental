@@ -260,30 +260,36 @@ class LoginVista(QWidget):
         self.input_password.setPlaceholderText("Ingrese su contraseña")
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
         
-        # Botón para mostrar/ocultar contraseña
-        self.btn_toggle_password = QPushButton("👁️")
-        self.btn_toggle_password.setFixedSize(50, 50)
+        # Botón para mostrar/ocultar contraseña con apariencia de ícono dentro del QLineEdit
+        self.btn_toggle_password = QPushButton()
+        self.btn_toggle_password.setFixedSize(60, 32)
         self.btn_toggle_password.setToolTip("Mostrar/Ocultar contraseña")
+        self.btn_toggle_password.setCheckable(True)
+        self.btn_toggle_password.setChecked(False)
+        self.btn_toggle_password.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_toggle_password.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btn_toggle_password.setText("🙈")  # Icono inicial de ocultar contraseña
         self.btn_toggle_password.setStyleSheet(f"""
             QPushButton {{
-                background-color: {self.colors['secondary']};
-                border: 2px solid {self.colors['secondary']};
-                border-radius: 10px;
-                font-size: 16px;
-                margin-left: 5px;
+                background-color: transparent;
+                border: none;
+                font-size: 20px;
+                color: {self.colors['accent']};
+                margin-left: 15px;
+                margin-right: 8px;
+                padding: 0px;
+            }}
+            QPushButton:checked {{
+                color: {self.colors['secondary']};
             }}
             QPushButton:hover {{
-                background-color: {self.colors['accent']};
-                border-color: {self.colors['accent']};
-            }}
-            QPushButton:pressed {{
-                background-color: {self.colors['primary']};
-                border-color: {self.colors['primary']};
+                color: {self.colors['primary']};
             }}
         """)
-        
+        # Ajustar layout para que el botón se superponga al QLineEdit
         password_container.addWidget(self.input_password)
         password_container.addWidget(self.btn_toggle_password)
+        password_container.setAlignment(self.btn_toggle_password, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         
         # Botón de login
         self.btn_login = QPushButton("🚀 Iniciar Sesión")
@@ -338,6 +344,16 @@ class LoginVista(QWidget):
         self.btn_login.clicked.connect(self.intentar_login)
         self.input_password.returnPressed.connect(self.intentar_login)
         self.input_usuario.returnPressed.connect(self.input_password.setFocus)
+        self.btn_toggle_password.toggled.connect(self.toggle_password_visibility)
+
+    def toggle_password_visibility(self, checked):
+        """Muestra u oculta la contraseña según el estado del botón"""
+        if checked:
+            self.input_password.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.btn_toggle_password.setText("🙉")
+        else:
+            self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
+            self.btn_toggle_password.setText("🙈")
     
     def intentar_login(self):
         """Emite la señal para intentar hacer login"""

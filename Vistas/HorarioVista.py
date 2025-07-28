@@ -252,6 +252,23 @@ class AgregarHorarioDialog(QDialog):
                 background-color: {self.colors['surface']};
                 color: #000000;
                 selection-background-color: {self.colors['accent']};
+                selection-color: #000000;
+            }}
+            QComboBox:focus {{
+                color: #000000;
+            }}
+            QComboBox:disabled {{
+                color: #000000;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {self.colors['surface']};
+                color: #000000;
+                selection-background-color: {self.colors['accent']};
+                selection-color: #000000;
+                border: 1px solid {self.colors['secondary']};
+            }}
+            QComboBox QAbstractItemView:disabled {{
+                color: #000000;
             }}
             QComboBox::drop-down {{
                 background-color: {self.colors['secondary']};
@@ -265,13 +282,6 @@ class AgregarHorarioDialog(QDialog):
                 border-right: 5px solid transparent;
                 border-top: 5px solid {self.colors['surface']};
                 margin: 5px;
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: {self.colors['surface']};
-                color: #000000;
-                selection-background-color: {self.colors['accent']};
-                selection-color: {self.colors['surface']};
-                border: 1px solid {self.colors['secondary']};
             }}
         """)
         
@@ -505,22 +515,36 @@ class HorarioView(QMainWindow):
         if not horarios_info:
             QMessageBox.information(self, "ℹ️ Información", "No hay horarios registrados para eliminar.")
             return None
-        
-        item, ok = QInputDialog.getItem(
-            self, "🗑️ Eliminar horario", 
-            "Seleccione un horario a eliminar:", horarios_info, 0, False)
-        
+
+        # Crear el QInputDialog manualmente para acceder al ComboBox
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle("🗑️ Eliminar horario")
+        dialog.setLabelText("Seleccione un horario a eliminar:")
+        dialog.setComboBoxItems(horarios_info)
+        dialog.setComboBoxEditable(False)
+
+        # Aplicar el estilo negro al ComboBox y su vista
+        combo = dialog.findChild(QComboBox)
+        if combo:
+            combo.setStyleSheet("color: #000000; background-color: #ffffff;")
+            view = combo.view()
+            if view:
+                view.setStyleSheet("color: #000000; background-color: #ffffff;")
+
+        ok = dialog.exec() == QDialog.DialogCode.Accepted
+        item = dialog.textValue() if ok else None
+
         if ok and item:
             id_horario = item.split(" | ")[0]
-            
+
             confirm = QMessageBox.question(
                 self, "⚠️ Confirmar Eliminación", 
                 f"¿Está seguro que desea eliminar el horario con ID: {id_horario}?", 
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            
+
             if confirm == QMessageBox.StandardButton.Yes:
                 return id_horario
-        
+
         return None
     
     def actualizar_lista_horarios(self, horarios_por_dia: dict):
