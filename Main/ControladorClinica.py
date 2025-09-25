@@ -4,6 +4,7 @@
 Script consolidado que ejecuta todos los controladores
 El menú permite elegir qué módulo usar
 """
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
